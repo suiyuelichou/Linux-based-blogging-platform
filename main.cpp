@@ -6,9 +6,8 @@ int main(int argc, char *argv[])
     string user = "root";
     string passwd = "bd20030423";
     string databasename = "yourdb";
-    // 在这里进行测试
 
-    //命令行解析
+    //命令行解析（根据用户的输入对基本配置进行修改）
     Config config;
     config.parse_arg(argc, argv);
 

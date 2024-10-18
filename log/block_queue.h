@@ -1,5 +1,6 @@
 /*************************************************************
 *循环数组实现的阻塞队列，m_back = (m_back + 1) % m_max_size;  
+使用循环数组可以重复利用这m_max_size部分的空间，已经使用过的内存，在m_back超过m_max_size后，会被新的元素覆盖
 *线程安全，每个操作前都要先加互斥锁，操作完后，再解锁
 **************************************************************/
 
@@ -25,7 +26,7 @@ public:
         }
 
         m_max_size = max_size;
-        m_array = new T[max_size];
+        m_array = new T[max_size];// 分配存储空间
         m_size = 0;
         m_front = -1;
         m_back = -1;
@@ -99,7 +100,7 @@ public:
         m_mutex.unlock();
         return true;
     }
-
+    // 返回当前队列大小
     int size() 
     {
         int tmp = 0;
@@ -110,7 +111,7 @@ public:
         m_mutex.unlock();
         return tmp;
     }
-
+    // 返回队列的最大大小
     int max_size()
     {
         int tmp = 0;
@@ -145,7 +146,7 @@ public:
         m_mutex.unlock();
         return true;
     }
-    //pop时,如果当前队列没有元素,将会等待条件变量
+    //pop时,如果当前队列没有元素,将会等待条件变量（从队列中提取日志信息写入日志文件
     bool pop(T &item)
     {
 
@@ -202,11 +203,11 @@ private:
     locker m_mutex;
     cond m_cond;
 
-    T *m_array;
-    int m_size;
-    int m_max_size;
-    int m_front;
-    int m_back;
+    T *m_array;     // 存储队列元素的动态数组
+    int m_size;     // 当前队列中的元素数量
+    int m_max_size; // 队列的最大容量
+    int m_front;    // 队首元素的索引
+    int m_back;     // 队尾元素的索引
 };
 
 #endif

@@ -16,6 +16,7 @@ connection_pool::connection_pool()
 	m_FreeConn = 0;
 }
 
+// 实例的初始化放在函数内部，是单例模式中的懒汉模式（在第一次被使用才会进行初始化）
 connection_pool *connection_pool::GetInstance()
 {
 	static connection_pool connPool;

@@ -15,7 +15,7 @@ const char *error_500_title = "Internal Error";
 const char *error_500_form = "There was an unusual problem serving the request file.\n";
 
 locker m_lock;
-map<string, string> users;
+map<string, string> users;  //将用户名和密码存入哈希表中，减少数据库的检索损耗
 
 void http_conn::initmysql_result(connection_pool *connPool)
 {
@@ -83,15 +83,15 @@ void removefd(int epollfd, int fd)
 //将事件重置为EPOLLONESHOT
 void modfd(int epollfd, int fd, int ev, int TRIGMode)
 {
-    epoll_event event;
-    event.data.fd = fd;
+    epoll_event event;  //新的事件配置
+    event.data.fd = fd;     //data.fd：保存fd（需要监听的对象） events：指定需要监听的事件类型及触发模式
 
-    if (1 == TRIGMode)
-        event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
+    if (1 == TRIGMode)  //若TRIGMode为1，设置为边缘触发(EPOLLET)
+        event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;    //EPOLLONESHOT：一个文件描述符的事件在触发一次后会被自动移除
     else
-        event.events = ev | EPOLLONESHOT | EPOLLRDHUP;
+        event.events = ev | EPOLLONESHOT | EPOLLRDHUP;  //EPOLLRDHUP：表示对方关闭连接或半关闭，用于检测是否关闭了socket连接
 
-    epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
+    epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);  //EPOLL_CTL_MOD：修改已经在epoll实例中的文件描述符的监听事件
 }
 
 int http_conn::m_user_count = 0;
@@ -339,6 +339,7 @@ http_conn::HTTP_CODE http_conn::parse_content(char *text)
     return NO_REQUEST;
 }
 
+// 处理从客户端读取的HTTP请求
 http_conn::HTTP_CODE http_conn::process_read()
 {
     LINE_STATUS line_status = LINE_OK;
@@ -350,6 +351,7 @@ http_conn::HTTP_CODE http_conn::process_read()
         text = get_line();
         m_start_line = m_checked_idx;
         LOG_INFO("%s", text);
+
         switch (m_check_state)
         {
         case CHECK_STATE_REQUESTLINE:
@@ -385,12 +387,13 @@ http_conn::HTTP_CODE http_conn::process_read()
     return NO_REQUEST;
 }
 
+//处理客户端请求
 http_conn::HTTP_CODE http_conn::do_request()
 {
     strcpy(m_real_file, doc_root);
     int len = strlen(doc_root);
     //printf("m_url:%s\n", m_url);
-    const char *p = strrchr(m_url, '/');
+    const char *p = strrchr(m_url, '/');    //返回m_url中的最后一个'/'字符的位置
 
     //处理cgi
     if (cgi == 1 && (*(p + 1) == '2' || *(p + 1) == '3'))
@@ -409,7 +412,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         //user=123&passwd=123
         char name[100], password[100];
         int i;
-        for (i = 5; m_string[i] != '&'; ++i)
+        for (i = 5; m_string[i] != '&'; ++i)    //？m_string存储的是请求头哪部分的数据
             name[i - 5] = m_string[i];
         name[i - 5] = '\0';
 
@@ -430,11 +433,11 @@ http_conn::HTTP_CODE http_conn::do_request()
             strcat(sql_insert, password);
             strcat(sql_insert, "')");
 
-            if (users.find(name) == users.end())
+            if (users.find(name) == users.end())    //哈希表中不存在相同的用户名
             {
                 m_lock.lock();
-                int res = mysql_query(mysql, sql_insert);
-                users.insert(pair<string, string>(name, password));
+                int res = mysql_query(mysql, sql_insert);   // 执行sql_insert中的语句
+                users.insert(pair<string, string>(name, password));     //数据插入成功后，将用户名和密码也存入users中
                 m_lock.unlock();
 
                 if (!res)
@@ -446,9 +449,9 @@ http_conn::HTTP_CODE http_conn::do_request()
                 strcpy(m_url, "/registerError.html");
         }
         //如果是登录，直接判断
-        //若浏览器端输入的用户名和密码在表中可以查找到，返回1，否则返回0
         else if (*(p + 1) == '2')
         {
+            //若浏览器端输入的用户名和密码在表中可以查找到，返回1，否则返回0
             if (users.find(name) != users.end() && users[name] == password)
                 strcpy(m_url, "/welcome.html");
             else
@@ -499,6 +502,7 @@ http_conn::HTTP_CODE http_conn::do_request()
     else
         strncpy(m_real_file + len, m_url, FILENAME_LEN - len - 1);
 
+    // 文件检查与映射
     if (stat(m_real_file, &m_file_stat) < 0)
         return NO_RESOURCE;
 
@@ -508,24 +512,28 @@ http_conn::HTTP_CODE http_conn::do_request()
     if (S_ISDIR(m_file_stat.st_mode))
         return BAD_REQUEST;
 
-    int fd = open(m_real_file, O_RDONLY);
-    m_file_address = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    int fd = open(m_real_file, O_RDONLY);   // 以只读模式打开文件，返回文件描述符fd
+    m_file_address = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);   //通过mmap将文件的内容映射到进程的地址空间中
     close(fd);
     return FILE_REQUEST;
 }
+
+// 解除内存映射
 void http_conn::unmap()
 {
     if (m_file_address)
     {
-        munmap(m_file_address, m_file_stat.st_size);
+        munmap(m_file_address, m_file_stat.st_size);    //解除通过mmap（）创建的内存映射，将文件内容从进程的地址空间删除
         m_file_address = 0;
     }
 }
+
+// 将响应数据写入客户端
 bool http_conn::write()
 {
     int temp = 0;
 
-    if (bytes_to_send == 0)
+    if (bytes_to_send == 0) //没有待发送的数据
     {
         modfd(m_epollfd, m_sockfd, EPOLLIN, m_TRIGMode);
         init();
@@ -534,9 +542,9 @@ bool http_conn::write()
 
     while (1)
     {
-        temp = writev(m_sockfd, m_iv, m_iv_count);
+        temp = writev(m_sockfd, m_iv, m_iv_count);  //将m_iv指向的缓冲区的数据写入m_sockfd
 
-        if (temp < 0)
+        if (temp < 0)   //writev的返回值小于0，表示写操作失败
         {
             if (errno == EAGAIN)
             {
@@ -578,6 +586,7 @@ bool http_conn::write()
         }
     }
 }
+
 bool http_conn::add_response(const char *format, ...)
 {
     if (m_write_idx >= WRITE_BUFFER_SIZE)

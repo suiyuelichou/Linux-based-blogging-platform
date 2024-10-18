@@ -6,6 +6,7 @@ sort_timer_lst::sort_timer_lst()
     head = NULL;
     tail = NULL;
 }
+
 sort_timer_lst::~sort_timer_lst()
 {
     util_timer *tmp = head;
@@ -17,17 +18,19 @@ sort_timer_lst::~sort_timer_lst()
     }
 }
 
+// 将定时器节点插入链表
 void sort_timer_lst::add_timer(util_timer *timer)
 {
     if (!timer)
     {
         return;
     }
-    if (!head)
+    if (!head)// 若链表为空，将timer设置为头和尾
     {
         head = tail = timer;
         return;
     }
+    // 如果 timer 的到期时间早于当前头节点的到期时间，则将其插入到头部
     if (timer->expire < head->expire)
     {
         timer->next = head;
@@ -37,6 +40,8 @@ void sort_timer_lst::add_timer(util_timer *timer)
     }
     add_timer(timer, head);
 }
+
+// 调整计时器的位置
 void sort_timer_lst::adjust_timer(util_timer *timer)
 {
     if (!timer)
@@ -48,20 +53,22 @@ void sort_timer_lst::adjust_timer(util_timer *timer)
     {
         return;
     }
-    if (timer == head)
+    if (timer == head) // 若调整的是头节点，则需要将下一个节点设为头节点
     {
         head = head->next;
         head->prev = NULL;
         timer->next = NULL;
-        add_timer(timer, head);
+        add_timer(timer, head);// 然后将脱离出来的头节点重新插入链表
     }
-    else
+    else // 若不是，则将该节点从两边脱离开
     {
         timer->prev->next = timer->next;
         timer->next->prev = timer->prev;
         add_timer(timer, timer->next);
     }
 }
+
+// 从链表中删除指定定时器timer
 void sort_timer_lst::del_timer(util_timer *timer)
 {
     if (!timer)
@@ -93,6 +100,7 @@ void sort_timer_lst::del_timer(util_timer *timer)
     timer->next->prev = timer->prev;
     delete timer;
 }
+
 void sort_timer_lst::tick()
 {
     if (!head)

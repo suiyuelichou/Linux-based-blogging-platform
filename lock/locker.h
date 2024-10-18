@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+// 信号量
 class sem
 {
 public:
@@ -38,6 +39,8 @@ public:
 private:
     sem_t m_sem;
 };
+
+//互斥锁
 class locker
 {
 public:
@@ -66,8 +69,10 @@ public:
     }
 
 private:
-    pthread_mutex_t m_mutex;
+    pthread_mutex_t m_mutex;    //创建互斥锁。互斥锁的类型就是pthread_mutex_t
 };
+
+// 条件变量
 class cond
 {
 public:

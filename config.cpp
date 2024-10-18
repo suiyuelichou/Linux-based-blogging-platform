@@ -35,12 +35,14 @@ Config::Config(){
 void Config::parse_arg(int argc, char*argv[]){
     int opt;
     const char *str = "p:l:m:o:s:t:c:a:";
+    //getopt会逐个处理argv数组中用户输入的参数
     while ((opt = getopt(argc, argv, str)) != -1)
     {
         switch (opt)
         {
         case 'p':
         {
+            // optarg存储了当前选项的实际参数
             PORT = atoi(optarg);
             break;
         }

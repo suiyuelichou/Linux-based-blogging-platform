@@ -2,7 +2,7 @@
 
 WebServer::WebServer()
 {
-    //http_conn类对象
+    //http_conn类对象，用于存储每个客户端的连接信息
     users = new http_conn[MAX_FD];
 
     //root文件夹路径
@@ -14,18 +14,18 @@ WebServer::WebServer()
     strcat(m_root, root);
 
     //定时器
-    users_timer = new client_data[MAX_FD];
+    users_timer = new client_data[MAX_FD];  //每个客户端连接都关联一个定时器
 }
 
 WebServer::~WebServer()
 {
-    close(m_epollfd);
-    close(m_listenfd);
-    close(m_pipefd[1]);
+    close(m_epollfd);   //关闭epoll实例文件描述符，释放epoll资源
+    close(m_listenfd);  //关闭监听套接字，停止接收新的客户端连接
+    close(m_pipefd[1]); //关闭用于信号处理的管道
     close(m_pipefd[0]);
-    delete[] users;
-    delete[] users_timer;
-    delete m_pool;
+    delete[] users;         //释放在构造函数中为users分配的内存，放置内存泄漏
+    delete[] users_timer;   //释放定时器数组
+    delete m_pool;          //释放线程池资源
 }
 
 void WebServer::init(int port, string user, string passWord, string databaseName, int log_write, 
@@ -35,15 +35,16 @@ void WebServer::init(int port, string user, string passWord, string databaseName
     m_user = user;
     m_passWord = passWord;
     m_databaseName = databaseName;
-    m_sql_num = sql_num;
-    m_thread_num = thread_num;
-    m_log_write = log_write;
-    m_OPT_LINGER = opt_linger;
-    m_TRIGMode = trigmode;
-    m_close_log = close_log;
-    m_actormodel = actor_model;
+    m_sql_num = sql_num;        // 设置数据库连接池的连接数
+    m_thread_num = thread_num;  // 设置线程池的线程数 
+    m_log_write = log_write;    // 设置日志写入选项（同步/异步）
+    m_OPT_LINGER = opt_linger;  // 设置套接字的SO_LINGER选项 
+    m_TRIGMode = trigmode;      // 设置触发模式
+    m_close_log = close_log;    // 设置是否关闭日志
+    m_actormodel = actor_model; // 设置actor模型
 }
 
+//设置触发模式（水平触发（LT/边缘触发（ET）
 void WebServer::trig_mode()
 {
     //LT + LT
@@ -72,6 +73,7 @@ void WebServer::trig_mode()
     }
 }
 
+//日志模块的初始化
 void WebServer::log_write()
 {
     if (0 == m_close_log)
@@ -84,6 +86,7 @@ void WebServer::log_write()
     }
 }
 
+//初始化数据库连接池
 void WebServer::sql_pool()
 {
     //初始化数据库连接池
@@ -94,12 +97,14 @@ void WebServer::sql_pool()
     users->initmysql_result(m_connPool);
 }
 
+//创建并初始化线程池
 void WebServer::thread_pool()
 {
     //线程池
     m_pool = new threadpool<http_conn>(m_actormodel, m_connPool, m_thread_num);
 }
 
+//进行套接字的监听
 void WebServer::eventListen()
 {
     //网络编程基础步骤
@@ -139,18 +144,22 @@ void WebServer::eventListen()
     m_epollfd = epoll_create(5);
     assert(m_epollfd != -1);
 
+    //将监听socket加入到epoll中
     utils.addfd(m_epollfd, m_listenfd, false, m_LISTENTrigmode);
     http_conn::m_epollfd = m_epollfd;
 
+    // 创建用于信号处理的管道，并将其加入epoll
     ret = socketpair(PF_UNIX, SOCK_STREAM, 0, m_pipefd);
     assert(ret != -1);
     utils.setnonblocking(m_pipefd[1]);
     utils.addfd(m_epollfd, m_pipefd[0], false, 0);
 
+    // 注册信号处理函数
     utils.addsig(SIGPIPE, SIG_IGN);
     utils.addsig(SIGALRM, utils.sig_handler, false);
     utils.addsig(SIGTERM, utils.sig_handler, false);
 
+    // 设置定时器
     alarm(TIMESLOT);
 
     //工具类,信号和描述符基础操作
@@ -158,21 +167,24 @@ void WebServer::eventListen()
     Utils::u_epollfd = m_epollfd;
 }
 
+//为新连接设置定时器。管理客户端连接的超时处理
 void WebServer::timer(int connfd, struct sockaddr_in client_address)
 {
     users[connfd].init(connfd, client_address, m_root, m_CONNTrigmode, m_close_log, m_user, m_passWord, m_databaseName);
 
     //初始化client_data数据
-    //创建定时器，设置回调函数和超时时间，绑定用户数据，将定时器添加到链表中
     users_timer[connfd].address = client_address;
     users_timer[connfd].sockfd = connfd;
+
+    //创建新的定时器
     util_timer *timer = new util_timer;
     timer->user_data = &users_timer[connfd];
-    timer->cb_func = cb_func;
+    timer->cb_func = cb_func;   //定时器超时回调函数
     time_t cur = time(NULL);
-    timer->expire = cur + 3 * TIMESLOT;
+    timer->expire = cur + 3 * TIMESLOT;     //设置超时时间为当前时间+3个时间片
+
     users_timer[connfd].timer = timer;
-    utils.m_timer_lst.add_timer(timer);
+    utils.m_timer_lst.add_timer(timer);     //将定时器加入链表
 }
 
 //若有数据传输，则将定时器往后延迟3个单位
@@ -180,23 +192,25 @@ void WebServer::timer(int connfd, struct sockaddr_in client_address)
 void WebServer::adjust_timer(util_timer *timer)
 {
     time_t cur = time(NULL);
-    timer->expire = cur + 3 * TIMESLOT;
-    utils.m_timer_lst.adjust_timer(timer);
+    timer->expire = cur + 3 * TIMESLOT;     //延迟超时时间
+    utils.m_timer_lst.adjust_timer(timer);  //调整定时器位置
 
     LOG_INFO("%s", "adjust timer once");
 }
 
+//处理超时的连接并关闭相应的客户端
 void WebServer::deal_timer(util_timer *timer, int sockfd)
 {
-    timer->cb_func(&users_timer[sockfd]);
+    timer->cb_func(&users_timer[sockfd]);   //调用回调函数关闭连接
     if (timer)
     {
-        utils.m_timer_lst.del_timer(timer);
+        utils.m_timer_lst.del_timer(timer); //删除定时器
     }
 
     LOG_INFO("close fd %d", users_timer[sockfd].sockfd);
 }
 
+//处理新客户端的连接请求
 bool WebServer::dealclientdata()
 {
     struct sockaddr_in client_address;
@@ -241,6 +255,7 @@ bool WebServer::dealclientdata()
     return true;
 }
 
+//处理信号事件（如定时器、关闭服务器等）
 bool WebServer::dealwithsignal(bool &timeout, bool &stop_server)
 {
     int ret = 0;
@@ -277,6 +292,7 @@ bool WebServer::dealwithsignal(bool &timeout, bool &stop_server)
     return true;
 }
 
+//处理可读事件
 void WebServer::dealwithread(int sockfd)
 {
     util_timer *timer = users_timer[sockfd].timer;
@@ -328,6 +344,7 @@ void WebServer::dealwithread(int sockfd)
     }
 }
 
+//处理可写事件
 void WebServer::dealwithwrite(int sockfd)
 {
     util_timer *timer = users_timer[sockfd].timer;
@@ -374,6 +391,7 @@ void WebServer::dealwithwrite(int sockfd)
     }
 }
 
+//服务器的主循环，用于处理事件
 void WebServer::eventLoop()
 {
     bool timeout = false;

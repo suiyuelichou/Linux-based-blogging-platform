@@ -8,6 +8,7 @@ using namespace std;
 class Config
 {
 public:
+    //在构造函数内进行配置的初始化
     Config();
     ~Config(){};
 

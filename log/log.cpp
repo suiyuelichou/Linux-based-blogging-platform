@@ -19,7 +19,7 @@ Log::~Log()
         fclose(m_fp);
     }
 }
-//异步需要设置阻塞队列的长度，同步不需要设置
+// 异步需要设置阻塞队列的长度，同步不需要设置
 bool Log::init(const char *file_name, int close_log, int log_buf_size, int split_lines, int max_queue_size)
 {
     //如果设置了max_queue_size,则设置为异步
@@ -35,15 +35,15 @@ bool Log::init(const char *file_name, int close_log, int log_buf_size, int split
     m_close_log = close_log;
     m_log_buf_size = log_buf_size;
     m_buf = new char[m_log_buf_size];
-    memset(m_buf, '\0', m_log_buf_size);
+    memset(m_buf, '\0', m_log_buf_size);    // 将字符串m_buf初始化为‘\0’,初始化的长度为m_log_buf_size
     m_split_lines = split_lines;
 
+    // 获取当前的系统时间，并转换为易于访问的结构体形式
     time_t t = time(NULL);
     struct tm *sys_tm = localtime(&t);
     struct tm my_tm = *sys_tm;
 
- 
-    const char *p = strrchr(file_name, '/');
+    const char *p = strrchr(file_name, '/');// 返回file_name中最后出现的'/'的指针
     char log_full_name[256] = {0};
 
     if (p == NULL)
@@ -59,7 +59,7 @@ bool Log::init(const char *file_name, int close_log, int log_buf_size, int split
 
     m_today = my_tm.tm_mday;
     
-    m_fp = fopen(log_full_name, "a");
+    m_fp = fopen(log_full_name, "a");   // 若log_full_name文件不存在，则创建它；若文件存在，文件指针定位到文件末尾，新写入的数据会添加到原有的内容后面
     if (m_fp == NULL)
     {
         return false;
@@ -68,14 +68,17 @@ bool Log::init(const char *file_name, int close_log, int log_buf_size, int split
     return true;
 }
 
+// 生成日志信息
 void Log::write_log(int level, const char *format, ...)
 {
+    // 获取当前系统时间（每次调用write_log都会重新获取时间）
     struct timeval now = {0, 0};
     gettimeofday(&now, NULL);
     time_t t = now.tv_sec;
     struct tm *sys_tm = localtime(&t);
     struct tm my_tm = *sys_tm;
-    char s[16] = {0};
+
+    char s[16] = {0};//记录日志类型
     switch (level)
     {
     case 0:
@@ -94,15 +97,17 @@ void Log::write_log(int level, const char *format, ...)
         strcpy(s, "[info]:");
         break;
     }
+
     //写入一个log，对m_count++, m_split_lines最大行数
     m_mutex.lock();
     m_count++;
 
+    // 若日期发生变化，或日志达到了最大行数
     if (m_today != my_tm.tm_mday || m_count % m_split_lines == 0) //everyday log
     {
         
         char new_log[256] = {0};
-        fflush(m_fp);
+        fflush(m_fp);   // 将缓冲区的数据写入文件（因为要创建新的文件了
         fclose(m_fp);
         char tail[16] = {0};
        
@@ -118,15 +123,14 @@ void Log::write_log(int level, const char *format, ...)
         {
             snprintf(new_log, 255, "%s%s%s.%lld", dir_name, tail, log_name, m_count / m_split_lines);
         }
-        m_fp = fopen(new_log, "a");
+        m_fp = fopen(new_log, "a");//生成新文件
     }
- 
     m_mutex.unlock();
 
     va_list valst;
-    va_start(valst, format);
+    va_start(valst, format);//初始化valst
 
-    string log_str;
+    string log_str;//完整的日志字符串
     m_mutex.lock();
 
     //写入的具体时间内容格式
@@ -135,10 +139,9 @@ void Log::write_log(int level, const char *format, ...)
                      my_tm.tm_hour, my_tm.tm_min, my_tm.tm_sec, now.tv_usec, s);
     
     int m = vsnprintf(m_buf + n, m_log_buf_size - n - 1, format, valst);
-    m_buf[n + m] = '\n';
+    m_buf[n + m] = '\n';    // 在日志信息的末尾添加换行符
     m_buf[n + m + 1] = '\0';
     log_str = m_buf;
-
     m_mutex.unlock();
 
     if (m_is_async && !m_log_queue->full())
@@ -148,7 +151,7 @@ void Log::write_log(int level, const char *format, ...)
     else
     {
         m_mutex.lock();
-        fputs(log_str.c_str(), m_fp);
+        fputs(log_str.c_str(), m_fp);//将log_str的日志内容直接写入日志
         m_mutex.unlock();
     }
 

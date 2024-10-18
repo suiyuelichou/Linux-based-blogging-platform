@@ -28,25 +28,27 @@ class util_timer;
 
 struct client_data
 {
-    sockaddr_in address;
-    int sockfd;
-    util_timer *timer;
+    sockaddr_in address; // 存储客户端地址信息
+    int sockfd; // 存储客户端的socket文件描述符
+    util_timer *timer; // 指向关联的定时器对象
 };
 
+// 实现一个定时器
 class util_timer
 {
 public:
     util_timer() : prev(NULL), next(NULL) {}
 
 public:
-    time_t expire;
+    time_t expire;  // 存储定时器的过期时间
     
-    void (* cb_func)(client_data *);
-    client_data *user_data;
+    void (* cb_func)(client_data *);    // 定时器超时后，会调用cb_func指向的函数
+    client_data *user_data; // 指向与定时器关联的客户端数据
     util_timer *prev;
     util_timer *next;
 };
 
+// 管理定时器的有序链表
 class sort_timer_lst
 {
 public:
@@ -56,15 +58,16 @@ public:
     void add_timer(util_timer *timer);
     void adjust_timer(util_timer *timer);
     void del_timer(util_timer *timer);
-    void tick();
+    void tick();    // 检查并处理过期的定时器
 
 private:
     void add_timer(util_timer *timer, util_timer *lst_head);
 
-    util_timer *head;
-    util_timer *tail;
+    util_timer *head;   // 链表的头指针
+    util_timer *tail;   // 链表的尾指针
 };
 
+// 提供工具函数，处理与网络编程相关的各种功能
 class Utils
 {
 public:
@@ -91,12 +94,13 @@ public:
     void show_error(int connfd, const char *info);
 
 public:
-    static int *u_pipefd;
-    sort_timer_lst m_timer_lst;
-    static int u_epollfd;
-    int m_TIMESLOT;
+    static int *u_pipefd;   //管道文件描述符，用于信号处理
+    sort_timer_lst m_timer_lst; // 定时器链表实例
+    static int u_epollfd;   // epoll文件描述符
+    int m_TIMESLOT; // 定时器时间片大小
 };
 
+// 定义回调函数，处理定时器超时时间
 void cb_func(client_data *user_data);
 
 #endif

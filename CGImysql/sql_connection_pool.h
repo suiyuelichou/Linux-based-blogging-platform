@@ -13,6 +13,7 @@
 
 using namespace std;
 
+// 数据库连接池
 class connection_pool
 {
 public:
@@ -29,6 +30,10 @@ public:
 private:
 	connection_pool();
 	~connection_pool();
+
+	// 禁止拷贝构造和赋值
+	connection_pool(const connection_pool&) = delete;
+	connection_pool& operator = (const connection_pool&) = delete;
 
 	int m_MaxConn;  //最大连接数
 	int m_CurConn;  //当前已使用的连接数
