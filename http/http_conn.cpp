@@ -2,6 +2,7 @@
 
 #include <mysql/mysql.h>
 #include <fstream>
+#include <string>
 
 //定义http响应的一些状态信息
 const char *ok_200_title = "OK";
@@ -478,13 +479,42 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
     }
 
+    // 返回数据库中的博客内容
     if (*(p + 1) == '0')
     {
-        char *m_url_real = (char *)malloc(sizeof(char) * 200);
-        strcpy(m_url_real, "/register.html");
-        strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+        // 查询博客数据
+        sql_blog_tool tool;
+        vector<Blog> blogs = tool.select_all_blog();
 
-        free(m_url_real);
+        // 手动构建JSON字符串
+        string jsonData = "[";  // 开始JSON数组
+        for(int i = 0; i < blogs.size(); i++){
+            Blog blog = blogs[i];
+
+            // 构建JSON对象
+            // 构建 JSON 对象
+            jsonData += "{";
+            jsonData += "\"blogId\": " + std::to_string(blog.get_blog_id()) + ",";
+            jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
+            jsonData += "\"content\": \"" + blog.get_blog_content() + "\",";
+            jsonData += "\"userId\": " + std::to_string(blog.get_user_id()) + ",";
+            jsonData += "\"postTime\": \"" + blog.get_blog_postTime() + "\"";
+            jsonData += "}";
+
+            if(i < blogs.size() - 1){
+                jsonData += ",";    // 添加逗号分隔
+            }
+        }
+        jsonData += "]"; // 结束JSON数组
+
+        // 设置响应头
+        sprintf(m_write_buf, "HTTP/1.1 200 OK\r\n"
+                         "Content-Type: application/json\r\n"
+                         "Content-Length: %zu\r\n\r\n", jsonData.size());
+
+        // 将构建的JSON字符串写入m_write_buf
+        strcpy(m_write_buf, jsonData.c_str());
+        m_write_idx = strlen(m_write_buf);
     }
     else if (*(p + 1) == '1')
     {
@@ -529,7 +559,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         return FORBIDDEN_REQUEST;
 
     if (S_ISDIR(m_file_stat.st_mode))
-        return BAD_REQUEST;
+        return BAD_REQUEST;     // 插眼
 
     int fd = open(m_real_file, O_RDONLY);   // 以只读模式打开文件，返回文件描述符fd
     m_file_address = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);   //通过mmap将文件的内容映射到进程的地址空间中

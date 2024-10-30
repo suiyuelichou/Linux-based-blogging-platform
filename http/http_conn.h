@@ -19,7 +19,10 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/uio.h>
+#include <cstring>
 #include <map>
+#include <string>
+#include <sstream>
 
 #include "../lock/locker.h"
 #include "../CGImysql/sql_connection_pool.h"
@@ -65,7 +68,8 @@ public:
         FORBIDDEN_REQUEST,   // 请求被拒绝（例如，权限问题）
         FILE_REQUEST,        // 请求成功，文件准备好返回
         INTERNAL_ERROR,      // 服务器内部错误
-        CLOSED_CONNECTION    // 连接已关闭
+        CLOSED_CONNECTION,   // 连接已关闭
+        BLOG_DATA            // 博客数据请求成功，准备返回
     };
 
     // 行状态

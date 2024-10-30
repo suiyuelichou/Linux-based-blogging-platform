@@ -146,6 +146,51 @@ connectionRAII::~connectionRAII(){
 	poolRAII->ReleaseConnection(conRAII);
 }
 
+/*
+ * 下面是对数据库进行操作的类
+*/
+// 查询并返回所有博客记录
+vector<Blog> sql_blog_tool::select_all_blog(){
+	connection_pool* connpool = connection_pool::GetInstance();
+
+	vector<Blog> blogs;
+	MYSQL* mysql = NULL;
+	// 从数据库连接池中取出一个连接
+	connectionRAII mysqlcon(&mysql, connpool);
+
+	// 查询博客数据
+	if(mysql_query(mysql, "SELECT blogId, title, content, userId, postTime FROM blog")){
+		return {};
+	}
+
+	// 获取结果集
+	MYSQL_RES* result = mysql_store_result(mysql);
+
+	// 检查结果集是否为空
+	if(!result){
+		return {};
+	}
+
+	// 获取字段数量
+	int num_fields = mysql_num_fields(result);
+
+	// 从结果集中逐行获取数据
+	while(MYSQL_ROW row = mysql_fetch_row(result)){
+		Blog blog;
+		blog.set_blog_id(stoi(row[0]));
+		blog.set_blog_title(row[1]);
+		blog.set_blog_content(row[2]);
+		blog.set_user_id(stoi(row[3]));
+		blog.set_blog_postTime(row[4]);
+
+		// 将博客数据存入容器
+		blogs.push_back(blog);
+	}
+
+	// 释放结果集
+	mysql_free_result(result);
+	return blogs;
+}
 
 /*
  *下面的内容为用户类
@@ -169,18 +214,43 @@ void Blog::set_blog_id(int blog_id){
 	this->m_blog_id = blog_id;
 }
 
+int Blog::get_blog_id()
+{
+    return this->m_blog_id;
+}
+
 void Blog::set_blog_title(string blog_title){
 	this->m_blog_title = blog_title;
+}
+
+string Blog::get_blog_title()
+{
+    return this->m_blog_title;
 }
 
 void Blog::set_blog_content(string content){
 	this->m_bolg_content = content;
 }
 
+string Blog::get_blog_content()
+{
+    return this->m_bolg_content;
+}
+
 void Blog::set_user_id(int user_id){
 	this->m_user_id = user_id;
 }
 
-void Blog::set_blog_postTime(tm blog_postTime){
+int Blog::get_user_id()
+{
+    return this->m_user_id;
+}
+
+void Blog::set_blog_postTime(string blog_postTime){
 	this->m_bolg_postTime = blog_postTime;
+}
+
+string Blog::get_blog_postTime()
+{
+    return this->m_bolg_postTime;
 }

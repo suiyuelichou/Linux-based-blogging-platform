@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <vector>
 #include "../lock/locker.h"
 #include "../log/log.h"
 
@@ -85,22 +86,31 @@ private:
 class Blog{
 public:
 	void set_blog_id(int blog_id);				// 设置博客id
-	void get_blog_id();
+	int get_blog_id();
 	void set_blog_title(string blog_title);		// 设置博客标题
-	void get_blog_tile();
+	string get_blog_title();
 	void set_blog_content(string content);		// 设置博客内容
-	void get_blog_content();
+	string get_blog_content();
 	void set_user_id(int user_id);				// 设置用户id
-	void get_user_id();
-	void set_blog_postTime(tm blog_postTime);	// 设置博客发布时间
-	void get_blog_postTime();
+	int get_user_id();
+	void set_blog_postTime(string blog_postTime);	// 设置博客发布时间
+	string get_blog_postTime();
 
 private:
 	int m_blog_id;			// 博客id
 	string m_blog_title;	// 博客标题	
 	string m_bolg_content;	// 博客内容
 	int m_user_id;			// 用户id
-	tm m_bolg_postTime;			// 博客发布时间
+	string m_bolg_postTime;			// 博客发布时间
+};
+
+// 对blog表进行数据库操作
+class sql_blog_tool{
+public:
+	vector<Blog> select_all_blog();	// 查询所有博客
+
+public:
+	int m_close_log;	// 日志开关
 };
 
 #endif
