@@ -1,12 +1,14 @@
 #include "lst_timer.h"
 #include "../http/http_conn.h"
 
+// 对链表进行初始化，为空
 sort_timer_lst::sort_timer_lst()
 {
     head = NULL;
     tail = NULL;
 }
 
+// 遍历链表，逐个删除定时器节点
 sort_timer_lst::~sort_timer_lst()
 {
     util_timer *tmp = head;
@@ -25,7 +27,7 @@ void sort_timer_lst::add_timer(util_timer *timer)
     {
         return;
     }
-    if (!head)// 若链表为空，将timer设置为头和尾
+    if (!head)  // 若链表为空，将timer设置为头和尾
     {
         head = tail = timer;
         return;
@@ -48,11 +50,13 @@ void sort_timer_lst::adjust_timer(util_timer *timer)
     {
         return;
     }
+
     util_timer *tmp = timer->next;
     if (!tmp || (timer->expire < tmp->expire))
     {
         return;
     }
+
     if (timer == head) // 若调整的是头节点，则需要将下一个节点设为头节点
     {
         head = head->next;
@@ -101,6 +105,7 @@ void sort_timer_lst::del_timer(util_timer *timer)
     delete timer;
 }
 
+// 检查并处理过期的定时器
 void sort_timer_lst::tick()
 {
     if (!head)
@@ -108,15 +113,16 @@ void sort_timer_lst::tick()
         return;
     }
     
-    time_t cur = time(NULL);
+    time_t cur = time(NULL);    // 获取当前的系统时间（以秒为单位）
     util_timer *tmp = head;
-    while (tmp)
+    while (tmp) // 遍历链表检查定时器是否过期
     {
-        if (cur < tmp->expire)
+        if (cur < tmp->expire)  // 若当前时间小于节点到期时间，说明定时器尚未过期
         {
             break;
         }
-        tmp->cb_func(tmp->user_data);
+
+        tmp->cb_func(tmp->user_data);   // 若定时器过期，调用tmp节点的回调函数，并传入与该定时器关联的客户端数据
         head = tmp->next;
         if (head)
         {
@@ -153,6 +159,7 @@ void sort_timer_lst::add_timer(util_timer *timer, util_timer *lst_head)
     }
 }
 
+// 初始化定时器时间片大小
 void Utils::init(int timeslot)
 {
     m_TIMESLOT = timeslot;
@@ -178,10 +185,10 @@ void Utils::addfd(int epollfd, int fd, bool one_shot, int TRIGMode)
     else
         event.events = EPOLLIN | EPOLLRDHUP;
 
-    if (one_shot)
+    if (one_shot)   // 若为true，在读事件被触发后，将会删除该事件
         event.events |= EPOLLONESHOT;
     epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
-    setnonblocking(fd);
+    setnonblocking(fd); // 将文件描述符设置为非阻塞
 }
 
 //信号处理函数
@@ -190,7 +197,7 @@ void Utils::sig_handler(int sig)
     //为保证函数的可重入性，保留原来的errno
     int save_errno = errno;
     int msg = sig;
-    send(u_pipefd[1], (char *)&msg, 1, 0);
+    send(u_pipefd[1], (char *)&msg, 1, 0);  // 通过管道发送信号编号，以通知主循环或其他相关的处理程序
     errno = save_errno;
 }
 
@@ -202,7 +209,7 @@ void Utils::addsig(int sig, void(handler)(int), bool restart)
     sa.sa_handler = handler;
     if (restart)
         sa.sa_flags |= SA_RESTART;
-    sigfillset(&sa.sa_mask);
+    sigfillset(&sa.sa_mask);    // 在信号处理期间阻塞其他信号
     assert(sigaction(sig, &sa, NULL) != -1);
 }
 
@@ -213,6 +220,7 @@ void Utils::timer_handler()
     alarm(m_TIMESLOT);
 }
 
+// 向客户端发送错误信息并关闭连接
 void Utils::show_error(int connfd, const char *info)
 {
     send(connfd, info, strlen(info), 0);
@@ -223,10 +231,14 @@ int *Utils::u_pipefd = 0;
 int Utils::u_epollfd = 0;
 
 class Utils;
+
+// 断开与超时用户之间的连接
 void cb_func(client_data *user_data)
 {
+    // 从epoll中移除当前超时用户的文件描述符，不再进行监听
     epoll_ctl(Utils::u_epollfd, EPOLL_CTL_DEL, user_data->sockfd, 0);
     assert(user_data);
+    // 关闭与客户端连接的socket
     close(user_data->sockfd);
     http_conn::m_user_count--;
 }

@@ -11,7 +11,7 @@ WebServer::WebServer()
     char root[6] = "/root";
     m_root = (char *)malloc(strlen(server_path) + strlen(root) + 1);
     strcpy(m_root, server_path);
-    strcat(m_root, root);
+    strcat(m_root, root); // 这里m_root存放的路径是"/root/projects/TinyWebServer/root"
 
     //定时器
     users_timer = new client_data[MAX_FD];  //每个客户端连接都关联一个定时器
@@ -90,7 +90,7 @@ void WebServer::log_write()
 void WebServer::sql_pool()
 {
     //初始化数据库连接池
-    m_connPool = connection_pool::GetInstance();
+    m_connPool = connection_pool::GetInstance();    // 获取类的实例
     m_connPool->init("localhost", m_user, m_passWord, m_databaseName, 3306, m_sql_num, m_close_log);
 
     //初始化数据库读取表
@@ -111,7 +111,7 @@ void WebServer::eventListen()
     m_listenfd = socket(PF_INET, SOCK_STREAM, 0);
     assert(m_listenfd >= 0);
 
-    //优雅关闭连接
+    // linger用来控制在关闭套接字时，是否等待数据传输完毕
     if (0 == m_OPT_LINGER)
     {
         struct linger tmp = {0, 1};
@@ -122,6 +122,8 @@ void WebServer::eventListen()
         struct linger tmp = {1, 1};
         setsockopt(m_listenfd, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
     }
+
+    // 在这里尝试修改TCP缓冲区
 
     int ret = 0;
     struct sockaddr_in address;
@@ -348,7 +350,7 @@ void WebServer::dealwithread(int sockfd)
 void WebServer::dealwithwrite(int sockfd)
 {
     util_timer *timer = users_timer[sockfd].timer;
-    //reactor
+    //reactor  主线程只负责监听文件描述符是否有事件发生，并将事件通知给工作线程
     if (1 == m_actormodel)
     {
         if (timer)
@@ -374,7 +376,7 @@ void WebServer::dealwithwrite(int sockfd)
     }
     else
     {
-        //proactor
+        //proactor（默认）  所有I/O操作都交给主线程和内核处理，工作线程仅仅负责业务逻辑
         if (users[sockfd].write())
         {
             LOG_INFO("send data to the client(%s)", inet_ntoa(users[sockfd].get_address()->sin_addr));
@@ -399,6 +401,7 @@ void WebServer::eventLoop()
 
     while (!stop_server)
     {
+        // 在 epoll_wait 返回时，就绪事件会从 events 数组的索引 0 开始存储
         int number = epoll_wait(m_epollfd, events, MAX_EVENT_NUMBER, -1);
         if (number < 0 && errno != EINTR)
         {

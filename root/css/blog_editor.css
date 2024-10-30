@@ -1,0 +1,48 @@
+/* 博客编辑页的样式 */
+.blog-edit-container {
+    width: 1000px;
+    height: calc(100% - 50px);
+    margin: 0 auto;
+}
+ 
+/* 注意使用后代选择器，防止和导航栏中的title冲突 */
+.blog-edit-container .title {
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+/* 标题的输入框 */
+#title-input {
+    height: 40px;
+    width: 896px;
+    border-radius: 10px;
+    border: none;
+    font-size: 20px;
+    text-indent: 10px;
+}
+ 
+/* 提交按钮 */
+#submit {
+    height: 40px;
+    width: 100px;
+    border-radius: 10px;
+    border: none;
+    color: white;
+    background-color: thistle;
+    font-size: 18px;
+}
+ 
+#submit:hover {
+    background-color: rgb(158,130,140);
+}
+ 
+.blog-edit-container form {
+    height: 100%;
+}
+ 
+#editor {
+    border-radius: 10px;
+    /* 设置半透明度，只不够他会让子元素也会跟着一起透明 */
+    opacity: 80%;
+}

@@ -1,0 +1,57 @@
+/* 博客首页的专属样式 */
+/* 整个blog的div样式 */
+.blog {
+    padding: 20px;
+}
+ 
+/* 设置博客的标题 */
+.blog .title {
+    font-size: 22px;
+    text-align: center;
+    font-weight: 900;
+    margin-right: auto;
+}
+
+/* 设置发布时间 */
+.blog .date {
+    text-align: center;
+    color: rgb(0, 120, 0);
+    padding: 15px 0;
+}
+ 
+/* 设置摘要部分 */
+.blog .desc {
+    /* em也是一个单位，和px是并列的，lem == 一个文字的大小 */
+    /* 首行缩进两个字节 */
+    text-indent: 2em;
+}
+
+.blog a {
+    /* 改成块级元素 */
+    display: block;
+ 
+    width: 150px;
+    height: 40px;
+    border: 2px solid rgb(164,163,194);
+ 
+    /* 修改里面的文字颜色，去掉下划线*/
+    color: indianred;
+    text-align: center;
+    text-decoration: none;
+ 
+    /* 当文字的行高和元素高度一样的时候，文字恰好是垂直居中 */
+    line-height: 40px;
+ 
+    /* 水平居中 */
+    margin: 10px auto;
+ 
+    /* 加上背景切换的过渡效果，all表示针对所有的变换都进行过渡，2s的意思是过渡的时间是2s。 */
+    transition: all 0.8s;
+}
+
+/* :hover 是一个伪类选择器，不是选中元素，而是选中元素的某种状态 */
+/* 具体来说 :hover 就是选中了元素被鼠标悬停的状态 */
+.blog a:hover {
+    background-color: rgb(163,134,143);
+    color: wheat;
+}

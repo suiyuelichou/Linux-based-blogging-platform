@@ -1,0 +1,76 @@
+/* 登录页的样式 */
+.login-container {
+    width: 100%;
+    height: calc(100% - 50px);
+    /* 为了让login-dialog垂直水平居中，使用贪心布局 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+ 
+.login-dialog {
+    width: 400px;
+    height: 350px;
+    background-color: rgba(255,255,255,0.7);
+    border-radius: 10px;
+}
+ 
+/* 登录标题 */
+.login-dialog h3 {
+    font-size: 24px;
+    font-weight: 900;
+    text-align: center;
+    margin-top: 60px;
+    margin-bottom: 40px;
+}
+ 
+/* 针对每一行的样式 */
+.row {
+    height: 50px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+ 
+/* 每一行的文字 */
+.row span {
+    font-size: 20px;
+    width: 60px;
+    margin-left: 40px;
+}
+ 
+.row #username {
+    width: 200px;
+    height: 40px;
+    font-size: 20px;
+    text-indent: 10px;
+    border-radius: 10px;
+    margin-right: 60px;
+}
+ 
+.row #password {
+    width: 200px;
+    height: 40px;
+    font-size: 20px;
+    text-indent: 10px;
+    border-radius: 10px;
+    margin-right: 60px;
+}
+ 
+.row #submit {
+    width: 150px; 
+    height: 40px;
+    color: white;
+    background-color: rgb(180,154,161);
+    text-align: center;
+    /* 设置文字居中 */
+    line-height: 40px;
+    border-radius: 10px;
+    margin-top: 40px;
+}
+ 
+.row #submit:hover {
+    background-color: rgb(163,134,143);
+    color: wheat;
+}

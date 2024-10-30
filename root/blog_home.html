@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客列表页</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+        <!-- 导航栏 -->
+        <div class="nav">
+            <!-- 图片的引入 -->
+            <img src="img/touxiang.jpg" alt="头像">
+            <!-- 标题 -->
+            <div class="title">我的博客系统</div>
+            <!-- 导航链接 -->
+            <div class="nav-links">
+                <a href="">留言板</a>
+                <a href="blog_home.html">主页</a>
+                <a href="blog_editor.html">写博客</a>
+                <a href="blog_login.html">登录</a>
+            </div>
+        </div>
+ 
+    <!-- 版心的实现 -->
+    <div class="container">
+        <!-- 左侧信息 -->
+        <div class="container-left">
+            <!-- 这个div表示整个用户信息的区域 -->
+            <div class="card">
+                <!-- 用户的头像 -->
+                <img src="img/touxiang.jpg">
+ 
+                <!-- 用户名 -->
+                <h3>岁月离愁</h3>
+ 
+                <!-- GitHub地址 -->
+                <a href="https://github.com/yaugaolele/Project.git">GitHub 地址</a>
+ 
+                <!-- 统计信息 -->
+                <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div>
+            </div>
+        </div>
+        <!-- 右侧信息 -->
+        <div class="container-right">
+ 
+            <!-- 这个div表示一篇博客 -->
+            <!-- <div class="blog">
+                
+                <div class="title">我的第一篇博客</div>
+                
+                <div class="date">2023-08-16 20:00:00</div>
+                
+                <div class="desc">
+                     使用lorem可以生成一段随机的字符串 
+                    认真写博客，Lorem ipsum dolor sit amet consectetur adipisicing elit. Blanditiis, adipisci quia dignissimos non ut illo quo! Exercitationem molestias, eveniet necessitatibus debitis laboriosam magni quibusdam ex quam eaque, nam, voluptatum nisi!
+                </div>
+                html中不能直接写 大于号 ，大于号可能会被当成标签的一部分
+                <a href="blog_detail.html">查看全文 &gt;&gt; </a>
+            </div> -->
+ 
+        </div>
+    </div>
+
+    <script>
+
+        //通过ajax给服务器发请求，获取到所有的博客数据，并且构造到页面上
+        function getBlogs() {
+            $.ajax({
+                type:'get',
+                url:'blog',
+                success:function(body) {
+                    //根据返回的数据，构造出页面中对应的元素
+                    let containerRight = document.querySelector(".container-right");
+                    for (const blog of body) {
+                        let blogDiv = document.createElement("div");
+                        blogDiv.className = 'blog';
+                        let titleDiv = document.createElement("div");
+                        titleDiv.className = 'title';
+                        titleDiv.innerHTML = blog.title;
+                        let dataDiv = document.createElement("div");
+                        dataDiv.className = 'data';
+                        dataDiv.innerHTML = blog.postTime;
+                        let descDiv = document.createElement("div");
+                        descDiv.className = 'desc';
+                        descDiv.innerHTML = blog.content;
+                        let a = document.createElement("a");
+                        a.href = 'blog_detail.html?blogId=' + blog.blogId;
+                        a.innerHTML = "查看全文 &gt;&gt;";
+ 
+                        //把上述标签定义好之后，还需要进行组合
+                        blogDiv.appendChild(titleDiv);
+                        blogDiv.appendChild(dataDiv);
+                        blogDiv.appendChild(descDiv);
+                        blogDiv.appendChild(a);
+                        containerRight.appendChild(blogDiv);
+                    }
+                },
+                error: function(xhr, status, error) {
+                console.error('请求失败:', status, error);
+                }
+            });
+        }
+        getBlogs();
+    </script>
+
+</body>
+</html>

@@ -33,7 +33,7 @@ public:
     static const int READ_BUFFER_SIZE = 2048;   // 读缓冲区大小
     static const int WRITE_BUFFER_SIZE = 1024;  // 写缓冲区大小
 
-    // HTTP 方法
+    // HTTP 请求方法
     enum METHOD
     {
         GET = 0,
@@ -50,30 +50,30 @@ public:
     // HTTP 请求的状态
     enum CHECK_STATE
     {
-        CHECK_STATE_REQUESTLINE = 0,
-        CHECK_STATE_HEADER,
-        CHECK_STATE_CONTENT
+        CHECK_STATE_REQUESTLINE = 0,    // 解析请求行
+        CHECK_STATE_HEADER,             // 解析请求头部
+        CHECK_STATE_CONTENT             // 解析请求体（如post请求的数据）
     };
 
-    // HTTP 代码
+    // HTTP请求处理的状态码
     enum HTTP_CODE
     {
-        NO_REQUEST,
-        GET_REQUEST,
-        BAD_REQUEST,
-        NO_RESOURCE,
-        FORBIDDEN_REQUEST,
-        FILE_REQUEST,
-        INTERNAL_ERROR,
-        CLOSED_CONNECTION
+        NO_REQUEST,          // 尚未接收到请求
+        GET_REQUEST,         // 成功解析到一个GET请求
+        BAD_REQUEST,         // 请求格式错误
+        NO_RESOURCE,         // 请求的资源不存在
+        FORBIDDEN_REQUEST,   // 请求被拒绝（例如，权限问题）
+        FILE_REQUEST,        // 请求成功，文件准备好返回
+        INTERNAL_ERROR,      // 服务器内部错误
+        CLOSED_CONNECTION    // 连接已关闭
     };
 
     // 行状态
     enum LINE_STATUS
     {
-        LINE_OK = 0,
-        LINE_BAD,
-        LINE_OPEN
+        LINE_OK = 0,    // 当前行解析成功
+        LINE_BAD,       // 当前行解析失败
+        LINE_OPEN       // 当前行尚未结束，可能需要继续读取更多数据以完成解析。这通常出现在分块传输编码等情况下
     };
 
 public:
@@ -133,7 +133,7 @@ private:
     char m_write_buf[WRITE_BUFFER_SIZE]; // 写缓冲区
     int m_write_idx;              // 写缓冲区索引
     CHECK_STATE m_check_state;    // 当前检查状态
-    METHOD m_method;              // HTTP 方法
+    METHOD m_method;              // HTTP请求方法方法
     char m_real_file[FILENAME_LEN]; // 真实文件路径
     char *m_url;                  // URL
     char *m_version;              // HTTP 版本
@@ -157,6 +157,8 @@ private:
     char sql_user[100];         // SQL 用户名
     char sql_passwd[100];       // SQL 密码
     char sql_name[100];         // SQL 数据库名称
+
+    int islogin;        // 用于标志是否已经登录
 };
 
 #endif

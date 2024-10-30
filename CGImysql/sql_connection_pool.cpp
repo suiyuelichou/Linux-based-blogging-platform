@@ -43,6 +43,7 @@ void connection_pool::init(string url, string User, string PassWord, string DBNa
 			LOG_ERROR("MySQL Error");
 			exit(1);
 		}
+		// 建立数据库连接
 		con = mysql_real_connect(con, url.c_str(), User.c_str(), PassWord.c_str(), DBName.c_str(), Port, NULL, 0);
 
 		if (con == NULL)
@@ -54,7 +55,7 @@ void connection_pool::init(string url, string User, string PassWord, string DBNa
 		++m_FreeConn;
 	}
 
-	reserve = sem(m_FreeConn);
+	reserve = sem(m_FreeConn);	// 将当前可使用的连接数量作为信号量的初始值
 
 	m_MaxConn = m_FreeConn;
 }
@@ -90,13 +91,13 @@ bool connection_pool::ReleaseConnection(MYSQL *con)
 
 	lock.lock();
 
-	connList.push_back(con);
+	connList.push_back(con);	// 将当前连接存入连接池，表示已可用
 	++m_FreeConn;
 	--m_CurConn;
 
 	lock.unlock();
 
-	reserve.post();
+	reserve.post();		// 通知正在等待连接的线程
 	return true;
 }
 
@@ -132,13 +133,54 @@ connection_pool::~connection_pool()
 	DestroyPool();
 }
 
+// 通过构造函数从地址池里面取出一个数据库连接
 connectionRAII::connectionRAII(MYSQL **SQL, connection_pool *connPool){
 	*SQL = connPool->GetConnection();
 	
-	conRAII = *SQL;
+	conRAII = *SQL;		// 两者指向同一个数据库连接（两个指针存放的地址相同）
 	poolRAII = connPool;
 }
 
+// 通过析构函数释放当前数据库连接
 connectionRAII::~connectionRAII(){
 	poolRAII->ReleaseConnection(conRAII);
+}
+
+
+/*
+ *下面的内容为用户类
+*/
+void User::set_userid(int userid){
+	this->m_userId = userid;
+}
+
+void User::set_username(string username){
+	this->m_username = username;
+}
+
+void User::set_password(string password){
+	this->m_password = password;
+}
+
+/*
+ *下面的内容为博客类
+*/
+void Blog::set_blog_id(int blog_id){
+	this->m_blog_id = blog_id;
+}
+
+void Blog::set_blog_title(string blog_title){
+	this->m_blog_title = blog_title;
+}
+
+void Blog::set_blog_content(string content){
+	this->m_bolg_content = content;
+}
+
+void Blog::set_user_id(int user_id){
+	this->m_user_id = user_id;
+}
+
+void Blog::set_blog_postTime(tm blog_postTime){
+	this->m_bolg_postTime = blog_postTime;
 }

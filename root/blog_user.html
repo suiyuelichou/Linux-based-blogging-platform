@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客列表页</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="nav">
+        <!-- 图片的引入 -->
+        <img src="img/touxiang.jpg">
+        <!-- 标题 -->
+        <div class="title">我的博客系统</div>
+        <!-- 在这里我们使用一个简单粗暴的办法将后面的链接直接给挤过去 -->
+        <div class="spacer"></div>
+ 
+        <a href="blog_home.html">主页</a>
+        <a href="blog_editor.html">写博客</a>
+        <!-- 这里的地址后期讲解 -->
+        <a href="blog_login.html">登录</a>
+    </div>
+ 
+    <!-- 版心的实现 -->
+    <div class="container">
+        <!-- 左侧信息 -->
+        <div class="container-left">
+            <!-- 这个div表示整个用户信息的区域 -->
+            <div class="card">
+                <!-- 用户的头像 -->
+                <img src="img/touxiang.jpg">
+ 
+                <!-- 用户名 -->
+                <h3>岁月离愁</h3>
+ 
+                <!-- GitHub地址 -->
+                <a href="https://github.com/yaugaolele/Project.git">GitHub 地址</a>
+ 
+                <!-- 统计信息 -->
+                <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>2</span>
+                    <span>1</span>
+                </div>
+            </div>
+        </div>
+        <!-- 右侧信息 -->
+        <div class="container-right">
+ 
+            <!-- 这个div表示一篇博客 -->
+            <div class="blog">
+                <!-- 博客标题 -->
+                <div class="title">我的第一篇博客</div>
+                <!-- 博客发布的时间 -->
+                <div class="date">2023-08-16 20:00:00</div>
+                <!-- 博客的摘要 -->
+                <div class="desc">
+                    <!-- 使用lorem可以生成一段随机的字符串 -->
+                    认真写博客，Lorem ipsum dolor sit amet consectetur adipisicing elit. Blanditiis, adipisci quia dignissimos non ut illo quo! Exercitationem molestias, eveniet necessitatibus debitis laboriosam magni quibusdam ex quam eaque, nam, voluptatum nisi!
+                </div>
+                <!-- html中不能直接写 大于号 ，大于号可能会被当成标签的一部分 -->
+                <a href="detail.html">查看全文 &gt;&gt; </a>
+            </div>
+ 
+            <!-- 这个div表示一篇博客 -->
+            <div class="blog">
+                <!-- 博客标题 -->
+                <div class="title">我的第一篇博客</div>
+                <!-- 博客发布的时间 -->
+                <div class="date">2023-08-16 20:00:00</div>
+                <!-- 博客的摘要 -->
+                <div class="desc">
+                    <!-- 使用lorem可以生成一段随机的字符串 -->
+                    认真写博客，Lorem ipsum dolor sit amet consectetur adipisicing elit. Blanditiis, adipisci quia dignissimos non ut illo quo! Exercitationem molestias, eveniet necessitatibus debitis laboriosam magni quibusdam ex quam eaque, nam, voluptatum nisi!
+                </div>
+                <!-- html中不能直接写 大于号 ，大于号可能会被当成标签的一部分 -->
+                <a href="blog_detail.html?html?blogId=1">查看全文 &gt;&gt; </a>
+            </div>
+ 
+            <!-- 这个div表示一篇博客 -->
+            <div class="blog">
+                <!-- 博客标题 -->
+                <div class="title">我的第一篇博客</div>
+                <!-- 博客发布的时间 -->
+                <div class="date">2023-08-16 20:00:00</div>
+                <!-- 博客的摘要 -->
+                <div class="desc">
+                    <!-- 使用lorem可以生成一段随机的字符串 -->
+                    认真写博客，Lorem ipsum dolor sit amet consectetur adipisicing elit. Blanditiis, adipisci quia dignissimos non ut illo quo! Exercitationem molestias, eveniet necessitatibus debitis laboriosam magni quibusdam ex quam eaque, nam, voluptatum nisi!
+                </div>
+                <!-- html中不能直接写 大于号 ，大于号可能会被当成标签的一部分 -->
+                <a href="blog_detail.html?html?blogId=1">查看全文 &gt;&gt; </a>
+            </div>
+ 
+        </div>
+    </div>
+</body>
+</html>

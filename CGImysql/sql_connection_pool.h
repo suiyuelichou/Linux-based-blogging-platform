@@ -8,6 +8,7 @@
 #include <string.h>
 #include <iostream>
 #include <string>
+#include <ctime>
 #include "../lock/locker.h"
 #include "../log/log.h"
 
@@ -21,6 +22,7 @@ public:
 	bool ReleaseConnection(MYSQL *conn); //释放连接
 	int GetFreeConn();					 //获取连接
 	void DestroyPool();					 //销毁所有连接
+	
 
 	//单例模式
 	static connection_pool *GetInstance();
@@ -40,7 +42,7 @@ private:
 	int m_FreeConn; //当前空闲的连接数
 	locker lock;
 	list<MYSQL *> connList; //连接池
-	sem reserve;
+	sem reserve;	// 设置一个数据库连接池信号量
 
 public:
 	string m_url;			 //主机地址
@@ -51,6 +53,7 @@ public:
 	int m_close_log;	//日志开关
 };
 
+// 用于获取数据库连接 
 class connectionRAII{
 
 public:
@@ -60,6 +63,44 @@ public:
 private:
 	MYSQL *conRAII;
 	connection_pool *poolRAII;
+};
+
+// 用户类，每个User对象就对应一个user表中的一条记录
+class User{
+public:
+	void set_userid(int userid);			// 设置用户id
+	void get_userid();
+	void set_username(string username);		// 设置用户名
+	void get_usernmae();
+	void set_password(string password);		// 设置用户密码
+	void get_password();
+
+private:
+	int m_userId;		// 用户id
+	string m_username;	// 用户名
+	string m_password;	// 用户密码
+};
+
+// 博客类，每个Blog对象就对应一个blog表中的一条记录
+class Blog{
+public:
+	void set_blog_id(int blog_id);				// 设置博客id
+	void get_blog_id();
+	void set_blog_title(string blog_title);		// 设置博客标题
+	void get_blog_tile();
+	void set_blog_content(string content);		// 设置博客内容
+	void get_blog_content();
+	void set_user_id(int user_id);				// 设置用户id
+	void get_user_id();
+	void set_blog_postTime(tm blog_postTime);	// 设置博客发布时间
+	void get_blog_postTime();
+
+private:
+	int m_blog_id;			// 博客id
+	string m_blog_title;	// 博客标题	
+	string m_bolg_content;	// 博客内容
+	int m_user_id;			// 用户id
+	tm m_bolg_postTime;			// 博客发布时间
 };
 
 #endif

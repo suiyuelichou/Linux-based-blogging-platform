@@ -26,6 +26,7 @@
 
 class util_timer;
 
+// 存储客户端数据
 struct client_data
 {
     sockaddr_in address; // 存储客户端地址信息
@@ -33,7 +34,7 @@ struct client_data
     util_timer *timer; // 指向关联的定时器对象
 };
 
-// 实现一个定时器
+// 实现一个定时器节点
 class util_timer
 {
 public:
@@ -42,7 +43,7 @@ public:
 public:
     time_t expire;  // 存储定时器的过期时间
     
-    void (* cb_func)(client_data *);    // 定时器超时后，会调用cb_func指向的函数
+    void (* cb_func)(client_data *);    //函数指针 定时器超时后，会调用cb_func指向的函数
     client_data *user_data; // 指向与定时器关联的客户端数据
     util_timer *prev;
     util_timer *next;
