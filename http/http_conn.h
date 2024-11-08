@@ -28,6 +28,7 @@
 #include "../CGImysql/sql_connection_pool.h"
 #include "../timer/lst_timer.h"
 #include "../log/log.h"
+#include "../cookie/cookie.h"
 
 class http_conn
 {
@@ -69,7 +70,11 @@ public:
         FILE_REQUEST,        // 请求成功，文件准备好返回
         INTERNAL_ERROR,      // 服务器内部错误
         CLOSED_CONNECTION,   // 连接已关闭
-        BLOG_DATA            // 博客数据请求成功，准备返回
+        BLOG_DATA,          // 博客数据请求成功，准备返回
+        BLOG_DETAIL,       // 返回博客详情
+        BLOG_USER_HOME,
+        LOGIN_REQUEST,       // 登录请求
+        REDIRECT            // 重定向
     };
 
     // 行状态
@@ -149,7 +154,7 @@ private:
     struct iovec m_iv[2];         // IO 向量
     int m_iv_count;               // IO 向量计数
     int cgi;                     // 是否启用 POST 请求
-    char *m_string;              // 存储请求头数据
+    char *m_string;              // 存储post请求体的数据
     int bytes_to_send;           // 需要发送的字节数
     int bytes_have_send;         // 已发送的字节数
     char *doc_root;              // 文档根目录
@@ -162,7 +167,10 @@ private:
     char sql_passwd[100];       // SQL 密码
     char sql_name[100];         // SQL 数据库名称
 
-    int islogin;        // 用于标志是否已经登录
+    string current_username;    // 每个连接独立的用户名
+    bool islogin;        // 用于标志是否已经登录
+    string jsonData;    // 用于存储json数据
+    Cookie cookie;      // Cookie对象
 };
 
 #endif

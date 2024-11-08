@@ -16,7 +16,7 @@ MYSQL_LIB_PATH := /usr/lib64/mysql
 CXXFLAGS += -I$(MYSQL_INC_PATH)
 LDFLAGS += -L$(MYSQL_LIB_PATH) -lpthread -lmysqlclient
 
-server: main.cpp  ./timer/lst_timer.cpp ./http/http_conn.cpp ./log/log.cpp ./CGImysql/sql_connection_pool.cpp  webserver.cpp config.cpp
+server: main.cpp  ./timer/lst_timer.cpp ./http/http_conn.cpp ./log/log.cpp ./CGImysql/sql_connection_pool.cpp  webserver.cpp config.cpp ./cookie/cookie.cpp
 	$(CXX) -std=c++11 -o $@ $^ $(CXXFLAGS) $(LDFLAGS)
 # 实际上就是：g++ -o server main.cpp ./timer/lst_timer.cpp ./http/http_conn.cpp ./log/log.cpp ./CGImysql/sql_connection_pool.cpp webserver.cpp config.cpp -g -I/usr/include/mysql -L/usr/lib64/mysql -lpthread -lmysqlclient
 

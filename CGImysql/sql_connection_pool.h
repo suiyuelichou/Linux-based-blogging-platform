@@ -108,6 +108,7 @@ private:
 class sql_blog_tool{
 public:
 	vector<Blog> select_all_blog();	// 查询所有博客
+	Blog select_blog_by_id(int blogid);		// 通过博客id查询博客内容 
 
 public:
 	int m_close_log;	// 日志开关

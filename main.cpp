@@ -1,4 +1,12 @@
 #include "config.h"
+#include <thread>
+
+void start_cleanup_thread(){
+    while(true){
+        sleep(3600);
+        Cookie::cleanupSessions();
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -33,6 +41,9 @@ int main(int argc, char *argv[])
 
     //监听
     server.eventListen();
+
+    thread cleanup_thread(start_cleanup_thread);
+    cleanup_thread.detach();
 
     //运行
     server.eventLoop();

@@ -21,9 +21,9 @@
             <!-- 导航链接 -->
             <div class="nav-links">
                 <a href="">留言板</a>
-                <a href="blog_home.html">主页</a>
+                <a href="blog_user_home.html">主页</a>
                 <a href="blog_editor.html">写博客</a>
-                <a href="blog_login.html">登录</a>
+                <a href="logout">注销</a>
             </div>
         </div>
  
@@ -37,7 +37,7 @@
                 <img src="img/touxiang.jpg">
  
                 <!-- 用户名 -->
-                <h3>游客</h3>
+                <h3 id = "username">用户名</h3>
  
                 <!-- GitHub地址 -->
                 <a href="https://github.com/yaugaolele/Project.git">GitHub 地址</a>
@@ -59,6 +59,25 @@
     </div>
 
     <script>
+        // 获取当前用户的用户名
+        function getCurrentUsername() {
+            $.ajax({
+                type: 'get',
+                url: 'get_current_user', // 这里的URL是你的服务器端API，用于获取当前用户
+                success: function(response) {
+                    if (response.username) {
+                        document.getElementById('username').innerHTML = response.username; // 替换用户名
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('获取用户名失败:', status, error);
+                }
+            });
+        }
+
+        // 调用获取用户名的函数
+        getCurrentUsername();
+
         //通过ajax给服务器发请求，获取到所有的博客数据，并且构造到页面上
         function getBlogs() {
             $.ajax({

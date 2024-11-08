@@ -158,8 +158,11 @@ vector<Blog> sql_blog_tool::select_all_blog(){
 	// 从数据库连接池中取出一个连接
 	connectionRAII mysqlcon(&mysql, connpool);
 
+	// 设置连接字符集
+	mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
 	// 查询博客数据
-	if(mysql_query(mysql, "SELECT blogId, title, content, userId, postTime FROM blog")){
+	if(mysql_query(mysql, "SELECT blogId, title, content, userId, postTime FROM blog order by postTime desc")){
 		return {};
 	}
 
@@ -190,6 +193,49 @@ vector<Blog> sql_blog_tool::select_all_blog(){
 	// 释放结果集
 	mysql_free_result(result);
 	return blogs;
+}
+
+// 通过博客id查询博客内容 
+Blog sql_blog_tool::select_blog_by_id(int blogid)
+{
+	connection_pool* connpool = connection_pool::GetInstance();
+	MYSQL* mysql = nullptr;
+
+	// 从数据库连接池中取出一个连接
+	connectionRAII mysqlcon(&mysql, connpool);
+
+	// 设置连接字符集
+	mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+	// 查询数据
+	string query = "SELECT blogId, title, content, userId, postTime FROM blog WHERE blogId = " + to_string(blogid);
+	if(mysql_query(mysql, query.c_str())){
+		return {};
+	}
+
+	// 获取结果集
+	MYSQL_RES* result = mysql_store_result(mysql);
+	if(!result){
+		return {};
+	}
+
+	// 检查结果集是否有数据
+	MYSQL_ROW row = mysql_fetch_row(result);
+	if(!row){
+		mysql_free_result(result);
+		return {};
+	}
+
+	// 创建Blog对象填充数据
+	Blog blog;
+	blog.set_blog_id(stoi(row[0]));
+	blog.set_blog_title(row[1]);
+	blog.set_blog_content(row[2]);
+	blog.set_user_id(stoi(row[3]));
+	blog.set_blog_postTime(row[4]);
+
+	mysql_free_result(result);
+    return blog;
 }
 
 /*

@@ -233,7 +233,6 @@ bool WebServer::dealclientdata()
         }
         timer(connfd, client_address);
     }
-
     else
     {
         while (1)

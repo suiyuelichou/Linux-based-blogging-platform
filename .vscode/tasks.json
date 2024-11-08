@@ -21,6 +21,7 @@
                 "${workspaceFolder}/CGImysql/sql_connection_pool.cpp",
                 "${workspaceFolder}/webserver.cpp",
                 "${workspaceFolder}/config.cpp",
+                "${workspaceFolder}/cookie/cookie.cpp",
                 "-g",
                 "-I/usr/include/mysql",
                 "-L/usr/lib64/mysql",
