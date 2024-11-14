@@ -23,6 +23,8 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <unordered_map>
+#include <iomanip>
 
 #include "../lock/locker.h"
 #include "../CGImysql/sql_connection_pool.h"
@@ -74,7 +76,8 @@ public:
         BLOG_DETAIL,       // 返回博客详情
         BLOG_USER_HOME,
         LOGIN_REQUEST,       // 登录请求
-        REDIRECT            // 重定向
+        REDIRECT,            // 重定向到登录界面
+        REDIRECT_HOME       // 重定向到主页面
     };
 
     // 行状态
@@ -125,6 +128,8 @@ private:
     bool add_content_length(int content_length);            // 添加内容长度
     bool add_linger();         // 添加 Keep-Alive
     bool add_blank_line();    // 添加空行
+    unordered_map<string, string> parse_post_data(const string& body);  // 解析post请求体的内容
+    string url_decode(const string &str);   // url解码函数
 
 public:
     static int m_epollfd;   //epoll文件描述符

@@ -361,6 +361,57 @@ http_conn::HTTP_CODE http_conn::parse_content(char *text)
     return NO_REQUEST;
 }
 
+// 解析http请求体内容并存储
+unordered_map<string, string> http_conn::parse_post_data(const string& body){
+    unordered_map<string, string> post_data;
+    string::size_type start = 0;
+    string::size_type pos;
+
+    while((pos = body.find('&', start)) != string::npos){
+        string pair = body.substr(start, pos - start);
+        string::size_type equalPos = pair.find('=');
+
+        if(equalPos != string::npos){
+            string key = pair.substr(0, equalPos);
+            string value = pair.substr(equalPos + 1);
+            post_data[key] = value;
+        }
+        start = pos + 1;
+    }
+
+    // 处理最后一个键值对
+    string lastPair = body.substr(start);
+    string::size_type lastEqualPost = lastPair.find('=');
+    if(lastEqualPost != string::npos){
+        string key = lastPair.substr(0, lastEqualPost);
+        string value = lastPair.substr(lastEqualPost + 1);
+        post_data[key] = value;
+    }
+
+    return post_data;
+}
+
+// URL解码函数
+string http_conn::url_decode(const string &str)
+{
+    std::ostringstream decoded;
+    for (size_t i = 0; i < str.length(); ++i) {
+        if (str[i] == '%' && i + 2 < str.length()) {
+            int value;
+            std::istringstream is(str.substr(i + 1, 2));
+            if (is >> std::hex >> value) {
+                decoded << static_cast<char>(value);
+                i += 2;
+            }
+        } else if (str[i] == '+') {
+            decoded << ' ';
+        } else {
+            decoded << str[i];
+        }
+    }
+    return decoded.str();
+}
+
 // 处理从客户端读取的HTTP请求（判断请求是否成功）
 http_conn::HTTP_CODE http_conn::process_read()
 {
@@ -523,36 +574,107 @@ http_conn::HTTP_CODE http_conn::do_request()
 
     }
 
+    // 这里用来判断是否将用户输入的博客保存进数据库
+    if(cgi == 1 && strstr(m_url, "/blog") != nullptr){
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(cookie.validateSession(username, session_id)){
+            // 对请求体的内容进行解码
+            string body = url_decode(m_string);
+
+            // 获取请求体的内容
+            auto post_data = parse_post_data(body);
+
+            // 获取title和content字段
+            string title = post_data["title"];
+            string content = post_data["content"];
+
+            // 获取userId
+            sql_blog_tool tool;
+            int userid = tool.get_userid(username);
+
+            // 获取系统时间
+            time_t now = time(nullptr);
+            tm* local_time = localtime(&now);
+            char buffer[100];
+            strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", local_time);
+            string postTime = string(buffer);
+
+            Blog blog;
+            blog.set_blog_title(title);
+            blog.set_blog_content(content);
+            blog.set_user_id(userid);
+            blog.set_blog_postTime(postTime);
+            // cout << blog.get_blog_title() << endl;
+            // cout << blog.get_blog_content() << endl;
+
+            tool.insert_blog(blog);
+
+            return REDIRECT_HOME;
+        }
+    }
+
     if (*(p + 1) == '0')    // 返回数据库中的博客内容
     {
         // 查询博客数据
         sql_blog_tool tool;
         vector<Blog> blogs = tool.select_all_blog();
 
-        // 手动构建JSON字符串
-        jsonData = "[";  // 开始JSON数组
-        for(int i = 0; i < blogs.size(); i++){
-            Blog blog = blogs[i];
+        // 添加转义字符处理函数
+        auto escapeJsonString = [](const string& input) {
+            string output;
+            for (char c : input) {
+                switch (c) {
+                    case '"': output += "\\\""; break;   // 双引号转义
+                    case '\\': output += "\\\\"; break;  // 反斜杠转义
+                    case '\b': output += "\\b"; break;   // 退格符
+                    case '\f': output += "\\f"; break;   // 换页符
+                    case '\n': output += "\\n"; break;   // 换行符
+                    case '\r': output += "\\r"; break;   // 回车符
+                    case '\t': output += "\\t"; break;   // 制表符
+                    default:
+                        // 处理其他不可打印字符
+                        if (iscntrl(c)) {
+                            char buf[8];
+                            snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
+                            output += buf;
+                        } else {
+                            output += c;
+                        }
+                }
+            }
+            return output;
+        };
 
-            // 构建JSON对象
+        jsonData = "[";
+        for(int i = 0; i < blogs.size(); i++) {
+            Blog blog = blogs[i];
+            
+            // 获取并处理内容
+            string content = blog.get_blog_content();
+            if(content.length() > 300) {
+                content = content.substr(0, 300) + "...";
+            }
+            
+            // 处理标题和内容中的特殊字符
+            string escapedTitle = escapeJsonString(blog.get_blog_title());
+            string escapedContent = escapeJsonString(content);
+            
             // 构建 JSON 对象
             jsonData += "{";
             jsonData += "\"blogId\": " + std::to_string(blog.get_blog_id()) + ",";
-            jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
-            string content = blog.get_blog_content();
-            if(content.length() > 300){
-                content = content.substr(0, 300) + "...";
-            }
-            jsonData += "\"content\": \"" + content + "\",";
+            jsonData += "\"title\": \"" + escapedTitle + "\",";
+            jsonData += "\"content\": \"" + escapedContent + "\",";
             jsonData += "\"userId\": " + std::to_string(blog.get_user_id()) + ",";
             jsonData += "\"postTime\": \"" + blog.get_blog_postTime() + "\"";
             jsonData += "}";
 
-            if(i < blogs.size() - 1){
-                jsonData += ",";    // 添加逗号分隔
+            if(i < blogs.size() - 1) {
+                jsonData += ",";
             }
         }
-        jsonData += "]"; // 结束JSON数组
+        jsonData += "]";
 
         return BLOG_DATA;
     }
@@ -564,6 +686,14 @@ http_conn::HTTP_CODE http_conn::do_request()
         strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
         free(m_url_real);
     }
+    // 处理访问 blog_detail_user.html 的情况（和上面一样，只是把游客和用户分开了）
+    else if (strstr(m_url, "/blog_detail_user.html") != nullptr) {
+        // 直接返回 blog_detail.html 页面
+        char *m_url_real = (char *)malloc(sizeof(char) * 200);
+        strcpy(m_url_real, "/blog_detail_user.html");
+        strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+        free(m_url_real);
+    }    
     // 处理博客详情数据请求
     else if (strstr(m_url, "?blogId=") != nullptr) {
         // 解析 blogId
@@ -581,11 +711,50 @@ http_conn::HTTP_CODE http_conn::do_request()
         sql_blog_tool tool;
         Blog blog = tool.select_blog_by_id(blogId);
 
-        // 构建JSON响应
-        jsonData = "{";
+        // // 构建JSON响应
+        // jsonData = "{";
+        // jsonData += "\"blogId\": " + std::to_string(blog.get_blog_id()) + ",";
+        // jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
+        // jsonData += "\"content\": \"" + blog.get_blog_content() + "\",";
+        // jsonData += "\"userId\": " + std::to_string(blog.get_user_id()) + ",";
+        // jsonData += "\"postTime\": \"" + blog.get_blog_postTime() + "\"";
+        // jsonData += "}";
+        // 添加转义字符处理函数
+        auto escapeJsonString = [](const string& input) {
+            string output;
+            for (char c : input) {
+                switch (c) {
+                    case '"': output += "\\\""; break;   // 双引号转义
+                    case '\\': output += "\\\\"; break;  // 反斜杠转义
+                    case '\b': output += "\\b"; break;   // 退格符
+                    case '\f': output += "\\f"; break;   // 换页符
+                    case '\n': output += "\\n"; break;   // 换行符
+                    case '\r': output += "\\r"; break;   // 回车符
+                    case '\t': output += "\\t"; break;   // 制表符
+                    default:
+                        // 处理其他不可打印字符
+                        if (iscntrl(c)) {
+                            char buf[8];
+                            snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
+                            output += buf;
+                        } else {
+                            output += c;
+                        }
+                }
+            }
+            return output;
+        };
+
+        // 处理标题和内容中的特殊字符
+        string content = blog.get_blog_content();
+        string escapedTitle = escapeJsonString(blog.get_blog_title());
+        string escapedContent = escapeJsonString(content);
+        
+        // 构建 JSON 对象
+        jsonData += "{";
         jsonData += "\"blogId\": " + std::to_string(blog.get_blog_id()) + ",";
-        jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
-        jsonData += "\"content\": \"" + blog.get_blog_content() + "\",";
+        jsonData += "\"title\": \"" + escapedTitle + "\",";
+        jsonData += "\"content\": \"" + escapedContent + "\",";
         jsonData += "\"userId\": " + std::to_string(blog.get_user_id()) + ",";
         jsonData += "\"postTime\": \"" + blog.get_blog_postTime() + "\"";
         jsonData += "}";
@@ -595,13 +764,10 @@ http_conn::HTTP_CODE http_conn::do_request()
     else if(strstr(m_url, "/get_current_user") != nullptr){
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
-
-        if(!cookie.validateSession(username, session_id)){
-                    // 构建JSON响应
-            jsonData = "{";
-            jsonData += "\"username\": " + username + "\"";
-            jsonData += "}";
-	    }
+        // 构建JSON响应
+        jsonData = "{";
+        jsonData += "\"username\": \"" + username + "\"";
+        jsonData += "}";
         return BLOG_DETAIL;
     }
     // 处理需要验证的请求？
@@ -643,18 +809,27 @@ http_conn::HTTP_CODE http_conn::do_request()
         cookie.removeSession(username);
         return REDIRECT;
     }
-    else if (*(p + 1) == '6')
+    else if (strstr(m_url, "/comments"))
     {
-        char *m_url_real = (char *)malloc(sizeof(char) * 200);
-        strcpy(m_url_real, "/video.html");
-        strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
-
-        free(m_url_real);
+            // 创建 JSON 格式的测试数据
+        jsonData = R"([
+            {
+                "text": "这是第一条留言",
+		        "timestamp": "2024-11-13 3:03:14"
+            },
+            {
+                "text": "这是第二条留言",
+		        "timestamp": "2024-11-13 16:03:14"
+            }
+        ])";
+        
+        // 将 JSON 数据加入响应
+        return BLOG_DETAIL;
     }
-    else if (*(p + 1) == '7')
+    else if (strstr(m_url, "/message_board.html"))
     {
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
-        strcpy(m_url_real, "/fans.html");
+        strcpy(m_url_real, "/message_board.html");
         strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
 
         free(m_url_real);
@@ -854,7 +1029,13 @@ bool http_conn::process_write(HTTP_CODE ret)
         string cookie_header = cookie.generateCookieHeaders();
         add_response(cookie_header.c_str());
         add_headers(strlen(ok_302_title));
-    }    
+    }
+    case REDIRECT_HOME:
+    {
+        add_status_line(302, ok_302_title);
+        add_response("Location: /blog_user_home.html\r\n");
+        add_headers(strlen(ok_302_title));
+    }
     case FILE_REQUEST:
     {
         add_status_line(200, ok_200_title);

@@ -108,7 +108,9 @@ private:
 class sql_blog_tool{
 public:
 	vector<Blog> select_all_blog();	// 查询所有博客
-	Blog select_blog_by_id(int blogid);		// 通过博客id查询博客内容 
+	Blog select_blog_by_id(int blogid);		// 通过博客id查询博客内容
+	void insert_blog(Blog blog);	// 将用户post过来的博客内容存储数据库
+	int get_userid(string username);	// 通过用户名获取用户id
 
 public:
 	int m_close_log;	// 日志开关

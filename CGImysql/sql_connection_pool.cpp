@@ -238,6 +238,116 @@ Blog sql_blog_tool::select_blog_by_id(int blogid)
     return blog;
 }
 
+// 将用户post过来的博客内容存储数据库
+void sql_blog_tool::insert_blog(Blog blog)
+{
+	connection_pool* connpool = connection_pool::GetInstance();
+	MYSQL* mysql = nullptr;
+
+	// 从数据库连接池中取出一个连接
+	connectionRAII mysqlcon(&mysql, connpool);
+
+	// 设置连接字符集
+	mysql_query(mysql, "SET NAMES 'utf8mb4'");
+	
+	// 预处理SQL语句
+	const char* query = "insert into blog(title, content, userId, postTime) values(?, ?, ?, ?)";
+	MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+	if(!stmt){
+		cerr << "mysql_stmt_init() failed" << endl;
+		return;
+	}
+
+	if(mysql_stmt_prepare(stmt, query, strlen(query))){
+		cerr << "mysql_stmt_prepare() failed" << mysql_stmt_error(stmt) << endl;
+		mysql_stmt_close(stmt);
+		return;
+	}
+
+	// 获取Blog对象的数据
+	string title = blog.get_blog_title();
+	// cout << "title = " << title << endl;
+	string content = blog.get_blog_content();
+	// cout << "content = " << content << endl;
+	int userId = blog.get_user_id();
+	string postTime = blog.get_blog_postTime();
+
+	// 绑定参数
+	MYSQL_BIND bind[4];
+	memset(bind, 0, sizeof(bind));
+
+	// 绑定每个字段的数据
+	bind[0].buffer_type = MYSQL_TYPE_STRING;
+	bind[0].buffer = (char*)title.c_str();
+	bind[0].buffer_length = title.size();
+
+	bind[1].buffer_type = MYSQL_TYPE_STRING;
+	bind[1].buffer = (char*)content.c_str();
+	bind[1].buffer_length = content.size();
+
+	bind[2].buffer_type = MYSQL_TYPE_LONG;
+	bind[2].buffer = (char*)&userId;
+
+	bind[3].buffer_type = MYSQL_TYPE_STRING;
+	bind[3].buffer = (char*)postTime.c_str();
+	bind[3].buffer_length = postTime.length();
+
+	// 将绑定的数据应用到语句
+	if(mysql_stmt_bind_param(stmt, bind)){
+		cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+		mysql_stmt_close(stmt);
+		return;
+	}
+
+	// 执行语句
+	if(mysql_stmt_execute(stmt)){
+		cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+
+	}else{
+		cout << "Blog inserted successfully" << endl;
+	}
+
+	// 关闭语句
+	mysql_stmt_close(stmt);
+}
+
+// 通过用户名获取用户id
+int sql_blog_tool::get_userid(string username)
+{
+	connection_pool* connpool = connection_pool::GetInstance();
+	MYSQL* mysql = nullptr;
+
+	connectionRAII mysqlconn(&mysql, connpool);
+
+	// 构建SQL查询语句
+	string query = "select userId from user where username = '" + username + "'";
+
+	// 执行SQL查询
+	if(mysql_query(mysql, query.c_str())){
+		cerr << "Query failed: " << mysql_error(mysql) << endl;
+		return -1;
+	}
+
+	// 获取查询结果
+	MYSQL_RES* res = mysql_store_result(mysql);
+	if(!res){
+		cerr << "Failed to retriee result set :" << mysql_error(mysql) << endl;
+		return -1;
+	}
+
+	// 获取第一行数据(用户名唯一)
+	MYSQL_ROW row = mysql_fetch_row(res);
+	int userid = -1;
+	if(row){
+		userid = atoi(row[0]);
+	}
+
+	// 释放结果集
+	mysql_free_result(res);
+	return userid;
+}
+
 /*
  *下面的内容为用户类
 */

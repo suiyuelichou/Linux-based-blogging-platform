@@ -15,9 +15,9 @@
         <!-- 导航栏 -->
         <div class="nav">
             <!-- 图片的引入 -->
-            <img src="img/touxiang.jpg" alt="头像">
+            <img src="img/logo.png" alt="头像">
             <!-- 标题 -->
-            <div class="title">我的博客系统</div>
+            <div class="title">云中杉木博客平台</div>
             <!-- 导航链接 -->
             <div class="nav-links">
                 <a href="">留言板</a>
@@ -99,7 +99,7 @@
                         descDiv.className = 'desc';
                         descDiv.innerHTML = blog.content;
                         let a = document.createElement("a");
-                        a.href = 'blog_detail.html?blogId=' + blog.blogId;
+                        a.href = 'blog_detail_user.html?blogId=' + blog.blogId;
                         a.innerHTML = "查看全文 &gt;&gt;";
  
                         //把上述标签定义好之后，还需要进行组合

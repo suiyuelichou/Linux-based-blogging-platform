@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>留言板</title>
+  <!-- <link rel="stylesheet" href="css/common.css"> -->
+  <link rel="stylesheet" href="./css/message_board.css">
+</head>
+<body>
+  <div class="comment-board">
+    <h2>留言板</h2>
+    <div class="comment-list">
+      <!-- 留言列表将由 JavaScript 动态生成 -->
+    </div>
+    <div class="comment-form">
+      <input type="text" id="comment-input" placeholder="输入您的留言..." />
+      <button onclick="postComment()">发表</button>
+    </div>
+  </div>
+  <script src="message_board.js"></script>
+</body>
+</html>
