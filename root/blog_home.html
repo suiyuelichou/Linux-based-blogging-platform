@@ -10,7 +10,8 @@
 
     <!--引入jquery-->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+    <!-- 引入自定js -->
+    <script src = "js/blog_home.js" defer></script>
 </head>
 <body>
         <!-- 导航栏 -->
@@ -57,48 +58,15 @@
         <!-- 右侧信息 -->
         <div class="container-right">
         </div>
-    </div>
 
-    <script>
-        //通过ajax给服务器发请求，获取到所有的博客数据，并且构造到页面上
-        function getBlogs() {
-            $.ajax({
-                type:'get',
-                url:'0',
-                success:function(body) {
-                    //根据返回的数据，构造出页面中对应的元素
-                    let containerRight = document.querySelector(".container-right");
-                    for (const blog of body) {
-                        let blogDiv = document.createElement("div");
-                        blogDiv.className = 'blog';
-                        let titleDiv = document.createElement("div");
-                        titleDiv.className = 'title';
-                        titleDiv.innerHTML = blog.title;
-                        let dataDiv = document.createElement("div");
-                        dataDiv.className = 'date';
-                        dataDiv.innerHTML = blog.postTime;
-                        let descDiv = document.createElement("div");
-                        descDiv.className = 'desc';
-                        descDiv.innerHTML = blog.content;
-                        let a = document.createElement("a");
-                        a.href = 'blog_detail.html?blogId=' + blog.blogId;
-                        a.innerHTML = "查看全文 &gt;&gt;";
- 
-                        //把上述标签定义好之后，还需要进行组合
-                        blogDiv.appendChild(titleDiv);
-                        blogDiv.appendChild(dataDiv);
-                        blogDiv.appendChild(descDiv);
-                        blogDiv.appendChild(a);
-                        containerRight.appendChild(blogDiv);
-                    }
-                },
-                error: function(xhr, status, error) {
-                console.error('请求失败:', status, error);
-                }
-            });
-        }
-        getBlogs();
-    </script>
+        <!-- 分页按钮
+        <div class="pagination">
+            <button id="prevPage" disabled>上一页</button>
+            <span id="currentPage">第 1 页</span>
+            <button id="nextPage">下一页</button>
+        </div> -->
+
+    </div>
 
 </body>
 </html>
