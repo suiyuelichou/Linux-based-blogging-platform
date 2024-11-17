@@ -1,3 +1,4 @@
+// 留言板
 let comments = [];
 
 function postComment() {
