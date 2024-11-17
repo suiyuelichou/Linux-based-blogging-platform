@@ -57,21 +57,34 @@
 }
 
 /* 分页按钮样式 */
+.pagination-wrapper {
+    position: fixed;
+    right: 260px; /* 距离右侧边框的距离 */
+    bottom: 10px; /* 距离底部的距离 */
+    z-index: 1000; /* 确保位于最上层 */
+}
+
 .pagination {
     display: flex;
-    justify-content: center;
-    margin-top: 20px;
+    align-items: center;
+    gap: 5px; /* 按钮之间的间距 */
 }
 
 .pagination button {
-    padding: 10px;
-    margin: 0 5px;
+    padding: 8px 12px;
     border: 1px solid #ccc;
-    background-color: #f0f0f0;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
     cursor: pointer;
 }
 
 .pagination button:disabled {
-    background-color: #ddd;
+    background-color: #ccc;
     cursor: not-allowed;
+}
+
+.pagination span {
+    font-size: 14px;
+    color: #333;
 }

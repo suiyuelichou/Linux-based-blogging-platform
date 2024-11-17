@@ -85,7 +85,7 @@ body {
  
 .container-right {
     height: 100%;
-    /* 流出来5px的缝隙 */
+    /* 留出来5px的缝隙 */
     width: 795px;
  
     /* 加上白色半透明背景 */

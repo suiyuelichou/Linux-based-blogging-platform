@@ -678,6 +678,72 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         return BLOG_DATA;
     }
+    else if (strstr(m_url, "/get_blogs?")) {
+        int page = 1, size = 20;
+        char* pageParam = strstr(m_url, "page=");
+        char* sizeParam = strstr(m_url, "size=");
+        if (pageParam) {
+            page = std::atoi(pageParam + 5);
+            if (page <= 0) page = 1;
+        }
+        if (sizeParam) {
+            size = std::atoi(sizeParam + 5);
+            if (size <= 0 || size > 100) size = 20;
+        }
+        
+        // 查询数据库
+        sql_blog_tool tool;
+        vector<Blog> blogs = tool.get_blogs_by_page(page, size);
+        int totalCount = tool.get_total_blog_count();
+
+        // 添加转义字符处理函数
+        auto escapeJsonString = [](const string& input) {
+            string output;
+            for (char c : input) {
+                switch (c) {
+                    case '"': output += "\\\""; break;   // 双引号转义
+                    case '\\': output += "\\\\"; break;  // 反斜杠转义
+                    case '\b': output += "\\b"; break;   // 退格符
+                    case '\f': output += "\\f"; break;   // 换页符
+                    case '\n': output += "\\n"; break;   // 换行符
+                    case '\r': output += "\\r"; break;   // 回车符
+                    case '\t': output += "\\t"; break;   // 制表符
+                    default:
+                        // 处理其他不可打印字符
+                        if (iscntrl(c)) {
+                            char buf[8];
+                            snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
+                            output += buf;
+                        } else {
+                            output += c;
+                        }
+                }
+            }
+            return output;
+        };
+
+        // 构造 JSON 响应
+        jsonData = "{";
+        jsonData += "\"blogs\": [";
+        for (int i = 0; i < blogs.size(); i++) {
+            Blog blog = blogs[i];
+            string escapedTitle = escapeJsonString(blog.get_blog_title());
+            string escapedContent = escapeJsonString(blog.get_blog_content());
+            jsonData += "{";
+            jsonData += "\"blogId\": " + std::to_string(blog.get_blog_id()) + ",";
+            jsonData += "\"title\": \"" + escapedTitle + "\",";
+            jsonData += "\"content\": \"" + escapedContent + "\",";
+            jsonData += "\"userId\": " + std::to_string(blog.get_user_id()) + ",";
+            jsonData += "\"postTime\": \"" + blog.get_blog_postTime() + "\"";
+            jsonData += "}";
+            if (i < blogs.size() - 1) jsonData += ",";
+        }
+        jsonData += "],";
+        jsonData += "\"totalCount\": " + std::to_string(totalCount);
+        jsonData += "}";
+
+        return BLOG_DATA;
+    }
     // 处理访问 blog_detail.html 的情况
     else if (strstr(m_url, "/blog_detail.html") != nullptr) {
         // 直接返回 blog_detail.html 页面
@@ -711,14 +777,6 @@ http_conn::HTTP_CODE http_conn::do_request()
         sql_blog_tool tool;
         Blog blog = tool.select_blog_by_id(blogId);
 
-        // // 构建JSON响应
-        // jsonData = "{";
-        // jsonData += "\"blogId\": " + std::to_string(blog.get_blog_id()) + ",";
-        // jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
-        // jsonData += "\"content\": \"" + blog.get_blog_content() + "\",";
-        // jsonData += "\"userId\": " + std::to_string(blog.get_user_id()) + ",";
-        // jsonData += "\"postTime\": \"" + blog.get_blog_postTime() + "\"";
-        // jsonData += "}";
         // 添加转义字符处理函数
         auto escapeJsonString = [](const string& input) {
             string output;

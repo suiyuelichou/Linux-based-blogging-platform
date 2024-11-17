@@ -59,12 +59,14 @@
         <div class="container-right">
         </div>
 
-        <!-- 分页按钮
-        <div class="pagination">
-            <button id="prevPage" disabled>上一页</button>
-            <span id="currentPage">第 1 页</span>
-            <button id="nextPage">下一页</button>
-        </div> -->
+        <!-- 分页按钮 -->
+        <div class="pagination-wrapper">
+            <div class="pagination">
+                <button id="prevPage" onclick="loadPage(currentPage - 1)">上一页</button>
+                <span id="currentPage">第 1 页</span>
+                <button id="nextPage" onclick="loadPage(currentPage + 1)">下一页</button>
+            </div>
+        </div>
 
     </div>
 

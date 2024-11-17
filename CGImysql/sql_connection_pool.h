@@ -108,6 +108,8 @@ private:
 class sql_blog_tool{
 public:
 	vector<Blog> select_all_blog();	// 查询所有博客
+	vector<Blog> get_blogs_by_page(int page, int size);	// 分页查询
+	int get_total_blog_count();		// 获取博客的总条数
 	Blog select_blog_by_id(int blogid);		// 通过博客id查询博客内容
 	void insert_blog(Blog blog);	// 将用户post过来的博客内容存储数据库
 	int get_userid(string username);	// 通过用户名获取用户id

@@ -195,6 +195,164 @@ vector<Blog> sql_blog_tool::select_all_blog(){
 	return blogs;
 }
 
+// 使用分页查询，避免一次性查询所有博客导致速度变慢
+// page：页数  size：每页的博客数
+vector<Blog> sql_blog_tool::get_blogs_by_page(int page, int size)
+{
+	// 用于存储查询到的博客
+	vector<Blog> blogs;
+
+	connection_pool* connpool = connection_pool::GetInstance();
+	MYSQL* mysql = nullptr;
+
+	// 从数据库连接池中取出一个连接
+	connectionRAII mysqlcon(&mysql, connpool);
+
+	// 设置连接字符集
+	mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+	// 预处理SQL语句
+	const char* query = "SELECT blogId, title, content, userId, postTime FROM blog ORDER BY postTime DESC LIMIT ? OFFSET ?";
+
+	MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return blogs;
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    // 计算偏移量
+    int offset = (page - 1) * size;
+
+    // 绑定参数
+    MYSQL_BIND bind[2];
+    memset(bind, 0, sizeof(bind));
+
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = (char*)&size;
+
+    bind[1].buffer_type = MYSQL_TYPE_LONG;
+    bind[1].buffer = (char*)&offset;
+
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    // 执行语句
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    // 获取结果
+    MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(stmt);
+    if (!prepare_meta_result) {
+        cerr << "mysql_stmt_result_metadata() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    int blogId;
+    char title[256];
+    char content[1024];
+    int userId;
+    char postTime[32];
+
+    MYSQL_BIND result_bind[5];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    result_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[0].buffer = (char*)&blogId;
+
+    result_bind[1].buffer_type = MYSQL_TYPE_STRING;
+    result_bind[1].buffer = (char*)title;
+    result_bind[1].buffer_length = sizeof(title);
+
+    result_bind[2].buffer_type = MYSQL_TYPE_STRING;
+    result_bind[2].buffer = (char*)content;
+    result_bind[2].buffer_length = sizeof(content);
+
+    result_bind[3].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[3].buffer = (char*)&userId;
+
+    result_bind[4].buffer_type = MYSQL_TYPE_STRING;
+    result_bind[4].buffer = (char*)postTime;
+    result_bind[4].buffer_length = sizeof(postTime);
+
+    if (mysql_stmt_bind_result(stmt, result_bind)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    // 遍历结果集
+    while (!mysql_stmt_fetch(stmt)) {
+        Blog blog;
+        blog.set_blog_id(blogId);
+        blog.set_blog_title(string(title));
+        blog.set_blog_content(string(content));
+        blog.set_user_id(userId);
+        blog.set_blog_postTime(string(postTime));
+        blogs.push_back(blog);
+    }
+
+    // 清理
+    mysql_free_result(prepare_meta_result);
+    mysql_stmt_close(stmt);
+
+    return blogs;
+}
+
+// 获取博客的总条数
+int sql_blog_tool::get_total_blog_count()
+{
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+
+    // 从连接池中取出一个连接
+    connectionRAII conn(&mysql, connpool);
+
+    // 构造 SQL 查询语句
+    const char* query = "SELECT COUNT(*) FROM blog;";
+
+    // 执行查询
+    if (mysql_query(mysql, query)) {
+        // 查询失败，打印错误信息
+        std::cerr << "MySQL query failed: " << mysql_error(mysql) << std::endl;
+        return 0;
+    }
+
+    // 获取查询结果
+    MYSQL_RES* result = mysql_store_result(mysql);
+    if (!result) {
+        // 获取结果失败
+        std::cerr << "MySQL store result failed: " << mysql_error(mysql) << std::endl;
+        return 0;
+    }
+
+    // 从结果集中提取总条数
+    MYSQL_ROW row = mysql_fetch_row(result);
+    int count = 0;
+    if (row && row[0]) {
+        count = std::atoi(row[0]); // 将字符串转为整数
+    }
+
+    // 释放结果集
+    mysql_free_result(result);
+
+    return count;
+}
+
+
 // 通过博客id查询博客内容 
 Blog sql_blog_tool::select_blog_by_id(int blogid)
 {
