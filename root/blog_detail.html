@@ -51,7 +51,7 @@
                     <span>分类</span>
                 </div>
                 <div class="counter">
-                    <span>2</span>
+                    <span id="article_count">2</span>
                     <span>1</span>
                 </div>
             </div>
@@ -96,14 +96,18 @@
             }
 
             // 从服务端获取用户信息
+            // 定义一个名为getUser的函数
             function getUser(){
+                // 使用jQuery提供的$.ajax方法
                 $.ajax({
                     type:'GET',
-                    url:'user' + location.search,
+                    url:'user' + location.search,   // user + 当前页面URL中的查询字符串部分(包括？和后面的参数)
+                    // 当请求成功就会调用success回调函数，data是数据库返回的数据对象，通常是JSON格式
                     success:function(data){
                         // 更新用户头像和用户名
                         document.getElementById('avatar').src = data.avatar || 'img/touxiang.jpg';
                         document.getElementById('username').innerText = data.username || '未知用户';
+                        document.getElementById('article_count').innerText = data.article_count || 0;
                     },
                     error:function(xhr, status, error){
                         console.error('获取用户信息失败:', status, error);

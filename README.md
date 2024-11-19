@@ -17,14 +17,16 @@
 - **前端**: HTML, CSS, JavaScript（AJAX）用于页面展示与交互
 - **框架与库**: 
   - `editor.md`: 用于Markdown编辑的富文本编辑器
-  - `ncurses`: 用于C++中的终端交互（如管理后台）
 - **服务器环境**:
-  - **操作系统**: Linux（CentOS）
-  - **Web服务器**: 自定义C++编写的简易Web服务器
+  - **操作系统**: Linux（CentOS_7_9）
+  - **Web服务器**: 自定义C++编写的Web服务器
+  - **部署**：部署于阿里云服务器
   - **API协议**: RESTful API，用于前后端通信
   - **代理与缓存**: 使用Nginx作为反向代理与负载均衡
 
 ## 功能改进与添加
+
+### 2024-11-14之前的进度没有进行系统记录
 
 ### 2024-11-14（数据库的编码问题和JSON字符串中特殊字符的转换）
 1. 客户端传入的json字符串在插入MySQL数据库时，插入的中文字符串（博客的标题和内容）会变成乱码。经过排查，从客户端发送的json字符串，到后端代码对于字符串的解析，cout出来的内容都没有乱码，因此将问题定位到插入到数据库的那一步。
@@ -59,6 +61,11 @@
 经过断点排查，**http_conn::HTTP_CODE http_conn::do_request()**函数中存储else if冲突，使用**strstr**进行字符串判断，会导致**blog**和**blog_login**都能被检测。
 3. 添加了点击博客详情时，也显示作者的部分信息。  
 为实现上述功能，添加了**根据博客id获取用户id**，**根据用户id获取用户信息**，以及添加了用户数据库的内容（头像地址、文章数、注册时间、email）。
+
+### 2024-11-19
+1. 登录可以获取用户信息，显示在用户主页上（如用户头像、用户名、用户发布的文章数），现在还没有添加文章数的功能，先自行修改数据库测试
+
+### 2024-11-20
 
 ## 更新日志
 
@@ -101,5 +108,4 @@
 ## 参考文献
 
 - Linux高性能服务器编程，游双著.
-- [TinyWebServer](https://github.com/qinguoyi/TinyWebServer)
-- [editor.md GitHub](https://github.com/pandao/editor.md) - Markdown编辑器的文档
+- [qinguoyi/TinyWebServer](https://github.com/qinguoyi/TinyWebServer)

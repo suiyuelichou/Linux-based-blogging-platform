@@ -31,6 +31,7 @@
 #include "../timer/lst_timer.h"
 #include "../log/log.h"
 #include "../cookie/cookie.h"
+#include "../CGImysql/sql_tool.h"
 
 class http_conn
 {

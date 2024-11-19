@@ -771,11 +771,12 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         // 根据用户id获取用户信息
         User user = tool.get_userdata_by_userid(userid);
-        cout << user.get_avatar()<<endl;
+
         // 构建 JSON 对象
         jsonData += "{";
         jsonData += "\"avatar\": \"" + user.get_avatar() + "\",";
-        jsonData += "\"username\": \"" + user.get_usernmae() + "\"";
+        jsonData += "\"username\": \"" + user.get_usernmae() + "\",";
+        jsonData += "\"article_count\": \"" + to_string(user.get_article_count()) + "\"";
         jsonData += "}";
 
         return BLOG_DETAIL;
