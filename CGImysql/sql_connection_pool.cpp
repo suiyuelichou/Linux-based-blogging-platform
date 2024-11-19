@@ -396,6 +396,190 @@ Blog sql_blog_tool::select_blog_by_id(int blogid)
     return blog;
 }
 
+// 通过博客id获取对应的用户id
+int sql_blog_tool::get_userid_by_blogid(int blogid)
+{
+    // 从连接池中获取 MySQL 连接
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlcon(&mysql, connpool);
+
+    // 设置连接字符集为 UTF8
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理 SQL 查询语句
+    const char* query = "SELECT userId FROM blog WHERE blogId = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return -1; // 错误返回 -1
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1; // 错误返回 -1
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind_param[1];
+    memset(bind_param, 0, sizeof(bind_param));
+
+    bind_param[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_param[0].buffer = (char*)&blogid;
+
+    if (mysql_stmt_bind_param(stmt, bind_param)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1; // 错误返回 -1
+    }
+
+    // 执行查询
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1; // 错误返回 -1
+    }
+
+    // 绑定结果
+    MYSQL_BIND bind_result[1];
+    memset(bind_result, 0, sizeof(bind_result));
+
+    int userId;
+    bind_result[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_result[0].buffer = (char*)&userId;
+
+    if (mysql_stmt_bind_result(stmt, bind_result)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1; // 错误返回 -1
+    }
+
+    // 获取结果
+    if (mysql_stmt_fetch(stmt) == 0) {
+        // 成功获取到 userId
+        mysql_stmt_close(stmt);
+        return userId;
+    } else {
+        cerr << "mysql_stmt_fetch() failed or no result found" << endl;
+        mysql_stmt_close(stmt);
+        return -1; // 未找到结果或发生错误
+    }
+}
+
+// 通过用户id获取用户信息
+User sql_blog_tool::get_userdata_by_userid(int userid)
+{
+    // 从连接池中获取 MySQL 连接
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlcon(&mysql, connpool);
+
+    // 设置连接字符集为 UTF8
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理 SQL 查询语句
+    const char* query = "SELECT userId, username, password, avatar, article_count, register_time, email FROM user WHERE userId = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return User(); // 返回空用户对象
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return User(); // 返回空用户对象
+    }
+
+    // 绑定查询参数
+    MYSQL_BIND bind_param[1];
+    memset(bind_param, 0, sizeof(bind_param));
+
+    bind_param[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_param[0].buffer = (char*)&userid;
+
+    if (mysql_stmt_bind_param(stmt, bind_param)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return User(); // 返回空用户对象
+    }
+
+    // 执行查询
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return User(); // 返回空用户对象
+    }
+
+    // 绑定结果
+    MYSQL_BIND bind_result[7];
+    memset(bind_result, 0, sizeof(bind_result));
+
+    int userId;
+    char username[128];
+    char password[128];
+    char avatar[256];
+    int article_count;
+    char register_time[64];
+    char email[128];
+
+    // 绑定字段
+    bind_result[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_result[0].buffer = (char*)&userId;
+
+    bind_result[1].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[1].buffer = (char*)username;
+    bind_result[1].buffer_length = sizeof(username);
+
+    bind_result[2].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[2].buffer = (char*)password;
+    bind_result[2].buffer_length = sizeof(password);
+
+    bind_result[3].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[3].buffer = (char*)avatar;
+    bind_result[3].buffer_length = sizeof(avatar);
+
+    bind_result[4].buffer_type = MYSQL_TYPE_LONG;
+    bind_result[4].buffer = (char*)&article_count;
+
+    bind_result[5].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[5].buffer = (char*)register_time;
+    bind_result[5].buffer_length = sizeof(register_time);
+
+    bind_result[6].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[6].buffer = (char*)email;
+    bind_result[6].buffer_length = sizeof(email);
+
+    if (mysql_stmt_bind_result(stmt, bind_result)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return User(); // 返回空用户对象
+    }
+    // 获取结果
+    if (mysql_stmt_fetch(stmt) == 0) {
+        // 填充用户对象
+        User user;
+        user.set_userid(userId);
+        user.set_username(username);
+        user.set_password(password);
+        user.set_avatar(avatar);
+        user.set_article_count(article_count);
+        user.set_register_time(register_time);
+        user.set_email(email);
+
+        mysql_stmt_close(stmt);
+        return user;
+    } else {
+        cerr << "mysql_stmt_fetch() failed or no result found" << endl;
+        mysql_stmt_close(stmt);
+        return User(); // 返回空用户对象
+    }
+}
+
+
 // 将用户post过来的博客内容存储数据库
 void sql_blog_tool::insert_blog(Blog blog)
 {
@@ -513,12 +697,67 @@ void User::set_userid(int userid){
 	this->m_userId = userid;
 }
 
+int User::get_userid()
+{
+    return this->m_userId;
+}
+
 void User::set_username(string username){
 	this->m_username = username;
 }
 
+string User::get_usernmae()
+{
+    return this->m_username;
+}
+
 void User::set_password(string password){
 	this->m_password = password;
+}
+
+string User::get_password()
+{
+    return this->m_password;
+}
+
+void User::set_avatar(string avatar)
+{
+	this->m_avatar = avatar;
+}
+
+string User::get_avatar()
+{
+    return this->m_avatar;
+}
+
+void User::set_article_count(int article_count)
+{
+	this->m_article_count = article_count;
+}
+
+int User::get_article_count()
+{
+    return this->m_article_count;
+}
+
+void User::set_register_time(string register_time)
+{
+	this->m_register_time = register_time;
+}
+
+string User::get_register_time()
+{
+    return this->m_register_time;
+}
+
+void User::set_email(string email)
+{
+	this->m_email = email;
+}
+
+string User::get_eamil()
+{
+    return this->m_email;
 }
 
 /*

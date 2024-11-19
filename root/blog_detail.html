@@ -37,10 +37,10 @@
             <!-- 这个div表示整个用户信息的区域 -->
             <div class="card">
                 <!-- 用户的头像 -->
-                <img src="img/touxiang.jpg">
+                <img id="avatar" src="img/touxiang.jpg" alt="用户头像">
  
                 <!-- 用户名 -->
-                <h3>打工人</h3>
+                <h3 id="username">加载中...</h3>
  
                 <!-- GitHub地址 -->
                 <a href="https://github.com/yaugaolele/Project.git">GitHub 地址</a>
@@ -61,17 +61,11 @@
             <!-- 博客标题 -->
             <h3>我的第一篇博客</h3>
             <!-- 时间 -->
-            <div class="date">2023-08-16 20:00:00</div>
-            <!-- <div class="content">
-                <p>从今天开始我要认真写博客，Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolores nostrum alias reprehenderit quisquam assumenda! Optio iste dicta pariatur odio unde dolorum, aliquid error, ipsa labore nobis, aspernatur qui aliquam explicabo!</p>
-                <p>从今天开始我要认真写博客，Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolores nostrum alias reprehenderit quisquam assumenda! Optio iste dicta pariatur odio unde dolorum, aliquid error, ipsa labore nobis, aspernatur qui aliquam explicabo!</p>
-                <p>从今天开始我要认真写博客，Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolores nostrum alias reprehenderit quisquam assumenda! Optio iste dicta pariatur odio unde dolorum, aliquid error, ipsa labore nobis, aspernatur qui aliquam explicabo!</p>
-                <p>从今天开始我要认真写博客，Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolores nostrum alias reprehenderit quisquam assumenda! Optio iste dicta pariatur odio unde dolorum, aliquid error, ipsa labore nobis, aspernatur qui aliquam explicabo!</p>
-            </div> -->
+            <div class="date">2023-08-16 20:00:00</div>          
         </div>
 
-        <!-- <script src="js/app.js"></script> -->
         <script>
+            // 从服务端获取博客详情
             function getBlog() {
                 $.ajax({
                     type: 'get',
@@ -100,6 +94,25 @@
                     }
                 });
             }
+
+            // 从服务端获取用户信息
+            function getUser(){
+                $.ajax({
+                    type:'GET',
+                    url:'user' + location.search,
+                    success:function(data){
+                        // 更新用户头像和用户名
+                        document.getElementById('avatar').src = data.avatar || 'img/touxiang.jpg';
+                        document.getElementById('username').innerText = data.username || '未知用户';
+                    },
+                    error:function(xhr, status, error){
+                        console.error('获取用户信息失败:', status, error);
+                        alert('获取用户信息失败，请稍后重试');
+                    }
+                });
+            }
+
+            getUser();
             getBlog();
         </script>
 </body>

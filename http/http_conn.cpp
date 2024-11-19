@@ -471,7 +471,6 @@ http_conn::HTTP_CODE http_conn::do_request()
 {
     strcpy(m_real_file, doc_root);
     int len = strlen(doc_root);
-    //printf("m_url:%s\n", m_url);
     const char *p = strrchr(m_url, '/');    //返回m_url中的最后一个'/'字符的位置
     char name[100], password[100];
 
@@ -573,9 +572,8 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
 
     }
-
     // 这里用来判断是否将用户输入的博客保存进数据库
-    if(cgi == 1 && strstr(m_url, "/blog") != nullptr){
+    else if(cgi == 1 && strstr(m_url, "/blog") != nullptr){
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
 
@@ -606,8 +604,6 @@ http_conn::HTTP_CODE http_conn::do_request()
             blog.set_blog_content(content);
             blog.set_user_id(userid);
             blog.set_blog_postTime(postTime);
-            // cout << blog.get_blog_title() << endl;
-            // cout << blog.get_blog_content() << endl;
 
             tool.insert_blog(blog);
 
@@ -615,70 +611,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
     }
 
-    if (*(p + 1) == '0')    // 返回数据库中的博客内容
-    {
-        // 查询博客数据
-        sql_blog_tool tool;
-        vector<Blog> blogs = tool.select_all_blog();
-
-        // 添加转义字符处理函数
-        auto escapeJsonString = [](const string& input) {
-            string output;
-            for (char c : input) {
-                switch (c) {
-                    case '"': output += "\\\""; break;   // 双引号转义
-                    case '\\': output += "\\\\"; break;  // 反斜杠转义
-                    case '\b': output += "\\b"; break;   // 退格符
-                    case '\f': output += "\\f"; break;   // 换页符
-                    case '\n': output += "\\n"; break;   // 换行符
-                    case '\r': output += "\\r"; break;   // 回车符
-                    case '\t': output += "\\t"; break;   // 制表符
-                    default:
-                        // 处理其他不可打印字符
-                        if (iscntrl(c)) {
-                            char buf[8];
-                            snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
-                            output += buf;
-                        } else {
-                            output += c;
-                        }
-                }
-            }
-            return output;
-        };
-
-        jsonData = "[";
-        for(int i = 0; i < blogs.size(); i++) {
-            Blog blog = blogs[i];
-            
-            // 获取并处理内容
-            string content = blog.get_blog_content();
-            if(content.length() > 300) {
-                content = content.substr(0, 300) + "...";
-            }
-            
-            // 处理标题和内容中的特殊字符
-            string escapedTitle = escapeJsonString(blog.get_blog_title());
-            string escapedContent = escapeJsonString(content);
-            
-            // 构建 JSON 对象
-            jsonData += "{";
-            jsonData += "\"blogId\": " + std::to_string(blog.get_blog_id()) + ",";
-            jsonData += "\"title\": \"" + escapedTitle + "\",";
-            jsonData += "\"content\": \"" + escapedContent + "\",";
-            jsonData += "\"userId\": " + std::to_string(blog.get_user_id()) + ",";
-            jsonData += "\"postTime\": \"" + blog.get_blog_postTime() + "\"";
-            jsonData += "}";
-
-            if(i < blogs.size() - 1) {
-                jsonData += ",";
-            }
-        }
-        jsonData += "]";
-
-        return BLOG_DATA;
-    }
-    else if (strstr(m_url, "/get_blogs?")) {
+    if (strstr(m_url, "/get_blogs?")) {
         int page = 1, size = 20;
         char* pageParam = strstr(m_url, "page=");
         char* sizeParam = strstr(m_url, "size=");
@@ -761,7 +694,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         free(m_url_real);
     }    
     // 处理博客详情数据请求
-    else if (strstr(m_url, "?blogId=") != nullptr) {
+    else if (strstr(m_url, "/blog?blogId=") != nullptr) {
         // 解析 blogId
         const char* blogIdStart = strstr(m_url, "blogId=");
         if (blogIdStart == nullptr) {
@@ -815,6 +748,34 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData += "\"content\": \"" + escapedContent + "\",";
         jsonData += "\"userId\": " + std::to_string(blog.get_user_id()) + ",";
         jsonData += "\"postTime\": \"" + blog.get_blog_postTime() + "\"";
+        jsonData += "}";
+
+        return BLOG_DETAIL;
+    }
+    // 请求博客详情的同时也返回该博客对应的用户信息
+    else if (strstr(m_url, "/user?blogId=") != nullptr) {
+        // 解析 blogId
+        const char* blogIdStart = strstr(m_url, "blogId=");
+        if (blogIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+        
+        int blogId = atoi(blogIdStart + 7);
+        if (blogId <= 0) {
+            return BAD_REQUEST;
+        }
+
+        // 获取用户id
+        sql_blog_tool tool;
+        int userid = tool.get_userid_by_blogid(blogId);
+
+        // 根据用户id获取用户信息
+        User user = tool.get_userdata_by_userid(userid);
+        cout << user.get_avatar()<<endl;
+        // 构建 JSON 对象
+        jsonData += "{";
+        jsonData += "\"avatar\": \"" + user.get_avatar() + "\",";
+        jsonData += "\"username\": \"" + user.get_usernmae() + "\"";
         jsonData += "}";
 
         return BLOG_DETAIL;

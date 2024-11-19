@@ -1,0 +1,181 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心</title>
+    <link rel="stylesheet" href="css/user_center.css">
+
+    <script src="js/user_center.js"></script>
+
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="nav">
+        <img src="img/logo.png" alt="logo">
+        <div class="title">云中杉木博客平台</div>
+        <div class="nav-links-top">
+            <a href="message_board.html">留言板</a>
+            <a href="blog_home.html">主页</a>
+            <a href="blog_editor.html">写博客</a>
+            <a href="blog_login.html">登录</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 左侧导航栏 -->
+        <nav class="sidebar">
+            <div class="profile-preview">
+                <img src="img/touxiang.jpg" alt="头像" class="avatar">
+                <h3>用户名</h3>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-page="profile">
+                    <span class="icon">👤</span>
+                    个人资料
+                </li>
+                <li data-page="blog">
+                    <span class="icon">📝</span>
+                    博客管理
+                </li>
+                <li data-page="settings">
+                    <span class="icon">⚙️</span>
+                    账号设置
+                </li>
+                <li data-page="messages">
+                    <span class="icon">✉️</span>
+                    消息中心
+                </li>
+            </ul>
+        </nav>
+
+        <!-- 右侧内容区 -->
+        <main class="content">
+            <!-- 个人资料页 -->
+            <div class="page active" id="profile">
+                <h2>个人资料</h2>
+                <div class="profile-info">
+                    <div class="info-item">
+                        <label>昵称：</label>
+                        <span>示例用户</span>
+                    </div>
+                    <div class="info-item">
+                        <label>邮箱：</label>
+                        <span>example@email.com</span>
+                    </div>
+                    <div class="info-item">
+                        <label>简介：</label>
+                        <p>这是一段个人简介文字，可以介绍一下自己。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 博客管理页 -->
+            <div class="page" id="blog">
+                <h2>博客管理</h2>
+                <div class="blog-list">
+                    <div class="blog-item">
+                        <h3>第一篇博客标题</h3>
+                        <p>发布时间：2024-03-18</p>
+                        <div class="blog-actions">
+                            <button>编辑</button>
+                            <button>删除</button>
+                        </div>
+                    </div>
+                    <div class="blog-item">
+                        <h3>第二篇博客标题</h3>
+                        <p>发布时间：2024-03-17</p>
+                        <div class="blog-actions">
+                            <button>编辑</button>
+                            <button>删除</button>
+                        </div>
+                    </div>
+                    <div class="blog-item">
+                        <h3>第一篇博客标题</h3>
+                        <p>发布时间：2024-03-18</p>
+                        <div class="blog-actions">
+                            <button>编辑</button>
+                            <button>删除</button>
+                        </div>
+                    </div>
+                    <div class="blog-item">
+                        <h3>第二篇博客标题</h3>
+                        <p>发布时间：2024-03-17</p>
+                        <div class="blog-actions">
+                            <button>编辑</button>
+                            <button>删除</button>
+                        </div>
+                    </div>
+                    <div class="blog-item">
+                        <h3>第一篇博客标题</h3>
+                        <p>发布时间：2024-03-18</p>
+                        <div class="blog-actions">
+                            <button>编辑</button>
+                            <button>删除</button>
+                        </div>
+                    </div>
+                    <div class="blog-item">
+                        <h3>第二篇博客标题</h3>
+                        <p>发布时间：2024-03-17</p>
+                        <div class="blog-actions">
+                            <button>编辑</button>
+                            <button>删除</button>
+                        </div>
+                    </div>
+                    <div class="blog-item">
+                        <h3>第一篇博客标题</h3>
+                        <p>发布时间：2024-03-18</p>
+                        <div class="blog-actions">
+                            <button>编辑</button>
+                            <button>删除</button>
+                        </div>
+                    </div>
+                    <div class="blog-item">
+                        <h3>第二篇博客标题</h3>
+                        <p>发布时间：2024-03-17</p>
+                        <div class="blog-actions">
+                            <button>编辑</button>
+                            <button>删除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 账号设置页 -->
+            <div class="page" id="settings">
+                <h2>账号设置</h2>
+                <div class="settings-form">
+                    <div class="form-item">
+                        <label>修改密码</label>
+                        <input type="password" placeholder="请输入新密码">
+                    </div>
+                    <div class="form-item">
+                        <label>确认密码</label>
+                        <input type="password" placeholder="请确认新密码">
+                    </div>
+                    <button class="save-btn">保存修改</button>
+                </div>
+            </div>
+
+            <!-- 消息中心页 -->
+            <div class="page" id="messages">
+                <h2>消息中心</h2>
+                <div class="message-list">
+                    <div class="message-item">
+                        <h4>系统通知</h4>
+                        <p>您的账号信息已更新</p>
+                        <span class="time">2024-03-18 10:30</span>
+                    </div>
+                    <div class="message-item">
+                        <h4>评论提醒</h4>
+                        <p>有人在您的博客下发表了评论</p>
+                        <span class="time">2024-03-17 15:20</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+</body>
+</html>

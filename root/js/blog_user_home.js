@@ -37,7 +37,7 @@ function getBlogs(page) {
                 descDiv.textContent = blog.content;
 
                 let a = document.createElement("a");
-                a.href = `blog_detail.html?blogId=${blog.blogId}`;
+                a.href = `blog_detail_user.html?blogId=${blog.blogId}`;
                 a.textContent = "查看全文 >>";
 
                 blogDiv.appendChild(titleDiv);
