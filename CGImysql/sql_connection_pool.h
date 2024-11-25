@@ -19,16 +19,16 @@ using namespace std;
 class connection_pool
 {
 public:
-	MYSQL *GetConnection();				 //获取数据库连接
-	bool ReleaseConnection(MYSQL *conn); //释放连接
-	int GetFreeConn();					 //获取连接
-	void DestroyPool();					 //销毁所有连接
-	
+	MYSQL *GetConnection();				 // 获取数据库连接
+	bool ReleaseConnection(MYSQL *conn); // 释放连接
+	int GetFreeConn();					 // 获取连接
+	void DestroyPool();					 // 销毁所有连接
 
-	//单例模式
+	// 单例模式
 	static connection_pool *GetInstance();
 
-	void init(string url, string User, string PassWord, string DataBaseName, int Port, int MaxConn, int close_log); 
+	// 对连接池进行初始化
+	void init(string url, string UserName, string PassWord, string DataBaseName, int Port, int MaxConn, int close_log); 
 
 private:
 	connection_pool();
@@ -42,8 +42,8 @@ private:
 	int m_CurConn;  //当前已使用的连接数
 	int m_FreeConn; //当前空闲的连接数
 	locker lock;
-	list<MYSQL *> connList; //连接池
 	sem reserve;	// 设置一个数据库连接池信号量
+	list<MYSQL *> connList; //连接池
 
 public:
 	string m_url;			 //主机地址

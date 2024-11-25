@@ -5,66 +5,70 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-// 信号量
+// 信号量类封装
 class sem
 {
 public:
-    sem()
-    {
-        if (sem_init(&m_sem, 0, 0) != 0)
-        {
+    sem() {
+        // 调用 sem_init 初始化信号量
+        // 参数说明：
+        // &m_sem: 要初始化的信号量对象
+        // 0: 信号量在线程间共享，非进程间
+        // 0: 初始值为0
+        if (sem_init(&m_sem, 0, 0) != 0) {
             throw std::exception();
         }
     }
-    sem(int num)
-    {
-        if (sem_init(&m_sem, 0, num) != 0)
-        {
+
+    sem(int num) {
+        if (sem_init(&m_sem, 0, num) != 0) {
             throw std::exception();
         }
     }
-    ~sem()
-    {
+
+    ~sem() {
         sem_destroy(&m_sem);
     }
-    bool wait()
-    {
+
+    // 等待信号量（P 操作），阻塞直到信号量的值大于0
+    //（若信号量大于0，说明有产品可消费，wait()会将信号量减1，并继续执行
+    bool wait() {
         return sem_wait(&m_sem) == 0;
     }
-    bool post()
-    {
+
+    // 增加信号量（V 操作），唤醒等待信号量的线程
+    bool post() {
         return sem_post(&m_sem) == 0;
     }
 
 private:
-    sem_t m_sem;
+    sem_t m_sem; // 信号量对象，类型为 sem_t
 };
+
 
 //互斥锁
 class locker
 {
 public:
-    locker()
-    {
-        if (pthread_mutex_init(&m_mutex, NULL) != 0)
-        {
+    locker(){
+        if (pthread_mutex_init(&m_mutex, NULL) != 0){
             throw std::exception();
         }
     }
-    ~locker()
-    {
+
+    ~locker(){
         pthread_mutex_destroy(&m_mutex);
     }
-    bool lock()
-    {
+
+    bool lock(){
         return pthread_mutex_lock(&m_mutex) == 0;
     }
-    bool unlock()
-    {
+
+    bool unlock(){
         return pthread_mutex_unlock(&m_mutex) == 0;
     }
-    pthread_mutex_t *get()
-    {
+    
+    pthread_mutex_t *get(){
         return &m_mutex;
     }
 

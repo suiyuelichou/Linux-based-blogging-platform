@@ -114,7 +114,9 @@ function getCurrentUsername() {
         url: 'get_current_user', // 这里的URL是你的服务器端API，用于获取当前用户
         success: function(response) {
             if (response.username) {
+                document.getElementById('avatar').src = response.avatar; // 替换用户头像
                 document.getElementById('username').innerHTML = response.username; // 替换用户名
+                document.getElementById('article_count').innerHTML = response.article_count;
             }
         },
         error: function(xhr, status, error) {

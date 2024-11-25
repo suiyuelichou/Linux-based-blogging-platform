@@ -37,7 +37,7 @@
             <!-- 这个div表示整个用户信息的区域 -->
             <div class="card">
                 <!-- 用户的头像 -->
-                <img id="avatar" src="img/touxiang.jpg" alt="用户头像">
+                <img id="avatar" src="img/default_touxiang.jpg" alt="用户头像">
  
                 <!-- 用户名 -->
                 <h3 id="username">加载中...</h3>
@@ -105,7 +105,7 @@
                     // 当请求成功就会调用success回调函数，data是数据库返回的数据对象，通常是JSON格式
                     success:function(data){
                         // 更新用户头像和用户名
-                        document.getElementById('avatar').src = data.avatar || 'img/touxiang.jpg';
+                        document.getElementById('avatar').src = data.avatar || 'img/default_touxiang.jpg';
                         document.getElementById('username').innerText = data.username || '未知用户';
                         document.getElementById('article_count').innerText = data.article_count || 0;
                     },

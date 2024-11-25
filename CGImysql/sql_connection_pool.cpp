@@ -16,19 +16,19 @@ connection_pool::connection_pool()
 	m_FreeConn = 0;
 }
 
-// 实例的初始化放在函数内部，是单例模式中的懒汉模式（在第一次被使用才会进行初始化）
+// 实例的初始化放在函数内部，是单例模式中的懒汉模式（在第一次被调用才会进行初始化）
 connection_pool *connection_pool::GetInstance()
 {
 	static connection_pool connPool;
 	return &connPool;
 }
 
-//构造初始化
-void connection_pool::init(string url, string User, string PassWord, string DBName, int Port, int MaxConn, int close_log)
+// 初始化数据库连接池
+void connection_pool::init(string url, string UserName, string PassWord, string DBName, int Port, int MaxConn, int close_log)
 {
 	m_url = url;
 	m_Port = Port;
-	m_User = User;
+	m_User = UserName;
 	m_PassWord = PassWord;
 	m_DatabaseName = DBName;
 	m_close_log = close_log;
@@ -44,7 +44,7 @@ void connection_pool::init(string url, string User, string PassWord, string DBNa
 			exit(1);
 		}
 		// 建立数据库连接
-		con = mysql_real_connect(con, url.c_str(), User.c_str(), PassWord.c_str(), DBName.c_str(), Port, NULL, 0);
+		con = mysql_real_connect(con, url.c_str(), UserName.c_str(), PassWord.c_str(), DBName.c_str(), Port, NULL, 0);
 
 		if (con == NULL)
 		{
@@ -61,13 +61,16 @@ void connection_pool::init(string url, string User, string PassWord, string DBNa
 }
 
 
-//当有请求时，从数据库连接池中返回一个可用连接，更新使用和空闲连接数
+//从数据库连接池中取出一个可用连接，更新使用和空闲连接数
 MYSQL *connection_pool::GetConnection()
 {
 	MYSQL *con = NULL;
 
-	if (0 == connList.size())
+	if (0 == connList.size()){
+		LOG_ERROR("The database connection pool is empty!");
+		// cout << "The database connection pool is empty!" << endl;
 		return NULL;
+	}
 
 	reserve.wait();
 	
@@ -112,7 +115,7 @@ void connection_pool::DestroyPool()
 		for (it = connList.begin(); it != connList.end(); ++it)
 		{
 			MYSQL *con = *it;
-			mysql_close(con);
+			mysql_close(con);	// 关闭数据库连接
 		}
 		m_CurConn = 0;
 		m_FreeConn = 0;

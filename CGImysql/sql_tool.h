@@ -13,7 +13,7 @@ public:
 	void set_userid(int userid);			// 设置用户id
 	int get_userid();
 	void set_username(string username);		// 设置用户名
-	string get_usernmae();
+	string get_username();
 	void set_password(string password);		// 设置用户密码
 	string get_password();
 	void set_avatar(string avatar);			// 设置用户头像路径
@@ -24,6 +24,8 @@ public:
 	string get_register_time();
 	void set_email(string email);// 设置用户邮箱
 	string get_eamil();
+	void set_description(string description);	// 设置用户简介
+	string get_description();		
 
 private:
 	int m_userId;		// 用户id
@@ -33,6 +35,7 @@ private:
 	int m_article_count;// 发布的文章数
 	string m_register_time;	// 注册时间
 	string m_email;		// 用户邮箱
+	string description; // 用户简介
 };
 
 // 博客类，每个Blog对象就对应一个blog表中的一条记录
@@ -60,14 +63,15 @@ private:
 // 对blog和user表进行数据库操作
 class sql_blog_tool{
 public:
-	vector<Blog> select_all_blog();	// 查询所有博客
+	vector<Blog> select_all_blog();						// 查询所有博客
 	vector<Blog> get_blogs_by_page(int page, int size);	// 分页查询
-	int get_total_blog_count();		// 获取博客的总条数
-	Blog select_blog_by_id(int blogid);		// 通过博客id查询博客内容
-	int get_userid_by_blogid(int blogid);	// 通过博客id获取对应的用户id
-	User get_userdata_by_userid(int userid); // 通过用户id获取用户信息
-	void insert_blog(Blog blog);	// 将用户post过来的博客内容存储数据库
-	int get_userid(string username);	// 通过用户名获取用户id
+	int get_total_blog_count();							// 获取博客的总条数
+	Blog select_blog_by_id(int blogid);					// 通过博客id查询博客内容
+	int get_userid_by_blogid(int blogid);				// 通过博客id获取对应的用户id
+	User get_userdata_by_userid(int userid); 			// 通过用户id获取用户信息
+	vector<Blog> get_blogs_by_userid(int userid);	// 通过用户id获取该用户的所有博客
+	void insert_blog(Blog blog);						// 将用户post过来的博客内容存储数据库
+	int get_userid(string username);					// 通过用户名获取用户id
 
 public:
 	int m_close_log;	// 日志开关

@@ -335,7 +335,7 @@ User sql_blog_tool::get_userdata_by_userid(int userid)
     mysql_query(mysql, "SET NAMES 'utf8mb4'");
 
     // 预处理 SQL 查询语句
-    const char* query = "SELECT userId, username, password, avatar, article_count, register_time, email FROM user WHERE userId = ?";
+    const char* query = "SELECT userId, username, password, avatar, article_count, register_time, email, description FROM user WHERE userId = ?";
     MYSQL_STMT* stmt = mysql_stmt_init(mysql);
 
     if (!stmt) {
@@ -370,7 +370,7 @@ User sql_blog_tool::get_userdata_by_userid(int userid)
     }
 
     // 绑定结果
-    MYSQL_BIND bind_result[7];
+    MYSQL_BIND bind_result[8];
     memset(bind_result, 0, sizeof(bind_result));
 
     int userId;
@@ -380,6 +380,7 @@ User sql_blog_tool::get_userdata_by_userid(int userid)
     int article_count;
     char register_time[64];
     char email[128];
+    char description[256];
 
     // 绑定字段
     bind_result[0].buffer_type = MYSQL_TYPE_LONG;
@@ -408,6 +409,10 @@ User sql_blog_tool::get_userdata_by_userid(int userid)
     bind_result[6].buffer = (char*)email;
     bind_result[6].buffer_length = sizeof(email);
 
+    bind_result[7].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[7].buffer = (char*)description;
+    bind_result[7].buffer_length = sizeof(description);
+
     if (mysql_stmt_bind_result(stmt, bind_result)) {
         cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
@@ -424,6 +429,7 @@ User sql_blog_tool::get_userdata_by_userid(int userid)
         user.set_article_count(article_count);
         user.set_register_time(register_time);
         user.set_email(email);
+        user.set_description(description);
 
         mysql_stmt_close(stmt);
         return user;
@@ -434,6 +440,115 @@ User sql_blog_tool::get_userdata_by_userid(int userid)
     }
 }
 
+// 通过用户id获取该用户的所有博客
+vector<Blog> sql_blog_tool::get_blogs_by_userid(int userid)
+{
+	// 用于存储查询到的博客
+	vector<Blog> blogs;
+
+	connection_pool* connpool = connection_pool::GetInstance();
+	MYSQL* mysql = nullptr;
+
+	// 从数据库连接池中取出一个连接
+	connectionRAII mysqlcon(&mysql, connpool);
+
+	// 设置连接字符集
+	mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+	// 预处理SQL语句
+	const char* query = "SELECT blogId, title, content, userId, postTime FROM blog WHERE userId = ? ORDER BY postTime DESC";
+
+	MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return blogs;
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind[1];
+    memset(bind, 0, sizeof(bind));
+
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = (char*)&userid;
+
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    // 执行语句
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    // 获取结果
+    MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(stmt);
+    if (!prepare_meta_result) {
+        cerr << "mysql_stmt_result_metadata() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    int blogId;
+    char title[256];
+    char content[1024];
+    int userId;
+    char postTime[32];
+
+    MYSQL_BIND result_bind[5];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    result_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[0].buffer = (char*)&blogId;
+
+    result_bind[1].buffer_type = MYSQL_TYPE_STRING;
+    result_bind[1].buffer = (char*)title;
+    result_bind[1].buffer_length = sizeof(title);
+
+    result_bind[2].buffer_type = MYSQL_TYPE_STRING;
+    result_bind[2].buffer = (char*)content;
+    result_bind[2].buffer_length = sizeof(content);
+
+    result_bind[3].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[3].buffer = (char*)&userId;
+
+    result_bind[4].buffer_type = MYSQL_TYPE_STRING;
+    result_bind[4].buffer = (char*)postTime;
+    result_bind[4].buffer_length = sizeof(postTime);
+
+    if (mysql_stmt_bind_result(stmt, result_bind)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return blogs;
+    }
+
+    // 遍历结果集
+    while (!mysql_stmt_fetch(stmt)) {
+        Blog blog;
+        blog.set_blog_id(blogId);
+        blog.set_blog_title(string(title));
+        blog.set_blog_content(string(content));
+        blog.set_user_id(userId);
+        blog.set_blog_postTime(string(postTime));
+        blogs.push_back(blog);
+    }
+
+    // 清理
+    mysql_free_result(prepare_meta_result);
+    mysql_stmt_close(stmt);
+
+    return blogs;
+}
 
 // 将用户post过来的博客内容存储数据库
 void sql_blog_tool::insert_blog(Blog blog)
@@ -561,7 +676,7 @@ void User::set_username(string username){
 	this->m_username = username;
 }
 
-string User::get_usernmae()
+string User::get_username()
 {
     return this->m_username;
 }
@@ -613,6 +728,16 @@ void User::set_email(string email)
 string User::get_eamil()
 {
     return this->m_email;
+}
+
+void User::set_description(string description)
+{
+    this->description = description;
+}
+
+string User::get_description()
+{
+    return this->description;
 }
 
 /*
