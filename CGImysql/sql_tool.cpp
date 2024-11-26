@@ -323,6 +323,73 @@ int sql_blog_tool::get_userid_by_blogid(int blogid)
     }
 }
 
+// 更新博客内容
+void sql_blog_tool::modify_blog_by_blogid(Blog blog)
+{
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+
+    // 从数据库连接池中取出一个连接
+    connectionRAII mysqlcon(&mysql, connpool);
+
+    // 设置连接字符集
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理SQL语句：修改博客内容
+    const char* query = "UPDATE blog SET title = ?, content = ? WHERE blogId = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return;
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 获取Blog对象的数据
+    string title = blog.get_blog_title();
+    string content = blog.get_blog_content();
+    int blogId = blog.get_blog_id();  // 获取博客 ID，用于更新指定的博客
+
+    // 绑定参数
+    MYSQL_BIND bind[3];
+    memset(bind, 0, sizeof(bind));
+
+    // 绑定每个字段的数据
+    bind[0].buffer_type = MYSQL_TYPE_STRING;
+    bind[0].buffer = (char*)title.c_str();
+    bind[0].buffer_length = title.size();
+
+    bind[1].buffer_type = MYSQL_TYPE_STRING;
+    bind[1].buffer = (char*)content.c_str();
+    bind[1].buffer_length = content.size();
+
+    bind[2].buffer_type = MYSQL_TYPE_LONG;
+    bind[2].buffer = (char*)&blogId;
+
+    // 将绑定的数据应用到语句
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 执行语句
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+    } else {
+        cout << "Blog updated successfully" << endl;
+    }
+
+    // 关闭语句
+    mysql_stmt_close(stmt);
+}
+
+
 // 通过用户id获取用户信息
 User sql_blog_tool::get_userdata_by_userid(int userid)
 {

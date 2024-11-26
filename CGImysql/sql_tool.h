@@ -68,10 +68,12 @@ public:
 	int get_total_blog_count();							// 获取博客的总条数
 	Blog select_blog_by_id(int blogid);					// 通过博客id查询博客内容
 	int get_userid_by_blogid(int blogid);				// 通过博客id获取对应的用户id
+	void modify_blog_by_blogid(Blog blog);				// 通过博客id修改博客的标题和内容
 	User get_userdata_by_userid(int userid); 			// 通过用户id获取用户信息
 	vector<Blog> get_blogs_by_userid(int userid);	// 通过用户id获取该用户的所有博客
 	void insert_blog(Blog blog);						// 将用户post过来的博客内容存储数据库
 	int get_userid(string username);					// 通过用户名获取用户id
+
 
 public:
 	int m_close_log;	// 日志开关

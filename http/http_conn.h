@@ -51,7 +51,7 @@ public:
         TRACE,
         OPTIONS,
         CONNECT,
-        PATH
+        PATCH
     };
 
     // HTTP 请求的状态

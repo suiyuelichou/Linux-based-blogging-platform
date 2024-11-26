@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客编辑页</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/blog_editor.css">
+    <script src="js/jquery.min.js"></script>
+    <!-- 引入editor.md的依赖 -->
+    <link rel="stylesheet" href="editor.md/css/editormd.min.css" />
+    <script src="editor.md/lib/marked.min.js"></script>
+    <script src="editor.md/lib/prettify.min.js"></script>
+    <script src="editor.md/editormd.js"></script>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="nav">
+        <img src="img/logo.png">
+        <div class="title">云中杉木博客平台</div>
+        <div class="nav-links">
+            <a href="message_board.html">留言板</a>
+            <a href="blog_home.html">主页</a>
+            <a href="blog_editor.html">写博客</a>
+            <a href="logout">注销</a>
+        </div>
+    </div>
+ 
+    <!-- 博客编辑页的版心 -->
+    <div class="blog-edit-container">
+        <form id="blog-form">
+            <!-- 标题编辑区 -->
+            <div class="title">
+                <input type="text" id="title-input" name="title" placeholder="在这里输入标题">
+                <button type="button" id="submit">提交</button> <!-- 改为button -->
+            </div>
+            <!-- 博客编辑器 -->
+            <div id="editor">
+                <textarea name="content" style="display: none;"></textarea>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let editor;
+
+        // 初始化编辑器
+        $(document).ready(function () {
+            editor = editormd("editor", {
+                width: "100%",
+                height: "calc(100% - 50px)",
+                markdown: "",
+                path: "editor.md/lib/",
+                onload: function () {
+                    const blogId = getQueryParam(); // 获取 blogId
+                    if (blogId) {
+                        // 请求博客内容
+                        $.ajax({
+                            url: 'blog' + location.search, // 使用 URL 查询参数作为请求路径
+                            method: "GET",
+                            success: function (data) {
+                                // 填充博客内容到编辑器
+                                $("#title-input").val(data.title);
+                                editor.setMarkdown(data.content);
+                            },
+                            error: function () {
+                                alert("加载博客内容失败！");
+                            }
+                        });
+                    }
+                }
+            });
+        });
+
+        // 从 URL 中获取博客 ID
+        function getQueryParam() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get("blogId"); // 获取 URL 中名为 blogId 的查询参数
+        }
+
+        // 提交博客更新
+        $("#submit").on("click", function () {
+            const blogId = getQueryParam();
+            if (!blogId) {
+                alert("无效的博客 ID！");
+                return;
+            }
+
+            const updatedBlog = {
+                blogId: parseInt(blogId, 10),
+                title: $("#title-input").val(),
+                content: editor.getMarkdown() // 获取编辑后的 Markdown 内容
+            };
+
+            // 发送更新请求
+            $.ajax({
+                url: 'modify_blog' + location.search, // 使用 URL 查询参数作为请求路径
+                method: "PATCH",
+                contentType: "application/x-www-form-urlencoded",
+                data: $.param(updatedBlog),
+                success: function () {
+                    alert("博客更新成功！");
+                    window.location.href = "user_center.html"; // 跳转到主页
+                },
+                error: function () {
+                    alert("更新博客失败！");
+                }
+            });
+        });
+    </script>
+</body>
+</html>

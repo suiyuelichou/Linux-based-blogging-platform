@@ -266,6 +266,8 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char *text)
     {
         m_method = POST;
         cgi = 1;
+    }else if(strcasecmp(method, "PATCH") == 0){
+        m_method = PATCH;
     }
     else
         return BAD_REQUEST;
@@ -572,7 +574,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
 
     }
-    // 这里用来判断是否将用户输入的博客保存进数据库
+    // 这里用来判断是否将用户新建的博客保存进数据库
     else if(cgi == 1 && strstr(m_url, "/blog") != nullptr){
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
@@ -608,6 +610,54 @@ http_conn::HTTP_CODE http_conn::do_request()
             tool.insert_blog(blog);
 
             return REDIRECT_USER_HOME;
+        }
+    }
+    // 这里用来判断是否将用户修改的博客保存进数据库
+    else if(m_method == PATCH && strstr(m_url, "/modify_blog?blogId=") != nullptr){
+        // 解析 blogId
+        const char* blogIdStart = strstr(m_url, "blogId=");
+        if (blogIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+        
+        int blogId = atoi(blogIdStart + 7);
+        if (blogId <= 0) {
+            return BAD_REQUEST;
+        }
+
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(cookie.validateSession(username, session_id)){
+            // 对请求体的内容进行解码
+            string body = url_decode(m_string);
+
+            // 获取请求体的内容
+            auto post_data = parse_post_data(body);
+
+            // 获取blogId、title和content字段
+            string blogId = post_data["blogId"];
+            string title = post_data["title"];
+            string content = post_data["content"];
+
+            // 获取userId
+            sql_blog_tool tool;
+            int userid = tool.get_userid(username);
+            int userId = tool.get_userid_by_blogid(stoi(blogId));
+
+            // 判断用户修改的是不是自己的博客
+            if(userid == userId){
+                Blog blog;
+                blog.set_blog_title(title);
+                blog.set_blog_content(content);
+                blog.set_blog_id(stoi(blogId));
+
+                tool.modify_blog_by_blogid(blog);
+
+                return REDIRECT_USER_HOME;
+            }else{
+                return BAD_REQUEST;
+            }
         }
     }
 
@@ -807,7 +857,25 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
         return BAD_REQUEST;
     }
-    // 处理需要验证的请求？
+    // 这个用来修改博客
+    else if (strstr(m_url, "/blog_editor_modify.html"))
+    {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            char *m_url_real = (char *)malloc(sizeof(char) * 200);
+            strcpy(m_url_real, "/blog_login.html");
+            strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+            free(m_url_real);
+	    }else{
+            char *m_url_real = (char *)malloc(sizeof(char) * 200);
+            strcpy(m_url_real, "/blog_editor_modify.html");
+            strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+            free(m_url_real);
+        }
+    }
+    // 这个用来新建博客 处理需要验证的请求？
     else if (strstr(m_url, "/blog_editor.html"))    // 在申请页面时，判断是否登录，从而返回不同的页面
     {
         string username = cookie.getCookie("username");
@@ -883,6 +951,20 @@ http_conn::HTTP_CODE http_conn::do_request()
         strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
 
         free(m_url_real);
+    }
+    else if(strstr(m_url, "/user_center.html")){
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(cookie.validateSession(username, session_id)){
+            char *m_url_real = (char *)malloc(sizeof(char) * 200);
+            strcpy(m_url_real, "/user_center.html");
+            strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+            free(m_url_real);
+        }else{
+            return REDIRECT_HOME;
+        }
     }
     // 个人中心-个人资料
     else if (strstr(m_url, "/profile")){

@@ -221,6 +221,68 @@ h2 {
     background-color: #c0392b;
 }
 
+/* 博客管理页面样式 -- 编辑或删除 */
+/* 模态框背景 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+/* 模态框内容 */
+.modal-content {
+    background-color: #fff;
+    border-radius: 8px;
+    width: 300px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+/* 标题样式 */
+.modal-content h3 {
+    margin-top: 0;
+    color: #333;
+}
+/* 按钮容器 */
+.modal-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+/* 按钮样式 */
+.modal-actions .btn-confirm,
+.modal-actions .btn-cancel {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+/* 确认按钮样式 */
+.modal-actions .btn-confirm {
+    background-color: #e63946;
+    color: white;
+}
+.modal-actions .btn-confirm:hover {
+    background-color: #d62839;
+}
+/* 取消按钮样式 */
+.modal-actions .btn-cancel {
+    background-color: #f1f1f1;
+    color: #333;
+}
+.modal-actions .btn-cancel:hover {
+    background-color: #ddd;
+}
+
+
 
 /* 账号设置页样式 */
 .settings-form {

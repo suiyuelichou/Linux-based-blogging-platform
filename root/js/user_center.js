@@ -24,10 +24,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // loadPageData('manage');
 });
 
-// document.addEventListener("DOMContentLoaded", () => {
-//     // loadPageData('profile'); // 默认加载个人资料页面
-//     loadPageData('manage');
-// });
+// 获取用户的头像和用户名
+function getCurrentUsername() {
+    $.ajax({
+        type: 'get',
+        url: 'get_current_user', // 这里的URL是你的服务器端API，用于获取当前用户
+        success: function(response) {
+            if (response.username) {
+                document.getElementById('avatar').src = response.avatar; // 替换用户头像
+                document.getElementById('username').innerHTML = response.username; // 替换用户名
+                // document.getElementById('article_count').innerHTML = response.article_count;
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('获取用户名失败:', status, error);
+        }
+    });
+}
+// 调用获取用户名的函数
+getCurrentUsername();
 
 function loadPageData(page) {
     fetch(`/${page}`, {
@@ -92,3 +107,49 @@ function updatePageContent(page, data) {
         }</div>`;
     }
 }
+
+// 编辑博客
+function editBlog(blogId) {
+    // 跳转到博客编辑页面，传递 blogId 参数
+    window.location.href = `blog_editor_modify.html?blogId=${blogId}`;
+}
+
+// 删除博客
+function deleteBlog(blogId) {
+    // 创建模态框
+    const modalHtml = `
+        <div id="confirmModal" class="modal">
+            <div class="modal-content">
+                <h3>确认删除</h3>
+                <p>确定要删除这篇博客吗？此操作无法撤销。</p>
+                <div class="modal-actions">
+                    <button class="btn-confirm" onclick="confirmDelete(${blogId})">确认</button>
+                    <button class="btn-cancel" onclick="closeModal()">取消</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+function confirmDelete(blogId) {
+    fetch(`/delete_blog`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blogId }),
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('删除成功');
+            closeModal();
+            loadPageData('manage'); // 重新加载博客管理页面
+        } else {
+            alert('删除失败');
+        }
+    })
+    .catch(error => console.error('删除博客失败:', error));
+}
+function closeModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.remove();
+}
+
