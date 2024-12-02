@@ -266,7 +266,10 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char *text)
     {
         m_method = POST;
         cgi = 1;
-    }else if(strcasecmp(method, "PATCH") == 0){
+    }else if(strcasecmp(method, "DELETE") == 0){
+        m_method = DELETE;
+    }
+    else if(strcasecmp(method, "PATCH") == 0){
         m_method = PATCH;
     }
     else
@@ -654,6 +657,63 @@ http_conn::HTTP_CODE http_conn::do_request()
 
                 tool.modify_blog_by_blogid(blog);
 
+                return REDIRECT_USER_HOME;
+            }else{
+                return BAD_REQUEST;
+            }
+        }
+    }
+    // 这里用来判断是否删除用户指定的博客
+    else if(m_method == DELETE && strstr(m_url, "/delete_blog?blogId=") != nullptr){
+        // 解析 blogId
+        const char* blogIdStart = strstr(m_url, "blogId=");
+        if (blogIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+        
+        int blogId = atoi(blogIdStart + 7);
+        if (blogId <= 0) {
+            return BAD_REQUEST;
+        }
+
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(cookie.validateSession(username, session_id)){
+            // 获取userId
+            sql_blog_tool tool;
+            int userid = tool.get_userid(username);
+            int userId = tool.get_userid_by_blogid(blogId);
+
+            // 判断用户删除的是不是自己的博客
+            if(userid == userId){
+                tool.delete_blog_by_blogid(blogId);
+                return REDIRECT_USER_HOME;
+            }else{
+                return BAD_REQUEST;
+            }
+        }
+    }
+    // 这里用来判断是否修改用户密码
+    else if(m_method == PATCH && strstr(m_url, "/update_password") != nullptr){
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(cookie.validateSession(username, session_id)){
+            // 获取userId
+            sql_blog_tool tool;
+            int userid = tool.get_userid(username);
+
+            string body = url_decode(m_string);
+            auto post_data = parse_post_data(body);
+
+            string old_password = post_data["oldPassword"];
+            string new_password = post_data["newPassword"];
+
+            // 这里是用来检测用户输入的旧密码对不对
+            if(users[username] == old_password){
+                tool.modify_password_by_username(username, new_password);
+                users[username] = new_password;
                 return REDIRECT_USER_HOME;
             }else{
                 return BAD_REQUEST;

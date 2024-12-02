@@ -389,6 +389,63 @@ void sql_blog_tool::modify_blog_by_blogid(Blog blog)
     mysql_stmt_close(stmt);
 }
 
+// 通过博客id删除指定博客
+void sql_blog_tool::delete_blog_by_blogid(int blogid)
+{
+    connection_pool* pool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII con(&mysql, pool);
+
+    // 设置连接字符集
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 删除博客的 SQL 查询
+    const char* query = "DELETE FROM blog WHERE blogId = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return;
+    }
+
+    // 准备 SQL 语句
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 绑定查询参数
+    MYSQL_BIND bind_param[1];
+    memset(bind_param, 0, sizeof(bind_param));
+
+    bind_param[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_param[0].buffer = (char*)&blogid;
+
+    if (mysql_stmt_bind_param(stmt, bind_param)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 执行 SQL 语句（删除操作）
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 判断删除是否成功
+    if (mysql_stmt_affected_rows(stmt) > 0) {
+        cout << "博客 ID " << blogid << " 删除成功!" << endl;
+    } else {
+        cout << "未找到博客 ID " << blogid << "，删除失败!" << endl;
+    }
+
+    // 关闭 SQL 语句
+    mysql_stmt_close(stmt);
+}
+
 
 // 通过用户id获取用户信息
 User sql_blog_tool::get_userdata_by_userid(int userid)
@@ -727,6 +784,62 @@ int sql_blog_tool::get_userid(string username)
 	return userid;
 }
 
+// 通过用户名修改用户密码
+void sql_blog_tool::modify_password_by_username(string username, string password) {
+    // 获取连接池实例并获取 MySQL 连接
+    connection_pool* pool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII con(&mysql, pool);
+
+    // 设置字符集，防止乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 准备 SQL 查询语句
+    const char* query = "UPDATE user SET password = ? WHERE username = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed: " << mysql_error(mysql) << endl;
+        return;
+    }
+
+    // 预处理 SQL 语句
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 准备绑定参数
+    MYSQL_BIND bind_param[2];
+    memset(bind_param, 0, sizeof(bind_param));
+
+    // 绑定密码参数
+    bind_param[0].buffer_type = MYSQL_TYPE_STRING;
+    bind_param[0].buffer = (char*)password.c_str();
+    bind_param[0].buffer_length = password.length();
+
+    // 绑定用户名参数
+    bind_param[1].buffer_type = MYSQL_TYPE_STRING;
+    bind_param[1].buffer = (char*)username.c_str();
+    bind_param[1].buffer_length = username.length();
+
+    // 绑定参数到语句
+    if (mysql_stmt_bind_param(stmt, bind_param)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 执行语句
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+    } else {
+        cout << "密码修改成功！" << endl;
+    }
+
+    // 清理
+    mysql_stmt_close(stmt);
+}
 /*
  *下面的内容为用户类
 */

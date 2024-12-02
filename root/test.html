@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- 保留原有的头部内容 -->
+    <style>
+        /* 评论区样式 */
+        .comment-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 1000;
+            transition: background-color 0.3s ease;
+        }
+
+        .comment-toggle-btn:hover {
+            background-color: #45a049;
+        }
+
+        .comment-section {
+            position: fixed;
+            top: 100px;
+            right: -400px; /* 默认隐藏 */
+            width: 350px;
+            height: calc(100% - 150px);
+            background-color: white;
+            border-left: 1px solid #e0e0e0;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 999;
+        }
+
+        .comment-section.open {
+            right: 0;
+        }
+
+        .comment-input {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .submit-comment-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .comment-list {
+            margin-top: 20px;
+        }
+
+        .single-comment {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+
+        .comment-author {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .comment-content {
+            color: #333;
+        }
+
+        .comment-date {
+            color: #888;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 在页面底部添加评论切换按钮 -->
+    <button class="comment-toggle-btn">💬 评论</button>
+
+    <!-- 评论区 -->
+    <div class="comment-section">
+        <!-- 评论输入区域 -->
+        <div class="comment-input-container">
+            <textarea class="comment-input" rows="4" placeholder="请输入您的评论..."></textarea>
+            <button class="submit-comment-btn">发布评论</button>
+        </div>
+
+        <!-- 评论列表 -->
+        <div class="comment-list">
+            <!-- 这里将动态加载评论 -->
+        </div>
+    </div>
+
+    <script>
+        // 评论区交互脚本
+        document.addEventListener('DOMContentLoaded', function() {
+            const commentToggleBtn = document.querySelector('.comment-toggle-btn');
+            const commentSection = document.querySelector('.comment-section');
+            const submitCommentBtn = document.querySelector('.submit-comment-btn');
+            const commentInput = document.querySelector('.comment-input');
+            const commentList = document.querySelector('.comment-list');
+
+            // 切换评论区显示/隐藏
+            commentToggleBtn.addEventListener('click', function() {
+                commentSection.classList.toggle('open');
+            });
+
+            // 发布评论
+            submitCommentBtn.addEventListener('click', function() {
+                const commentText = commentInput.value.trim();
+                if (commentText) {
+                    $.ajax({
+                        type: 'POST',
+                        url: 'comment', // 替换为您的后端评论提交接口
+                        data: {
+                            blogId: getBlogId(), // 获取当前博客ID的函数
+                            content: commentText
+                        },
+                        success: function(response) {
+                            // 添加新评论到列表
+                            addCommentToList(response);
+                            commentInput.value = ''; // 清空输入框
+                        },
+                        error: function(xhr, status, error) {
+                            alert('评论发布失败，请稍后重试');
+                        }
+                    });
+                }
+            });
+
+            // 获取评论列表
+            function fetchComments() {
+                $.ajax({
+                    type: 'GET',
+                    url: 'comments' + location.search, // 获取当前博客的评论
+                    success: function(comments) {
+                        commentList.innerHTML = ''; // 清空现有评论
+                        comments.forEach(addCommentToList);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('获取评论失败:', error);
+                    }
+                });
+            }
+
+            // 添加评论到列表
+            function addCommentToList(comment) {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('single-comment');
+                commentElement.innerHTML = `
+                    <div class="comment-author">${comment.username || '匿名用户'}</div>
+                    <div class="comment-content">${comment.content}</div>
+                    <div class="comment-date">${comment.commentTime || new Date().toLocaleString()}</div>
+                `;
+                commentList.prepend(commentElement);
+            }
+
+            // 获取博客ID的辅助函数
+            function getBlogId() {
+                const urlParams = new URLSearchParams(location.search);
+                return urlParams.get('id');
+            }
+
+            // 页面加载时获取评论
+            fetchComments();
+        });
+    </script>
+</body>
+</html>
