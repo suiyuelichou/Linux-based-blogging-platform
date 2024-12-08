@@ -60,6 +60,31 @@ private:
 	string m_bolg_postTime;			// 博客发布时间
 };
 
+// 评论类，用于存储每条博客里的用户评论
+class Comments{
+public:
+	void set_comment_id(int comment_id);
+	int get_comment_id();
+	void set_blog_id(int blog_id);
+	int get_blog_id();
+	void set_username(string username);
+	string get_username();
+	void set_content(string content);
+	string get_content();
+	void set_parent_id(int parent_id);
+	int get_parent_id();
+	void set_comment_time(string comment_time);
+	string get_comment_time();
+
+private:
+	int m_comment_id;
+	int m_blog_id;
+	string m_username;
+	string m_content;
+	int m_parent_id;
+	string m_comment_time;
+};
+
 // 对blog和user表进行数据库操作
 class sql_blog_tool{
 public:
@@ -70,6 +95,8 @@ public:
 	int get_userid_by_blogid(int blogid);				// 通过博客id获取对应的用户id
 	void modify_blog_by_blogid(Blog blog);				// 通过博客id修改博客的标题和内容
 	void delete_blog_by_blogid(int blogid);				// 通过博客id删除指定博客
+	vector<Comments> get_comments_by_blogid(int blogid);		// 通过博客id获取对应的评论内容
+	void add_comment_by_blogid(Comments comment);		// 通过博客id插入评论
 	User get_userdata_by_userid(int userid); 			// 通过用户id获取用户信息
 	vector<Blog> get_blogs_by_userid(int userid);	// 通过用户id获取该用户的所有博客
 	void insert_blog(Blog blog);						// 将用户post过来的博客内容存储数据库

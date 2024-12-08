@@ -446,6 +446,173 @@ void sql_blog_tool::delete_blog_by_blogid(int blogid)
     mysql_stmt_close(stmt);
 }
 
+// 通过博客id获取对应的评论内容
+vector<Comments> sql_blog_tool::get_comments_by_blogid(int blogid)
+{
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII msqlcon(&mysql, connpool);
+
+    // 设置连接字符集
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理 SQL 查询语句
+    const char* query = "SELECT username, content, comment_time FROM blog_comments WHERE blog_id = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return {};
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return {};
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind_param[1];
+    memset(bind_param, 0, sizeof(bind_param));
+
+    bind_param[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_param[0].buffer = (char*)&blogid;
+
+    if (mysql_stmt_bind_param(stmt, bind_param)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return {};
+    }
+
+    // 执行查询
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return {};
+    }
+
+    // 获取结果元信息
+    MYSQL_RES* prepare_meta_result = mysql_stmt_result_metadata(stmt);
+    if (!prepare_meta_result) {
+        cerr << "mysql_stmt_result_metadata() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return {};
+    }
+
+    // 绑定结果
+    MYSQL_BIND bind_result[3];
+    memset(bind_result, 0, sizeof(bind_result));
+
+    char username[256];
+    char content[1024];
+    char comment_time[20];
+
+    bind_result[0].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[0].buffer = username;
+    bind_result[0].buffer_length = sizeof(username);
+
+    bind_result[1].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[1].buffer = content;
+    bind_result[1].buffer_length = sizeof(content);
+
+    bind_result[2].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[2].buffer = comment_time;
+    bind_result[2].buffer_length = sizeof(comment_time);
+
+    if (mysql_stmt_bind_result(stmt, bind_result)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_free_result(prepare_meta_result);
+        mysql_stmt_close(stmt);
+        return {};
+    }
+
+    // 获取结果并存储到 vector
+    vector<Comments> comments_list;
+
+    while (mysql_stmt_fetch(stmt) == 0) {
+        Comments comment;
+        comment.set_username(string(username));
+        comment.set_content(string(content));
+        comment.set_comment_time(string(comment_time));
+        comments_list.push_back(comment);
+    }
+
+    // 释放资源
+    mysql_free_result(prepare_meta_result);
+    mysql_stmt_close(stmt);
+
+    return comments_list;
+}
+
+// 通过博客id插入评论
+void sql_blog_tool::add_comment_by_blogid(Comments comment)
+{
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII msqlcon(&mysql, connpool);
+
+    // 设置连接字符集
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理 SQL 插入语句
+    const char* query = "INSERT INTO blog_comments (blog_id, username, content, comment_time) VALUES (?, ?, ?, ?)";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return;
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind_param[4];
+    memset(bind_param, 0, sizeof(bind_param));
+
+    int blog_id = comment.get_blog_id();
+    const string& username = comment.get_username();
+    const string& content = comment.get_content();
+    const string& comment_time = comment.get_comment_time();
+
+    bind_param[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_param[0].buffer = (char*)&blog_id;
+
+    bind_param[1].buffer_type = MYSQL_TYPE_STRING;
+    bind_param[1].buffer = (char*)username.c_str();
+    bind_param[1].buffer_length = username.length();
+
+    bind_param[2].buffer_type = MYSQL_TYPE_STRING;
+    bind_param[2].buffer = (char*)content.c_str();
+    bind_param[2].buffer_length = content.length();
+
+    bind_param[3].buffer_type = MYSQL_TYPE_STRING;
+    bind_param[3].buffer = (char*)comment_time.c_str();
+    bind_param[3].buffer_length = comment_time.length();
+
+    if (mysql_stmt_bind_param(stmt, bind_param)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 执行插入
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return;
+    }
+
+    // 打印插入成功信息（可选）
+    cout << "Comment successfully added for blog ID: " << blog_id << endl;
+
+    // 释放资源
+    mysql_stmt_close(stmt);
+}
+
 
 // 通过用户id获取用户信息
 User sql_blog_tool::get_userdata_by_userid(int userid)
@@ -840,6 +1007,8 @@ void sql_blog_tool::modify_password_by_username(string username, string password
     // 清理
     mysql_stmt_close(stmt);
 }
+
+
 /*
  *下面的内容为用户类
 */
@@ -966,4 +1135,68 @@ void Blog::set_blog_postTime(string blog_postTime){
 string Blog::get_blog_postTime()
 {
     return this->m_bolg_postTime;
+}
+
+
+/*
+ *下面的内容为评论类
+*/
+void Comments::set_comment_id(int comment_id)
+{
+    this->m_comment_id = comment_id;
+}
+
+int Comments::get_comment_id()
+{
+    return this->m_comment_id;
+}
+
+void Comments::set_blog_id(int blog_id)
+{
+    this->m_blog_id = blog_id;
+}
+
+int Comments::get_blog_id()
+{
+    return this->m_blog_id;
+}
+
+void Comments::set_username(string username)
+{
+    this->m_username = username;
+}
+
+string Comments::get_username()
+{
+    return this->m_username;
+}
+
+void Comments::set_content(string content)
+{
+    this->m_content = content;
+}
+
+string Comments::get_content()
+{
+    return this->m_content;
+}
+
+void Comments::set_parent_id(int parent_id)
+{
+    this->m_parent_id = parent_id;
+}
+
+int Comments::get_parent_id()
+{
+    return this->m_parent_id;
+}
+
+void Comments::set_comment_time(string comment_time)
+{
+    this->m_comment_time = comment_time;
+}
+
+string Comments::get_comment_time()
+{
+    return this->m_comment_time;
 }

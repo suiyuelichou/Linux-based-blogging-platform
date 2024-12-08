@@ -108,26 +108,26 @@ function updatePageContent(page, data) {
     // 消息中心
     else if (page === 'messages') {
         // // 模拟消息数据
-        // const mockMessages = [
-        //     {
-        //         type: '系统消息',
-        //         content: '您的账号已成功注册。',
-        //         time: '2024-11-28 10:00'
-        //     },
-        //     {
-        //         type: '评论提醒',
-        //         content: '用户“张三”评论了您的博客《如何学习JavaScript》。',
-        //         time: '2024-11-27 14:45'
-        //     },
-        //     {
-        //         type: '系统消息',
-        //         content: '您的博客《C++入门》已发布成功。',
-        //         time: '2024-11-26 09:30'
-        //     }
-        // ];
+        const mockMessages = [
+            {
+                type: '系统消息',
+                content: '您的账号已成功注册。',
+                time: '2024-11-28 10:00'
+            },
+            {
+                type: '评论提醒',
+                content: '用户“张三”评论了您的博客《如何学习JavaScript》。',
+                time: '2024-11-27 14:45'
+            },
+            {
+                type: '系统消息',
+                content: '您的博客《C++入门》已发布成功。',
+                time: '2024-11-26 09:30'
+            }
+        ];
 
         content.innerHTML = `<h2>消息中心</h2><div class="message-list">${
-            data.messages.map(msg => `
+            mockMessages.map(msg => `
                 <div class="message-item">
                     <h4>${msg.type}</h4>
                     <p>${msg.content}</p>

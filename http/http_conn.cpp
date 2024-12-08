@@ -891,6 +891,131 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         return BLOG_DETAIL;
     }
+    // 获取博客详情对应的评论内容
+    else if (strstr(m_url, "/get_blog_comments?blogId=") != nullptr) {
+        // 解析 blogId
+        const char* blogIdStart = strstr(m_url, "blogId=");
+        if (blogIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+        
+        int blogId = atoi(blogIdStart + 7);
+        if (blogId <= 0) {
+            return BAD_REQUEST;
+        }
+
+        // 添加转义字符处理函数
+        auto escapeJsonString = [](const string& input) {
+            string output;
+            for (char c : input) {
+                switch (c) {
+                    case '"': output += "\\\""; break;   // 双引号转义
+                    case '\\': output += "\\\\"; break;  // 反斜杠转义
+                    case '\b': output += "\\b"; break;   // 退格符
+                    case '\f': output += "\\f"; break;   // 换页符
+                    case '\n': output += "\\n"; break;   // 换行符
+                    case '\r': output += "\\r"; break;   // 回车符
+                    case '\t': output += "\\t"; break;   // 制表符
+                    default:
+                        // 处理其他不可打印字符
+                        if (iscntrl(c)) {
+                            char buf[8];
+                            snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
+                            output += buf;
+                        } else {
+                            output += c;
+                        }
+                }
+            }
+            return output;
+        };
+
+        sql_blog_tool tool;
+        vector<Comments> comments;
+        comments = tool.get_comments_by_blogid(blogId);
+
+        // 处理评论
+        jsonData = "{";
+        jsonData += "\"comments\": [";
+        for (int i = 0; i < comments.size(); ++i) {
+            Comments comment = comments[i];
+            string escapedContent = escapeJsonString(comment.get_content());
+
+            jsonData += "{";
+            jsonData += "\"username\": \"" + comment.get_username() + "\",";
+            jsonData += "\"content\": \"" + escapedContent + "\",";
+            jsonData += "\"comment_time\": \"" + comment.get_comment_time() + "\"";
+            jsonData += "}";
+
+            if (i != comments.size() - 1) {
+                jsonData += ",";
+            }
+        }
+        jsonData += "]";
+        jsonData += "}";
+
+        return BLOG_DETAIL;
+    }
+    // 发表评论
+    else if (strstr(m_url, "/add_comment") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id))
+             return BAD_REQUEST;
+
+        string post_body = url_decode(m_string);
+        auto post_data = parse_post_data(post_body);
+        
+        string blog_id = post_data["blogId"];
+        string content = post_data["content"];
+
+        // 添加转义字符处理函数
+        auto escapeJsonString = [](const string& input) {
+            string output;
+            for (char c : input) {
+                switch (c) {
+                    case '"': output += "\\\""; break;   // 双引号转义
+                    case '\\': output += "\\\\"; break;  // 反斜杠转义
+                    case '\b': output += "\\b"; break;   // 退格符
+                    case '\f': output += "\\f"; break;   // 换页符
+                    case '\n': output += "\\n"; break;   // 换行符
+                    case '\r': output += "\\r"; break;   // 回车符
+                    case '\t': output += "\\t"; break;   // 制表符
+                    default:
+                        // 处理其他不可打印字符
+                        if (iscntrl(c)) {
+                            char buf[8];
+                            snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
+                            output += buf;
+                        } else {
+                            output += c;
+                        }
+                }
+            }
+            return output;
+        };
+
+        string m_content = escapeJsonString(content);
+        // 获取系统时间
+        time_t now = time(nullptr);
+        tm* local_time = localtime(&now);
+        char buffer[100];
+        strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", local_time);
+        string postTime = string(buffer);
+
+        // 将评论插入评论表
+        Comments comment;
+        comment.set_username(username);
+        comment.set_blog_id(stoi(blog_id));
+        comment.set_content(content);
+        comment.set_comment_time(postTime);
+
+        sql_blog_tool tool;
+        tool.add_comment_by_blogid(comment);
+
+        return REDIRECT_HOME;
+    }
     // 返回当前登录的用户信息
     else if(strstr(m_url, "/get_current_user") != nullptr){
         string username = cookie.getCookie("username");
@@ -1419,6 +1544,13 @@ bool http_conn::process_write(HTTP_CODE ret)
         m_iv_count = 1;
         bytes_to_send = m_write_idx;
         return true;
+    }
+    case OK:
+    {
+        add_status_line(200, ok_200_title);
+        add_response("Content-Type: application/json\r\n"); // 因为是JSON字符串
+        add_headers(strlen(ok_200_title));
+
     }
     default:
         return false;

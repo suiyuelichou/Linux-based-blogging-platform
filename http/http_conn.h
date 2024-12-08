@@ -79,7 +79,8 @@ public:
         LOGIN_REQUEST,       // 登录请求
         REDIRECT,            // 重定向到登录界面
         REDIRECT_HOME,       // 重定向到游客主页面
-        REDIRECT_USER_HOME       // 重定向到用户主页面
+        REDIRECT_USER_HOME,       // 重定向到用户主页面
+        OK         // 返回一个请求成功
     };
 
     // 行状态
