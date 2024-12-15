@@ -107,34 +107,17 @@ function updatePageContent(page, data) {
 
     // 消息中心
     else if (page === 'messages') {
-        // // 模拟消息数据
-        const mockMessages = [
-            {
-                type: '系统消息',
-                content: '您的账号已成功注册。',
-                time: '2024-11-28 10:00'
-            },
-            {
-                type: '评论提醒',
-                content: '用户“张三”评论了您的博客《如何学习JavaScript》。',
-                time: '2024-11-27 14:45'
-            },
-            {
-                type: '系统消息',
-                content: '您的博客《C++入门》已发布成功。',
-                time: '2024-11-26 09:30'
-            }
-        ];
-
-        content.innerHTML = `<h2>消息中心</h2><div class="message-list">${
-            mockMessages.map(msg => `
-                <div class="message-item">
-                    <h4>${msg.type}</h4>
-                    <p>${msg.content}</p>
-                    <span class="time">${msg.time}</span>
-                </div>
-            `).join('')
-        }</div>`;
+        // content.innerHTML = `<h2>消息中心</h2><div class="message-list">${
+        //     mockMessages.map(msg => `
+        //         <div class="message-item">
+        //             <h4>${msg.type}</h4>
+        //             <p>${msg.content}</p>
+        //             <span class="time">${msg.time}</span>
+        //         </div>
+        //     `).join('')
+        // }</div>`;
+        MessageModel.fetchMessages();
+        MessageModel.updateMessageDisplay();
     }
 }
 
@@ -220,3 +203,174 @@ function savePasswordChange() {
         }
     });
 }
+
+// 消息中心
+// 消息数据模型
+const MessageModel = {
+    // 消息类型映射，用于处理服务器返回的不同类型的消息
+    TYPE_MAP: {
+        'system': '系统通知',
+        'comment': '评论通知',
+        'like': '点赞通知',
+        'follow': '关注通知'
+    },
+
+    // 消息数据
+    messages: [],
+
+    // 新增获取消息的方法
+    fetchMessages() {
+        fetch('/messages', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('获取消息失败');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 处理服务器返回的消息数据
+            this.messages = data.messages.map(msg => ({
+                id: msg.id,
+                type: this.TYPE_MAP[msg.type] || msg.type,
+                content: msg.content,
+                time: msg.postTime,
+                isRead: msg.isRead === '1', // 服务器返回的是字符串'0'或'1'
+                relatedLink: msg.relatedLink
+            }));
+            this.updateMessageDisplay();
+        })
+        .catch(error => {
+            console.error('获取消息错误:', error);
+            alert('无法获取消息，请稍后重试');
+        });
+    },
+
+    // 获取未读消息数量
+    getUnreadCount() {
+        return this.messages.filter(msg => !msg.isRead).length;
+    },
+
+    // 标记消息为已读
+    markAsRead(messageId) {
+        const message = this.messages.find(msg => msg.id === messageId);
+        if (message) {
+            // 发送标记已读的请求到服务器
+            fetch(`/mark_message_read?messageId=${messageId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    message.isRead = true;
+                    this.updateMessageDisplay();
+                } else {
+                    throw new Error('标记消息失败');
+                }
+            })
+            .catch(error => {
+                console.error('标记消息已读失败:', error);
+                alert('标记消息失败，请重试');
+            });
+        }
+    },
+
+    // 标记所有消息为已读
+    markAllAsRead() {
+        fetch('/mark_all_messages_read', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                this.messages.forEach(msg => msg.isRead = true);
+                this.updateMessageDisplay();
+            } else {
+                throw new Error('标记所有消息失败');
+            }
+        })
+        .catch(error => {
+            console.error('标记所有消息已读失败:', error);
+            alert('标记消息失败，请重试');
+        });
+    },
+
+    // 删除消息
+    deleteMessage(messageId) {
+        fetch(`/delete_message?messageId=${messageId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                const index = this.messages.findIndex(msg => msg.id === messageId);
+                if (index !== -1) {
+                    this.messages.splice(index, 1);
+                    this.updateMessageDisplay();
+                }
+            } else {
+                throw new Error('删除消息失败');
+            }
+        })
+        .catch(error => {
+            console.error('删除消息失败:', error);
+            alert('删除消息失败，请重试');
+        });
+    },
+
+    // 更新消息显示
+    updateMessageDisplay() {
+        const content = document.getElementById('content');
+        const unreadCount = this.getUnreadCount();
+    
+        content.innerHTML = `
+            <div class="message-center">
+                <div class="message-header">
+                    <h2>
+                        消息中心 
+                        <span class="unread-badge">${unreadCount > 0 ? `(${unreadCount}条未读)` : ''}</span>
+                    </h2>
+                </div>
+                <div class="message-controls">
+                    <button onclick="MessageModel.markAllAsRead()" class="mark-all-read-btn">
+                        全部标记为已读
+                    </button>
+                </div>
+                <div class="message-list">
+                    ${this.messages.length > 0 ? 
+                        this.messages.map(msg => `
+                            <div class="message-item ${msg.isRead ? 'read' : 'unread'}">
+                                <div class="message-header">
+                                    <h4>${msg.type}</h4>
+                                    <span class="time">${msg.time}</span>
+                                </div>
+                                <p>${msg.content}</p>
+                                <div class="message-actions">
+                                    ${!msg.isRead ? `<button onclick="MessageModel.markAsRead(${msg.id})">标记已读</button>` : ''}
+                                    ${msg.relatedLink ? `<a href="blog_detail_user.html?blogId=${msg.relatedLink}" class="view-link">查看详情</a>` : ''}
+                                    <button onclick="MessageModel.deleteMessage(${msg.id})">删除</button>
+                                </div>
+                            </div>
+                        `).join('') : 
+                        '<p class="no-messages">暂无新消息</p>'
+                    }
+                </div>
+            </div>
+        `;
+    }
+};
+
+// 在页面加载时初始化消息模型(这个可以删掉)
+document.addEventListener('DOMContentLoaded', function() {
+    // 如果需要，可以在这里添加额外的初始化逻辑
+});

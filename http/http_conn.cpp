@@ -956,7 +956,7 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         return BLOG_DETAIL;
     }
-    // 发表评论
+    // 发表评论-同时同步到信息表
     else if (strstr(m_url, "/add_comment") != nullptr) {
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
@@ -1013,6 +1013,20 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         sql_blog_tool tool;
         tool.add_comment_by_blogid(comment);
+
+        // 将评论信息插入消息表
+        Messages message;
+        int userid = tool.get_userid(username);
+        message.set_sender_id(userid);
+        message.set_blog_id(stoi(blog_id));
+        message.set_type("评论通知");
+        message.set_content(content);
+        message.set_post_time(postTime);
+        message.set_is_read(0);
+        int recipient_id = tool.get_userid_by_blogid(stoi(blog_id));
+        message.set_recipient_id(recipient_id);
+
+        tool.insert_new_message(message);
 
         return REDIRECT_HOME;
     }
@@ -1237,6 +1251,166 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         return BLOG_DATA;
         }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 个人中心-消息中心
+    else if (strstr(m_url, "/messages")){
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(cookie.validateSession(username, session_id)){
+            sql_blog_tool tool;
+            // 根据用户名获取用户id
+            int userid = tool.get_userid(username);
+
+            // 根据用户id获取该用户的全部消息
+            vector<Messages> messages;
+            messages = tool.get_messages_by_userid(userid);
+
+            // 添加转义字符处理函数
+            auto escapeJsonString = [](const string& input) {
+                string output;
+                for (char c : input) {
+                    switch (c) {
+                        case '"': output += "\\\""; break;   // 双引号转义
+                        case '\\': output += "\\\\"; break;  // 反斜杠转义
+                        case '\b': output += "\\b"; break;   // 退格符
+                        case '\f': output += "\\f"; break;   // 换页符
+                        case '\n': output += "\\n"; break;   // 换行符
+                        case '\r': output += "\\r"; break;   // 回车符
+                        case '\t': output += "\\t"; break;   // 制表符
+                        default:
+                            // 处理其他不可打印字符
+                            if (iscntrl(c)) {
+                                char buf[8];
+                                snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
+                                output += buf;
+                            } else {
+                                output += c;
+                            }
+                    }
+                }
+                return output;
+            };
+
+            // 构造 JSON 响应
+            jsonData = "{";
+            jsonData += "\"messages\": [";
+            for (int i = 0; i < messages.size(); i++) {
+                Messages message = messages[i];
+                string escapedContent = escapeJsonString(message.get_content());
+                jsonData += "{";
+                jsonData += "\"id\": " + to_string(message.get_message_id()) + ",";
+                jsonData += "\"type\": \"" + message.get_type() + "\",";
+                jsonData += "\"content\": \"" + message.get_content() + "\",";
+                jsonData += "\"postTime\": \"" + message.get_post_time() + "\",";
+                jsonData += "\"isRead\": \"" + to_string(message.get_is_read()) + "\",";
+                jsonData += "\"relatedLink\": \"" + to_string(message.get_blog_id()) + "\"";
+                jsonData += "}";
+                if (i < messages.size() - 1) jsonData += ",";
+            }
+            jsonData += "]";
+            jsonData += "}";
+
+            return BLOG_DATA;
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 个人中心-消息中心-标记单个消息为已读
+    else if (strstr(m_url, "/mark_message_read")){
+        // 解析 messageId
+        const char* messageIdStart = strstr(m_url, "messageId=");
+        if (messageIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+        
+        int messageId = atoi(messageIdStart + 10);
+        if (messageId <= 0) {
+            return BAD_REQUEST;
+        }
+
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+
+        if(cookie.validateSession(username, session_id) && tool.check_message_belongs_to_user(userid, messageId)){
+            // cout << 111 << endl;
+            // cout << messageId << endl;
+            // 标记消息为已读
+            bool success = tool.mark_message_as_read(messageId);
+
+            if(success){
+                jsonData = "{\"status\": \"success\"}";
+                return BLOG_DATA;
+            }else{
+                jsonData = "{\"status\": \"error\", \"message\": \"标记消息失败\"}";
+                return BAD_REQUEST;
+            }
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 个人中心-消息中心-标记所有消息为已读
+    else if (strstr(m_url, "/mark_all_messages_read")){
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+
+        if(cookie.validateSession(username, session_id)){
+            // 标记所有消息为已读
+            bool success = tool.mark_all_message_as_read(userid);
+
+            if(success){
+                jsonData = "{\"status\": \"success\"}";
+                return BLOG_DATA;
+            }else{
+                jsonData = "{\"status\": \"error\", \"message\": \"标记所有消息失败\"}";
+                return BAD_REQUEST;
+            }
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 个人中心-消息中心-删除指定消息
+    else if (strstr(m_url, "/delete_message")){
+        // 解析 messageId
+        const char* messageIdStart = strstr(m_url, "messageId=");
+        if (messageIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+        
+        int messageId = atoi(messageIdStart + 10);
+        if (messageId <= 0) {
+            return BAD_REQUEST;
+        }
+
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+
+        if(cookie.validateSession(username, session_id) && tool.check_message_belongs_to_user(userid, messageId)){
+            // cout << 111 << endl;
+            // cout << messageId << endl;
+            // 标记消息为已读
+            bool success = tool.delete_message(messageId);
+
+            if(success){
+                jsonData = "{\"status\": \"success\"}";
+                return BLOG_DATA;
+            }else{
+                jsonData = "{\"status\": \"error\", \"message\": \"删除消息失败\"}";
+                return BAD_REQUEST;
+            }
+        }
+        else{
             return BAD_REQUEST;
         }
     }

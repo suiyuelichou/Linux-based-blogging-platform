@@ -120,6 +120,7 @@ body {
     margin-left: 250px;
     height: calc(100vh - 50px); /* 设置高度，减去顶部导航栏 */
     overflow-y: auto; /* 添加滚动条 */
+    /* overflow: hidden; 隐藏外部滚动条 */
     padding: 30px;
     background-color: #fff;
 }
@@ -315,20 +316,119 @@ h2 {
     cursor: pointer;
 }
 
+
 /* 消息中心页样式 */
-.message-item {
-    background-color: #f8f9fa;
-    padding: 15px;
+.message-controls {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 10;
     margin-bottom: 15px;
-    border-radius: 8px;
+    text-align: right;
+    padding: 10px 0;
+    border-bottom: 1px solid #eaeaea;
 }
 
-.message-item h4 {
-    color: #2c3e50;
-    margin-bottom: 5px;
+.message-center {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* 确保占满可用高度，避免消息中心滚动条的出现 */
 }
 
-.message-item .time {
-    color: #7f8c8d;
+.message-list {
+    max-height: calc(100vh - 200px); /* 根据实际页面调整高度 */
+    overflow-y: auto;
+    padding-right: 10px; /* 为滚动条腾出空间 */
+}
+
+.mark-all-read-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
     font-size: 0.9em;
+    transition: background-color 0.3s;
+}
+
+.mark-all-read-btn:hover {
+    background-color: #2980b9;
+}
+
+.message-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.message-item.unread {
+    background-color: #f0f4f8;
+    border-left: 4px solid #3498db;
+}
+
+.message-item.read {
+    background-color: #f8f9fa;
+    border-left: 4px solid #7f8c8d;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.message-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.message-actions button,
+.message-actions .view-link {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    text-decoration: none;
+}
+
+.message-actions button:hover,
+.message-actions .view-link:hover {
+    background-color: #2980b9;
+}
+
+.no-messages {
+    text-align: center;
+    color: #7f8c8d;
+    padding: 20px;
+}
+
+.unread-badge {
+    color: #e74c3c;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
+
+/* 自定义滚动条样式 */
+.message-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.message-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.message-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
