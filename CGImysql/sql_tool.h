@@ -116,6 +116,25 @@ private:
 	bool m_is_read;		// 1:read	0：unread 默认为0
 };
 
+// 博客点赞类，用于存储用户对博客的点赞信息
+class Blog_like{
+public:
+	void set_like_id(int like_id);
+	int get_like_id();
+	void set_user_id(int user_id);
+	int get_user_id();
+	void set_blog_id(int blog_id);
+	int get_blog_id();
+	void set_like_time(string like_time);
+	string get_like_time();
+
+private:
+	int m_like_id;
+	int m_user_id;
+	int m_blog_id;
+	string m_like_time;
+};
+
 // 对blog和user表进行数据库操作
 class sql_blog_tool{
 public:
@@ -142,6 +161,11 @@ public:
 	bool delete_message(int messageid);					// 删除指定消息
 	bool insert_new_message(Messages message);			// 插入新消息
 
+	// 点赞相关
+	bool insert_new_blog_like(Blog_like blog_like);		// 插入新的博客点赞
+	bool remove_blog_like(int userid, int blogid);		// 删除博客点赞
+	int get_blog_likes_count(int blogid);				// 获取当前博客的点赞总数
+	bool is_user_liked_blog(int userid, int blog_id);	// 检测用户是否已经对该博客点赞
 
 
 public:

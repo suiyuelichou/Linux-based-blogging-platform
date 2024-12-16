@@ -1448,6 +1448,286 @@ bool sql_blog_tool::insert_new_message(Messages message)
     return true;
 }
 
+// 插入新的博客点赞
+bool sql_blog_tool::insert_new_blog_like(Blog_like blog_like)
+{
+    // 获取数据库连接池实例
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlconn(&mysql, connpool);
+
+    // 设置连接字符集，防止乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理SQL语句
+    const char* query = "INSERT INTO blog_likes (user_id, blog_id) VALUES (?, ?)";
+
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return false;
+    }
+
+    // 准备SQL语句
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind[2];
+    memset(bind, 0, sizeof(bind));
+
+    int user_id = blog_like.get_user_id();
+    int blog_id = blog_like.get_blog_id();
+
+    // 绑定 user_id
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = (char*)&user_id;
+    bind[0].is_null = 0;
+    bind[0].length = 0;
+
+    // 绑定 blog_id
+    bind[1].buffer_type = MYSQL_TYPE_LONG;
+    bind[1].buffer = (char*)&blog_id;
+    bind[1].is_null = 0;
+    bind[1].length = 0;
+
+    // 绑定参数到预处理语句
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 执行插入操作
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 清理
+    mysql_stmt_close(stmt);
+
+    return true;
+}
+
+// 删除博客点赞
+bool sql_blog_tool::remove_blog_like(int user_id, int blog_id)
+{
+    // 获取数据库连接池实例
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlconn(&mysql, connpool);
+
+    // 设置连接字符集，防止乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理SQL语句
+    const char* query = "DELETE FROM blog_likes WHERE user_id = ? AND blog_id = ?";
+
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return false;
+    }
+
+    // 准备SQL语句
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind[2];
+    memset(bind, 0, sizeof(bind));
+
+    // 绑定 user_id
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = (char*)&user_id;
+    bind[0].is_null = 0;
+    bind[0].length = 0;
+
+    // 绑定 blog_id
+    bind[1].buffer_type = MYSQL_TYPE_LONG;
+    bind[1].buffer = (char*)&blog_id;
+    bind[1].is_null = 0;
+    bind[1].length = 0;
+
+    // 绑定参数到预处理语句
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 执行删除操作
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 清理
+    mysql_stmt_close(stmt);
+
+    return true;
+}
+
+// 获取当前博客的点赞总数
+int sql_blog_tool::get_blog_likes_count(int blog_id)
+{
+    // 获取数据库连接池实例
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlconn(&mysql, connpool);
+
+    // 设置连接字符集，防止乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理SQL语句，查询点赞数
+    const char* query = "SELECT COUNT(*) FROM blog_likes WHERE blog_id = ?";
+
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return -1;
+    }
+
+    // 准备SQL语句
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind[1];
+    memset(bind, 0, sizeof(bind));
+
+    // 绑定 blog_id
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = (char*)&blog_id;
+    bind[0].is_null = 0;
+    bind[0].length = 0;
+
+    // 绑定参数到预处理语句
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 执行查询操作
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 绑定结果
+    MYSQL_BIND result_bind[1];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    int like_count = 0;
+
+    result_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[0].buffer = (char*)&like_count;
+    result_bind[0].is_null = 0;
+    result_bind[0].length = 0;
+
+    if (mysql_stmt_bind_result(stmt, result_bind)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 获取结果
+    if (mysql_stmt_fetch(stmt)) {
+        cerr << "mysql_stmt_fetch() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 清理
+    mysql_stmt_close(stmt);
+
+    return like_count;
+}
+
+// 检测用户是否已经对该博客点赞
+bool sql_blog_tool::is_user_liked_blog(int user_id, int blog_id) {
+
+    // 获取数据库连接池实例
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlconn(&mysql, connpool);
+
+    // 设置连接字符集，防止乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    const char* query = "SELECT COUNT(*) FROM blog_likes WHERE user_id = ? AND blog_id = ?";
+    
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return false;
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    MYSQL_BIND bind[2];
+    memset(bind, 0, sizeof(bind));
+
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = (char*)&user_id;
+
+    bind[1].buffer_type = MYSQL_TYPE_LONG;
+    bind[1].buffer = (char*)&blog_id;
+
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    int like_count = 0;
+    MYSQL_BIND result_bind[1];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    result_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[0].buffer = (char*)&like_count;
+
+    if (mysql_stmt_bind_result(stmt, result_bind)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    if (mysql_stmt_fetch(stmt)) {
+        cerr << "mysql_stmt_fetch() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    mysql_stmt_close(stmt);
+
+    return like_count > 0;
+}
+
 
 /*
  *下面的内容为用户类
@@ -1724,4 +2004,48 @@ void Messages::set_is_read(bool is_read)
 bool Messages::get_is_read()
 {
     return this->m_is_read;
+}
+
+
+/*
+ *下面的内容为博客点赞类
+*/
+void Blog_like::set_like_id(int like_id)
+{
+    this->m_like_id = like_id;
+}
+
+int Blog_like::get_like_id()
+{
+    return this->m_like_id;
+}
+
+void Blog_like::set_user_id(int user_id)
+{
+    this->m_user_id = user_id;
+}
+
+int Blog_like::get_user_id()
+{
+    return this->m_user_id;
+}
+
+void Blog_like::set_blog_id(int blog_id)
+{
+    this->m_blog_id = blog_id;
+}
+
+int Blog_like::get_blog_id()
+{
+    return this->m_blog_id;
+}
+
+void Blog_like::set_like_time(string like_time)
+{
+    this->m_like_time = like_time;
+}
+
+string Blog_like::get_like_time()
+{
+    return this->m_like_time;
 }

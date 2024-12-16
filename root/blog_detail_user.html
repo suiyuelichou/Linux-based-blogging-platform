@@ -292,5 +292,92 @@
             fetchComments();
         });
     </script>
+
+    <!-- 点赞区 -->
+    <button class="like-toggle-btn">❤️ 点赞</button>
+
+    <div class="like-section">
+        <div class="like-like-handle"></div>
+
+        <div class="like-count-container">
+            <span>点赞数</span>
+            <span class="like-count">0</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        const likeToggleBtn = document.querySelector('.like-toggle-btn');
+        const likeCountDisplay = document.querySelector('.like-count');
+        
+        let isLiked = false;
+        let likeCount = parseInt(likeCountDisplay.textContent) || 0;
+
+        function getBlogId() {
+            const urlParams = new URLSearchParams(location.search);
+            return urlParams.get('blogId');
+        }
+
+        // 检查点赞状态的函数
+        function checkIfLiked() {
+            $.ajax({
+                type: 'GET',
+                url: 'check_blog_like',
+                data: {
+                    blogId: getBlogId()
+                },
+                success: function(response) {
+                    // 检查 success 属性
+                    if (response.success) {
+                        // isLiked 为 0 表示未点赞，1 表示已点赞
+                        isLiked = response.isLiked === 1;
+                        likeCount = response.likeCount;
+                        likeCountDisplay.textContent = likeCount;
+                        likeToggleBtn.textContent = isLiked ? '❤️ 取消点赞' : '❤️ 点赞';
+                    } else {
+                        alert('获取点赞状态失败，请稍后重试');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('获取点赞状态失败，请稍后重试');
+                }
+            });
+        }
+
+        // 点赞功能
+        likeToggleBtn.addEventListener('click', function() {
+            $.ajax({
+                type: 'POST',
+                url: 'like_blog',
+                data: {
+                    blogId: getBlogId(),
+                    action: isLiked ? 'unlike' : 'like'
+                },
+                success: function(response) {
+                    // 检查 status 属性
+                    if (response.status === 'success') {
+                        // 切换点赞状态
+                        isLiked = !isLiked;
+                        // 更新点赞数
+                        likeCount = response.likeCount;
+                        likeCountDisplay.textContent = likeCount;
+                        
+                        // 更新按钮显示文本
+                        likeToggleBtn.textContent = isLiked ? '❤️ 取消点赞' : '❤️ 点赞';
+                    } else {
+                        alert('操作失败，请稍后重试');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('网络请求失败');
+                }
+            });
+        });
+
+        // 初始化页面时检查点赞状态
+        checkIfLiked();
+    });
+    </script>
+
 </body>
 </html>

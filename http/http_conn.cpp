@@ -956,7 +956,7 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         return BLOG_DETAIL;
     }
-    // 发表评论-同时同步到信息表
+    // 发表评论-同时同步该消息到信息表
     else if (strstr(m_url, "/add_comment") != nullptr) {
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
@@ -1029,6 +1029,99 @@ http_conn::HTTP_CODE http_conn::do_request()
         tool.insert_new_message(message);
 
         return REDIRECT_HOME;
+    }
+    // 博客详情-点赞-检查用户是否已经点赞
+    else if (strstr(m_url, "/check_blog_like") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id))
+            return BAD_REQUEST;
+
+        // 解析 blogId
+        const char* blogIdStart = strstr(m_url, "blogId=");
+        if (blogIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+        
+        int blog_id = atoi(blogIdStart + 7);
+        if (blog_id <= 0) {
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+
+        // 查询当前用户对该博客的点赞状态
+        bool isLiked = tool.is_user_liked_blog(userid, blog_id);
+        int likeCount = tool.get_blog_likes_count(blog_id);
+
+        jsonData = "{\"success\": true, \"isLiked\": " + to_string(isLiked) + ", \"likeCount\": " + to_string(likeCount) + "}";
+        return BLOG_DATA;
+    }
+    // 博客详情-点赞
+    else if (strstr(m_url, "/like_blog") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        // 验证用户的会话
+        if (!cookie.validateSession(username, session_id))
+            return BAD_REQUEST;
+
+        // 解析POST请求体
+        string post_body = url_decode(m_string);
+        auto post_data = parse_post_data(post_body);
+
+        string blog_id = post_data["blogId"];
+        string action = post_data["action"];  // like 或 unlike
+
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+
+        bool success = false;
+        if (action == "like") {
+            // 判断用户是否已点赞过
+            bool already_liked = tool.is_user_liked_blog(userid, stoi(blog_id));
+
+            if (!already_liked) {
+                // 用户未点赞，进行点赞操作
+                Blog_like like;
+                like.set_user_id(userid);
+                like.set_blog_id(stoi(blog_id));
+
+                success = tool.insert_new_blog_like(like);
+            } else {
+                // 用户已经点赞过，返回错误
+                jsonData = "{\"status\": \"error\", \"message\": \"你已经点赞过此博客\"}";
+                return BLOG_DATA;
+            }
+
+        } else if (action == "unlike") {
+            // 判断用户是否已点赞
+            bool already_liked = tool.is_user_liked_blog(userid, stoi(blog_id));
+
+            if (already_liked) {
+                // 用户已点赞，进行取消点赞操作
+                success = tool.remove_blog_like(userid, stoi(blog_id));
+            } else {
+                // 用户没有点赞过，返回错误
+                jsonData = "{\"status\": \"error\", \"message\": \"你尚未点赞此博客\"}";
+                return BLOG_DATA;
+            }
+        }
+
+        // 返回响应
+        if (success) {
+            // 获取更新后的点赞数
+            int new_like_count = tool.get_blog_likes_count(stoi(blog_id));
+
+            jsonData = "{\"status\": \"success\", \"likeCount\": " + to_string(new_like_count) + "}";
+            return BLOG_DATA;
+        } else {
+            // 处理失败，返回错误信息
+            jsonData = "{\"status\": \"error\", \"message\": \"操作失败，请稍后重试\"}";
+            return BAD_REQUEST;
+        }
     }
     // 返回当前登录的用户信息
     else if(strstr(m_url, "/get_current_user") != nullptr){
