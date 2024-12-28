@@ -141,7 +141,10 @@
     <!-- 下面是评论区的代码 -->
 
     <!-- 在页面底部添加评论切换按钮 -->
-    <button class="comment-toggle-btn">💬 评论</button>
+    <div class="comment-container">
+        <span class="comment-count">0</span>
+        <button class="comment-toggle-btn">💬 评论</button>
+    </div>
 
     <!-- 评论区 -->
     <div class="comment-section">
@@ -165,6 +168,7 @@
             const submitCommentBtn = document.querySelector('.submit-comment-btn');
             const commentInput = document.querySelector('.comment-input');
             const commentList = document.querySelector('.comment-list');
+            const commentCountElement = document.querySelector('.comment-count');
 
             // 创建调整大小的手柄
             const resizeHandle = document.createElement('div');
@@ -245,11 +249,17 @@
                         commentList.innerHTML = ''; // 清空现有评论
                         const comments = response.comments || [];
                         comments.forEach(addCommentToList);
+
+                        updateCommentCount(comments.length);
                     },
                     error: function(xhr, status, error) {
                         console.error('获取评论失败:', error);
                     }
                 });
+            }
+
+            function updateCommentCount(count){
+                commentCountElement.textContent = count;
             }
 
             // 添加评论到列表
@@ -273,6 +283,56 @@
             // 页面加载时获取评论
             fetchComments();
         });
+    </script>
+
+    <!-- 点赞区 -->
+    <div class="like-container">
+        <span class="like-count">0</span>
+        <button class="like-toggle-btn">❤️ 点赞</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        const likeToggleBtn = document.querySelector('.like-toggle-btn');
+        const likeCountDisplay = document.querySelector('.like-count');
+        
+        let likeCount = parseInt(likeCountDisplay.textContent) || 0;
+
+        function getBlogId() {
+            const urlParams = new URLSearchParams(location.search);
+            return urlParams.get('blogId');
+        }
+
+        // 获取总点赞数
+        function checkLikeCount() {
+            $.ajax({
+                type: 'GET',
+                url: 'get_blog_likes_count',
+                data: {
+                    blogId: getBlogId()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        likeCount = response.likeCount;  // 获取总点赞数
+                        likeCountDisplay.textContent = likeCount;  // 更新显示的点赞数
+                    } else {
+                        alert('获取点赞状态失败，请稍后重试');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('获取点赞状态失败，请稍后重试');
+                }
+            });
+        }
+
+        // 点赞按钮点击事件（提示游客登录）
+        likeToggleBtn.addEventListener('click', function() {
+            alert('请登录后点赞');
+        });
+
+        // 初始化页面时获取总点赞数
+        checkLikeCount();
+    });
     </script>
 </body>
 </html>

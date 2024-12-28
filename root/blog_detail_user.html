@@ -141,7 +141,11 @@
     <!-- 下面是评论区的代码 -->
 
     <!-- 在页面底部添加评论切换按钮 -->
-    <button class="comment-toggle-btn">💬 评论</button>
+    
+    <div class="comment-container">
+        <span class="comment-count">0</span>
+        <button class="comment-toggle-btn">💬 评论</button>
+    </div>
 
     <!-- 评论区 -->
     <div class="comment-section">
@@ -165,6 +169,7 @@
             const submitCommentBtn = document.querySelector('.submit-comment-btn');
             const commentInput = document.querySelector('.comment-input');
             const commentList = document.querySelector('.comment-list');
+            const commentCountElement = document.querySelector('.comment-count');   
 
             // 创建调整大小的手柄
             const resizeHandle = document.createElement('div');
@@ -254,7 +259,7 @@
                 }
             });
 
-            // 获取评论列表
+            // 获取评论列表和更新评论总数
             function fetchComments() {
                 $.ajax({
                     type: 'GET',
@@ -263,11 +268,17 @@
                         commentList.innerHTML = ''; // 清空现有评论
                         const comments = response.comments || [];
                         comments.forEach(addCommentToList);
+
+                        updateCommentCount(comments.length);
                     },
                     error: function(xhr, status, error) {
                         console.error('获取评论失败:', error);
                     }
                 });
+            }
+
+            function updateCommentCount(count){
+                commentCountElement.textContent = count;
             }
 
             // 添加评论到列表
@@ -294,15 +305,9 @@
     </script>
 
     <!-- 点赞区 -->
-    <button class="like-toggle-btn">❤️ 点赞</button>
-
-    <div class="like-section">
-        <div class="like-like-handle"></div>
-
-        <div class="like-count-container">
-            <span>点赞数</span>
-            <span class="like-count">0</span>
-        </div>
+    <div class="like-container">
+        <span class="like-count">0</span>
+        <button class="like-toggle-btn">❤️ 点赞</button>
     </div>
 
     <script>
@@ -333,7 +338,7 @@
                         isLiked = response.isLiked === 1;
                         likeCount = response.likeCount;
                         likeCountDisplay.textContent = likeCount;
-                        likeToggleBtn.textContent = isLiked ? '❤️ 取消点赞' : '❤️ 点赞';
+                        likeToggleBtn.textContent = isLiked ? '❤️ 取消' : '❤️ 点赞';
                     } else {
                         alert('获取点赞状态失败，请稍后重试');
                     }
@@ -363,7 +368,7 @@
                         likeCountDisplay.textContent = likeCount;
                         
                         // 更新按钮显示文本
-                        likeToggleBtn.textContent = isLiked ? '❤️ 取消点赞' : '❤️ 点赞';
+                        likeToggleBtn.textContent = isLiked ? '❤️ 取消' : '❤️ 点赞';
                     } else {
                         alert('操作失败，请稍后重试');
                     }

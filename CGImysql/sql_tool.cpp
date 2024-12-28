@@ -1728,6 +1728,86 @@ bool sql_blog_tool::is_user_liked_blog(int user_id, int blog_id) {
     return like_count > 0;
 }
 
+// 获取当前博客的评论总数
+int sql_blog_tool::get_blog_comments_count(int blogid)
+{
+    // 获取数据库连接池实例
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlconn(&mysql, connpool);
+
+    // 设置连接字符集，防止乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理SQL语句，查询点赞数
+    const char* query = "SELECT COUNT(*) FROM blog_comments WHERE blog_id = ?";
+
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return -1;
+    }
+
+    // 准备SQL语句
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind[1];
+    memset(bind, 0, sizeof(bind));
+
+    // 绑定 blog_id
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = (char*)&blogid;
+    bind[0].is_null = 0;
+    bind[0].length = 0;
+
+    // 绑定参数到预处理语句
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 执行查询操作
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 绑定结果
+    MYSQL_BIND result_bind[1];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    int comment_count = 0;
+
+    result_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[0].buffer = (char*)&comment_count;
+    result_bind[0].is_null = 0;
+    result_bind[0].length = 0;
+
+    if (mysql_stmt_bind_result(stmt, result_bind)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 获取结果
+    if (mysql_stmt_fetch(stmt)) {
+        cerr << "mysql_stmt_fetch() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 清理
+    mysql_stmt_close(stmt);
+
+    return comment_count;
+}
 
 /*
  *下面的内容为用户类

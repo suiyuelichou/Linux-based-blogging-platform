@@ -1123,6 +1123,25 @@ http_conn::HTTP_CODE http_conn::do_request()
             return BAD_REQUEST;
         }
     }
+    // 博客详情-获取当前博客总点赞数
+    else if (strstr(m_url, "/get_blog_likes_count") != nullptr) {
+        // 解析 blogId
+        const char* blogIdStart = strstr(m_url, "blogId=");
+        if (blogIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+        
+        int blog_id = atoi(blogIdStart + 7);
+        if (blog_id <= 0) {
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        int blog_like_count = tool.get_blog_likes_count(blog_id);
+
+        jsonData = "{\"success\": true, \"likeCount\": " + std::to_string(blog_like_count) + "}";
+        return BLOG_DATA;
+    }
     // 返回当前登录的用户信息
     else if(strstr(m_url, "/get_current_user") != nullptr){
         string username = cookie.getCookie("username");

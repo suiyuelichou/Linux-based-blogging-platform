@@ -161,11 +161,14 @@ public:
 	bool delete_message(int messageid);					// 删除指定消息
 	bool insert_new_message(Messages message);			// 插入新消息
 
-	// 点赞相关
+	// 博客点赞相关
 	bool insert_new_blog_like(Blog_like blog_like);		// 插入新的博客点赞
 	bool remove_blog_like(int userid, int blogid);		// 删除博客点赞
 	int get_blog_likes_count(int blogid);				// 获取当前博客的点赞总数
 	bool is_user_liked_blog(int userid, int blog_id);	// 检测用户是否已经对该博客点赞
+
+	// 博客评论相关
+	int get_blog_comments_count(int blogid);			// 获取当前博客的评论总数
 
 
 public:
