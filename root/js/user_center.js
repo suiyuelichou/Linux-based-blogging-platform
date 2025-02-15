@@ -44,6 +44,69 @@ function getCurrentUsername() {
 // 调用获取用户名的函数
 getCurrentUsername();
 
+
+let isDialogOpen = false;
+// 触发文件选择框
+function triggerFileInput() {
+    if (isDialogOpen) return;  // 如果对话框已经打开，直接返回
+    
+    isDialogOpen = true;
+    const fileInput = document.getElementById('avatar-upload');
+    fileInput.value = ''; // 清空之前选择的文件
+    // fileInput.click();
+}
+
+// 上传头像
+function uploadAvatar(input) {
+    const file = input.files[0];
+    if (!file) return;  // 如果没有选择文件，直接返回
+
+    // 验证文件类型和大小
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+        alert("请上传图片格式的文件 (jpg, png, gif)！");
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) { // 限制大小为5MB
+        alert("图片大小不能超过5MB！");
+        return;
+    }
+
+    // 构造表单数据
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    // 使用 AJAX 上传头像
+    $.ajax({
+        url: '/upload_avatar',
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (response) {
+            if (response.success) {
+                $('#avatar').attr('src', response.avatarUrl);
+                alert("头像上传成功！");
+            } else {
+                alert("上传失败：" + response.message);
+            }
+        },
+        error: function () {
+            alert("上传失败，请稍后再试！");
+        }
+    });
+}
+
+// 添加取消选择处理
+document.getElementById('avatar-upload').addEventListener('change', function(e) {
+    if (e.target.files.length === 0) {
+        // 用户取消了选择
+        isDialogOpen = false;
+    }
+});
+
+
+
 // 根据传入的选择，加载不同的页面
 function loadPageData(page) {
     fetch(`/${page}`, {

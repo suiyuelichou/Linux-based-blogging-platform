@@ -37,7 +37,7 @@ class http_conn
 {
 public:
     static const int FILENAME_LEN = 200;        // 文件名的最大长度
-    static const int READ_BUFFER_SIZE = 2048;   // 读缓冲区大小
+    static const int READ_BUFFER_SIZE = 65535;   // 读缓冲区大小
     static const int WRITE_BUFFER_SIZE = 1024;  // 写缓冲区大小
 
     // HTTP 请求方法
@@ -133,6 +133,9 @@ private:
     bool add_blank_line();    // 添加空行
     unordered_map<string, string> parse_post_data(const string& body);  // 解析post请求体的内容
     string url_decode(const string &str);   // url解码函数
+    string handle_file_upload(const string& boundary, const string& body, const string& upload_dir);  // 用于解析 multipart/form-data 并保存文件
+    string sanitize_filename(const std::string &filename);  // 移除文件名中的潜在危险字符
+    string generate_unique_filename(const std::string &filename);   // 生成一个唯一的文件名，避免文件名冲突
 
 public:
     static int m_epollfd;   //epoll文件描述符
@@ -155,7 +158,10 @@ private:
     char *m_url;                  // URL
     char *m_version;              // HTTP 版本
     char *m_host;                 // 主机
+    char *m_content_type;
     long m_content_length;        // 内容长度
+    int m_content_start;        // 请求体的起始位置
+    string m_content;           // 请求体的具体内容
     bool m_linger;                // 是否保持连接
     char *m_file_address;         // 文件地址
     struct stat m_file_stat;      // 文件状态
@@ -163,6 +169,8 @@ private:
     int m_iv_count;               // IO 向量计数
     int cgi;                     // 是否启用 POST 请求
     char *m_string;              // 存储post请求体的数据
+    string m_post_content;        // 新的存储post请求体的数据
+    string m_boundary;
     int bytes_to_send;           // 需要发送的字节数
     int bytes_have_send;         // 已发送的字节数
     char *doc_root;              // 文档根目录

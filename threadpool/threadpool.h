@@ -66,6 +66,7 @@ threadpool<T>::~threadpool()
     delete[] m_threads;
 }
 
+// 将请求request添加到工作队列，并标记任务的状态state(读/写)
 template <typename T>
 bool threadpool<T>::append(T *request, int state)
 {
@@ -82,6 +83,7 @@ bool threadpool<T>::append(T *request, int state)
     return true;
 }
 
+// 将请求request添加到工作队列
 template <typename T>
 bool threadpool<T>::append_p(T *request)
 {
@@ -97,6 +99,7 @@ bool threadpool<T>::append_p(T *request)
     return true;
 }
 
+// 工作线程(子线程)运行的函数，它不断从工作队列(任务队列)中取出任务并执行
 template <typename T>
 void *threadpool<T>::worker(void *arg)
 {
@@ -117,7 +120,7 @@ void threadpool<T>::run()
             m_queuelocker.unlock();
             continue;
         }
-        T *request = m_workqueue.front();   // 取出队列中的第一个任务
+        T *request = m_workqueue.front();   // 取出队列中的第一个任务 这个request实际就是一个http_conn对象！！！！！
         m_workqueue.pop_front();            // 移除已经取出的任务
         m_queuelocker.unlock();             // 解锁任务队列
         if (!request)

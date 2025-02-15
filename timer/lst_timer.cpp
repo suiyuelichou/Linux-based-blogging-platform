@@ -191,7 +191,7 @@ void Utils::addfd(int epollfd, int fd, bool one_shot, int TRIGMode)
     setnonblocking(fd); // 将文件描述符设置为非阻塞
 }
 
-//信号处理函数
+//信号处理函数 sig是前面addsig注册的信号
 void Utils::sig_handler(int sig)
 {
     //为保证函数的可重入性，保留原来的errno

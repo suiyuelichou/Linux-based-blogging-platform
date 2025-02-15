@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // {
+        //     "label": "clean", // 清理任务（如果需要）
+        //     "command": "rm",
+        //     "args": ["-f", "${workspaceFolder}/server"],
+        //     "type": "shell",
+        //     "problemMatcher": []
+        // },
+        {
+            "label": "build-debug", // 构建任务
+            "command": "/usr/bin/g++",
+            "args": [
+                "-o",
+                "${workspaceFolder}/server",
+                "${workspaceFolder}/main.cpp",
+                "${workspaceFolder}/timer/lst_timer.cpp",
+                "${workspaceFolder}/http/http_conn.cpp",
+                "${workspaceFolder}/log/log.cpp",
+                "${workspaceFolder}/CGImysql/sql_connection_pool.cpp",
+                "${workspaceFolder}/CGImysql/sql_tool.cpp",
+                "${workspaceFolder}/webserver.cpp",
+                "${workspaceFolder}/config.cpp",
+                "${workspaceFolder}/cookie/cookie.cpp",
+                "-g",
+                "-I/usr/include/mysql",
+                "-L/usr/lib64/mysql",
+                "-lpthread",
+                "-lmysqlclient",
+                "-std=c++11"
+            ],
+            "type": "shell",
+            "problemMatcher": []
+        },
+        // {
+        //     "label": "build-and-run",
+        //     "dependsOn": [
+        //         "clean",
+        //         "build-debug"
+        //     ],
+        //     "dependsOrder": "sequence",
+        //     "command": "echo 'Build completed'",
+        //     "type": "shell",
+        //     "problemMatcher": []
+        // }
+    ]
+}

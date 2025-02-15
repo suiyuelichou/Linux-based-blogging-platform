@@ -3,6 +3,11 @@
 #include <mysql/mysql.h>
 #include <fstream>
 #include <string>
+#include <algorithm>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <chrono>
 
 //定义http响应的一些状态信息
 const char *ok_200_title = "OK";
@@ -168,6 +173,11 @@ void http_conn::init()
 //返回值为行的读取状态，有LINE_OK,LINE_BAD,LINE_OPEN
 http_conn::LINE_STATUS http_conn::parse_line()
 {
+    // 如果当前是在处理请求体，直接返回LINE_OK
+    if(m_check_state == CHECK_STATE_CONTENT){
+        return LINE_OK;
+    }
+
     char temp;
     for (; m_checked_idx < m_read_idx; ++m_checked_idx)
     {
@@ -212,7 +222,7 @@ bool http_conn::read_once()
     //LT读取数据
     if (0 == m_TRIGMode)
     {
-        // m_read_buf + m_read_idx ：计算出缓冲区中实际写入数据的位置。
+        // m_read_buf + m_read_idx ：计算出缓冲区中实际写入数据的位置。在这里获取fd的数据
         bytes_read = recv(m_sockfd, m_read_buf + m_read_idx, READ_BUFFER_SIZE - m_read_idx, 0);
         m_read_idx += bytes_read;
 
@@ -316,6 +326,7 @@ http_conn::HTTP_CODE http_conn::parse_headers(char *text)
         if (m_content_length != 0)
         {
             m_check_state = CHECK_STATE_CONTENT;
+            m_content_start = m_checked_idx;
             return NO_REQUEST;
         }
         return GET_REQUEST;
@@ -341,6 +352,26 @@ http_conn::HTTP_CODE http_conn::parse_headers(char *text)
         text += strspn(text, " \t");
         m_host = text;
     }
+    else if (strncasecmp(text, "Content-Type:", 13) == 0) // 提取 Content-Type
+    {
+        text += 13;
+        text += strspn(text, " \t");
+        m_content_type = text; // 保存 Content-Type
+
+        // 检查 boundary 参数
+        const char* boundary_key = "boundary=";
+        char* boundary_pos = strstr(text, boundary_key);
+        if (boundary_pos != nullptr)
+        {
+            boundary_pos += strlen(boundary_key); // 跳过 "boundary="
+            char* end = strpbrk(boundary_pos, " ;\r\n"); // 查找 boundary 的结束位置
+            if (end != nullptr)
+            {
+                *end = '\0'; // 截断到空格、分号或换行符
+            }
+            m_boundary = boundary_pos; // 保存 boundary 的值
+        }
+    }
     else if(strncasecmp(text, "Cookie:", 7) == 0){
         text += 7;
         text += strspn(text, " \t");
@@ -348,7 +379,7 @@ http_conn::HTTP_CODE http_conn::parse_headers(char *text)
     }
     else    // 若某一行的请求头不属于上述之一，则会重复写入日志，并在前面添加报警
     {
-        LOG_INFO("oop!unknow header: %s", text);
+        // LOG_INFO("oop!unknow header: %s", text);
     }
     return NO_REQUEST;
 }
@@ -359,6 +390,7 @@ http_conn::HTTP_CODE http_conn::parse_content(char *text)
     if (m_read_idx >= (m_content_length + m_checked_idx))
     {
         text[m_content_length] = '\0';
+        // cout << strlen(text) << endl;
         //POST请求中最后为输入的用户名和密码
         m_string = text;
         return GET_REQUEST;
@@ -366,7 +398,7 @@ http_conn::HTTP_CODE http_conn::parse_content(char *text)
     return NO_REQUEST;
 }
 
-// 解析http请求体内容并存储
+// 解析http请求体内容并存储 这是json数据的
 unordered_map<string, string> http_conn::parse_post_data(const string& body){
     unordered_map<string, string> post_data;
     string::size_type start = 0;
@@ -417,6 +449,87 @@ string http_conn::url_decode(const string &str)
     return decoded.str();
 }
 
+// 用于解析 multipart/form-data（头像） 并保存文件
+string http_conn::handle_file_upload(const string& boundary, const string& body, const string& upload_dir)
+{
+    // 确保boundary格式正确（协议要求以--开头）
+    string delimiter = "--" + boundary;
+
+    // 查找第一个有效part的起始位置
+    size_t part_start = body.find(delimiter);
+    if (part_start == string::npos) return "";
+    part_start += delimiter.length();
+
+    // 跳过头部，定位到文件名的位置
+    size_t name_pos = body.find("filename=\"", part_start);
+    if (name_pos == string::npos) return "";
+    name_pos += 10; // 跳过"filename=\""
+    size_t name_end = body.find('\"', name_pos);
+    string filename = body.substr(name_pos, name_end - name_pos);
+    filename = sanitize_filename(filename);
+
+    // 定位文件内容起始位置（跳过头部后的空行）
+    size_t header_end = body.find("\r\n\r\n", name_end);
+    if (header_end == string::npos) return "";
+    size_t file_start = header_end + 4;
+
+    // 查找当前part的结束位置（下一个boundary前）
+    size_t file_end = body.find(delimiter, file_start);
+    if (file_end == string::npos) {
+        // 可能是最后一个part，尝试查找结束符
+        file_end = body.find("--" + boundary + "--", file_start);
+        if (file_end == string::npos) return "";
+    }
+    // 回退到内容结束位置（减去前置\r\n）
+    file_end -= 2;
+
+    // 确保数据范围有效
+    if (file_end <= file_start) return "";
+
+    // 写入文件（二进制模式）
+    string file_path = upload_dir + "/" + generate_unique_filename(filename);
+    ofstream out(file_path, ios::binary);
+    if (!out) return "";
+    out.write(&body[file_start], file_end - file_start); // 直接操作string底层数据
+
+    return file_path;
+}
+
+// 移除文件名中的潜在危险字符
+string http_conn::sanitize_filename(const std::string &filename)
+{
+    string safe_filename = filename;
+
+    // 移除非法字符，例如 "..", "/" 等
+    safe_filename.erase(remove_if(safe_filename.begin(), safe_filename.end(), [](char c) {
+        return !(isalnum(c) || c == '.' || c == '_' || c == '-');
+    }), safe_filename.end());
+
+    // 防止空文件名
+    if (safe_filename.empty()) {
+        safe_filename = "default_file";
+    }
+
+    return safe_filename;
+}
+
+// 生成一个唯一的文件名，避免文件名冲突
+string http_conn::generate_unique_filename(const std::string &filename)
+{
+     // 获取当前时间戳（毫秒级别）
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+
+    // 提取文件扩展名
+    size_t dot_pos = filename.find_last_of('.');
+    std::string base_name = (dot_pos != std::string::npos) ? filename.substr(0, dot_pos) : filename;
+    std::string extension = (dot_pos != std::string::npos) ? filename.substr(dot_pos) : "";
+
+    // 生成唯一文件名
+    return base_name + "_" + std::to_string(milliseconds) + extension;
+}
+
 // 处理从客户端读取的HTTP请求（判断请求是否成功）
 http_conn::HTTP_CODE http_conn::process_read()
 {
@@ -432,14 +545,18 @@ http_conn::HTTP_CODE http_conn::process_read()
     // - 在解析过程中，根据返回值判断请求的有效性，处理请求或返回错误状态。
     while ((m_check_state == CHECK_STATE_CONTENT && line_status == LINE_OK) || ((line_status = parse_line()) == LINE_OK))
     {
-        text = get_line();  // 获取当前行内容，并将指针赋值给text
-        m_start_line = m_checked_idx;
-        LOG_INFO("%s", text);   // 将当前行写入日志
+        // text = get_line();  // 获取当前行内容，并将指针赋值给text
+        // m_start_line = m_checked_idx;
+        // LOG_INFO("%s", text);   // 将当前行写入日志
 
         switch (m_check_state)
         {
             case CHECK_STATE_REQUESTLINE:   // 转去解析请求行
             {
+                text = get_line();  // 获取当前行内容，并将指针赋值给text
+                m_start_line = m_checked_idx;
+                LOG_INFO("%s", text);
+
                 ret = parse_request_line(text);
                 if (ret == BAD_REQUEST)
                     return BAD_REQUEST;
@@ -447,7 +564,11 @@ http_conn::HTTP_CODE http_conn::process_read()
             }
             case CHECK_STATE_HEADER:    // 转去解析请求头
             {
-                ret = parse_headers(text);
+                text = get_line();  // 获取当前行内容，并将指针赋值给text
+                m_start_line = m_checked_idx;
+                LOG_INFO("%s", text);
+
+                ret = parse_headers(text);  // 空行在这个函数里面判断了
                 if (ret == BAD_REQUEST)
                     return BAD_REQUEST;
                 else if (ret == GET_REQUEST)
@@ -456,13 +577,28 @@ http_conn::HTTP_CODE http_conn::process_read()
                 }
                 break;
             }
-            case CHECK_STATE_CONTENT:   // 转去解析请求体
+            case CHECK_STATE_CONTENT:   // 转去解析请求体 这边要判断请求体是否完整
             {
-                ret = parse_content(text);
-                if (ret == GET_REQUEST)
+                // text = get_line();  // 获取当前行内容，并将指针赋值给text
+                // m_start_line = m_checked_idx;
+                // LOG_INFO("%s", text);
+
+                // ret = parse_content(text);
+                // if (ret == GET_REQUEST)
+                //     return do_request();
+                // line_status = LINE_OPEN;
+                // break;
+                // 检查是否读取到了完整的请求体
+                if(m_read_idx - m_content_start >= m_content_length){
+                    text = m_read_buf + m_content_start;
+                    cout << strlen(text) << endl;
+                    LOG_INFO("%s", text);
+                    text[m_content_length] = '\0';
+                    m_string = text;
+                    m_post_content.assign(text, m_content_length);  // 直接按长度拷贝，避免了'\0'导致数据截断
                     return do_request();
-                line_status = LINE_OPEN;
-                break;
+                }
+
             }
             default:
                 return INTERNAL_ERROR;
@@ -1303,6 +1439,38 @@ http_conn::HTTP_CODE http_conn::do_request()
             return BAD_REQUEST;
         }
     }
+    // 个人中心-个人资料-头像上传
+    else if (strstr(m_url, "/upload_avatar")) {
+        // 验证用户的登录状态
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if (!cookie.validateSession(username, session_id)) {
+            return BAD_REQUEST;
+        }
+
+        // 解析上传的 multipart/form-data ff
+        string file_path = handle_file_upload(m_boundary, m_post_content, "/root/projects/C-WebServer/root/img");
+
+        if (file_path.empty()) {
+            jsonData = "{\"success\": false, \"message\": \"上传失败，文件无效\"}";
+            return BAD_REQUEST;
+        }
+
+        // 将文件路径保存到数据库
+        size_t pos = file_path.find("/img");
+        file_path = file_path.substr(pos);
+        
+        sql_blog_tool tool;
+        if (!tool.update_avatar_path(username, file_path)) {
+            jsonData = "{\"success\": false, \"message\": \"数据库更新失败\"}";
+            return INTERNAL_ERROR;
+        }
+
+        // 返回成功响应
+        jsonData = "{\"success\": true, \"avatarUrl\": \"" + file_path + "\"}";
+        return BLOG_DATA;
+    }
     // 个人中心-博客管理
     else if (strstr(m_url, "/manage")){
         string username = cookie.getCookie("username");
@@ -1848,7 +2016,7 @@ bool http_conn::process_write(HTTP_CODE ret)
     return true;
 }
 
-void http_conn::process()
+void http_conn::process() // 在threadpool头文件里面调用
 {
     HTTP_CODE read_ret = process_read();    // 标识客户端请求的处理结果
     if (read_ret == NO_REQUEST)

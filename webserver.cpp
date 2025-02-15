@@ -23,6 +23,11 @@ WebServer::~WebServer()
     close(m_listenfd);  //关闭监听套接字，停止接收新的客户端连接
     close(m_pipefd[1]); //关闭用于信号处理的管道
     close(m_pipefd[0]);
+    if (m_root != nullptr)
+    {
+        free(m_root); // 释放分配给 m_root 的内存
+        m_root = nullptr; // 避免悬空指针
+    }  
     delete[] users;         //释放在构造函数中为users分配的内存，放置内存泄漏
     delete[] users_timer;   //释放定时器数组
     delete m_pool;          //释放线程池资源
@@ -151,17 +156,25 @@ void WebServer::eventListen()
     http_conn::m_epollfd = m_epollfd;
 
     // 创建用于信号处理的管道，并将其加入epoll
+    // 信号处理程序向管道m_pipefd[1]写入信号编号或通知信息。
+    // 主线程从管道m_pipefd[0]读取信号信息并处理，例如关闭连接、清理资源等
     ret = socketpair(PF_UNIX, SOCK_STREAM, 0, m_pipefd);
     assert(ret != -1);
     utils.setnonblocking(m_pipefd[1]);
+
+    // 将m_pipefd[0]加入事件表进行监听
     utils.addfd(m_epollfd, m_pipefd[0], false, 0);
 
     // 注册信号处理函数
+    // SIGPIPE：忽略，避免进程意外终止。
+    // SIGALRM：触发定时任务，用于管理连接超时。
+    // SIGTERM：优雅关闭服务器。
     utils.addsig(SIGPIPE, SIG_IGN);
     utils.addsig(SIGALRM, utils.sig_handler, false);
     utils.addsig(SIGTERM, utils.sig_handler, false);
 
     // 设置定时器
+    // alarm 定时触发 SIGALRM 信号，通过上面注册的信号处理函数执行utils.sig_handler
     alarm(TIMESLOT);
 
     //工具类,信号和描述符基础操作
@@ -262,6 +275,7 @@ bool WebServer::dealwithsignal(bool &timeout, bool &stop_server)
     int ret = 0;
     int sig;
     char signals[1024];
+    // 调用 recv() 从信号管道（m_pipefd[0]）读取信号数据到 signals 数组中
     ret = recv(m_pipefd[0], signals, sizeof(signals), 0);
     if (ret == -1)
     {
@@ -408,35 +422,41 @@ void WebServer::eventLoop()
             break;
         }
 
+        // 遍历epooll_wait返回的事件列表
         for (int i = 0; i < number; i++)
         {
             int sockfd = events[i].data.fd;
 
-            //处理新到的客户连接
+            // 处理新到的客户连接
             if (sockfd == m_listenfd)
             {
                 bool flag = dealclientdata();
                 if (false == flag)
                     continue;
             }
+            // 处理连接异常（如连接关闭）
+            // 如果发生连接断开、挂起或错误（EPOLLRDHUP、EPOLLHUP、EPOLLERR），表示客户端连接出了问题。
+            // 从 users_timer 数组中获取与该连接相关联的定时器，并调用 deal_timer() 函数处理定时器（例如移除定时器，清理资源等）。
             else if (events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR))
             {
                 //服务器端关闭连接，移除对应的定时器
                 util_timer *timer = users_timer[sockfd].timer;
                 deal_timer(timer, sockfd);
             }
-            //处理信号
+            // 处理信号
+            // 若事件关联的是信号管道（m_pipefd[0]），并且是可读事件
             else if ((sockfd == m_pipefd[0]) && (events[i].events & EPOLLIN))
             {
                 bool flag = dealwithsignal(timeout, stop_server);
                 if (false == flag)
                     LOG_ERROR("%s", "dealclientdata failure");
             }
-            //处理客户连接上接收到的数据
+            // 客户端有数据发送到服务器
             else if (events[i].events & EPOLLIN)
             {
                 dealwithread(sockfd);
             }
+            // 服务器可以向客户端发送数据
             else if (events[i].events & EPOLLOUT)
             {
                 dealwithwrite(sockfd);

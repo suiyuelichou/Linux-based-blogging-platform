@@ -1,4 +1,4 @@
-/* 登录页的样式 */
+/* 注册页的样式 */
 .login-container {
     width: 100%;
     height: calc(100% - 50px);
@@ -37,7 +37,10 @@
 .row span {
     font-size: 20px;
     width: 60px;
-    margin-left: 40px;
+    margin-left: 30px;
+    white-space: nowrap; /* 防止换行 */
+    margin-top: 5px;
+    text-align: left; /* 文字右对齐 */
 }
  
 .row #username {
@@ -73,4 +76,123 @@
 .row #submit:hover {
     background-color: rgb(163,134,143);
     color: wheat;
+}
+
+
+/* 
+***用户注册密码验证
+*/
+.row {
+    /* 移除固定高度 */
+    width: 100%;
+    display: flex;
+    align-items: flex-start; /* 顶部对齐 */
+    margin-bottom: 15px; /* 留出提示空间 */
+
+}
+
+.input-group {
+    position: relative; /* 为提示定位做准备 */
+    display: flex;
+    flex-direction: column;
+}
+
+.hint-text {
+    color: #ff4444;
+    font-size: 12px;
+    position: absolute;  /* 绝对定位 */
+    top: 100%;          /* 显示在输入框下方 */
+    left: 0px;
+    /*width: 200px;       /* 与输入框同宽 */
+    padding: 2px 5px;
+    margin-top: 2px;
+    display: none;
+    /*  background: rgba(255, 255, 255, 0.9); /* 防止文字重叠 */
+    border-radius: 3px;
+}
+
+#confirm-password {
+    width: 200px;
+    height: 40px;
+    font-size: 20px;
+    text-indent: 10px;
+    border-radius: 10px;
+    margin-right: 60px;
+}
+
+#confirm-password-hint {
+    color: #ff4444;
+    font-size: 12px;
+    position: absolute;
+    top: 100%;
+    left: 0px;
+    padding: 2px 5px;
+    margin-top: 2px;
+    display: none;
+    border-radius: 3px;
+}
+
+
+/* 
+***问号图标样式 ***
+*/
+.tooltip {
+    position: absolute;
+    right: 10px;   /* 根据实际情况调整 */
+    top: 35%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 14px;
+    /* 使用 flex 布局，使问号文字在容器内居中 */
+    display: flex;
+    align-items: center;   
+    justify-content: center;
+}
+
+/* 鼠标悬停时显示提示信息 */
+.tooltip:hover::after {
+    content: attr(data-hint);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    animation: fadeIn 0.2s ease-out forwards;
+    margin-bottom: 8px;
+}
+
+/* 添加小三角指示 */
+.tooltip:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% - 5px);
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }

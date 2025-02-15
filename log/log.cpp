@@ -151,7 +151,7 @@ void Log::write_log(int level, const char *format, ...)
     else
     {
         m_mutex.lock();
-        fputs(log_str.c_str(), m_fp);//将log_str的日志内容直接写入日志
+        fputs(log_str.c_str(), m_fp);// 此时数据还停留在文件的缓冲区，还没有直接写入硬盘
         m_mutex.unlock();
     }
 

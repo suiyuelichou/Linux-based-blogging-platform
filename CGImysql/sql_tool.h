@@ -154,6 +154,8 @@ public:
 	int get_userid(string username);					// 通过用户名获取用户id
 	void modify_password_by_username(string username, string password);	// 通过用户名修改用户密码
 
+	bool update_avatar_path(string username, string file_path);	// 存储用户头像路径
+
 	// 个人中心-消息中心相关
 	bool check_message_belongs_to_user(int userid, int messageid);	// 检查消息是否属于该用户
 	bool mark_message_as_read(int messageid);			// 标记消息为已读

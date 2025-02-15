@@ -1,0 +1,1419 @@
+2025-02-11 08:04:20.395603 [info]: timer tick
+2025-02-11 08:04:21.876040 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:04:21.876184 [info]: adjust timer once
+2025-02-11 08:04:21.876225 [info]: GET /blog_register.html HTTP/1.1
+2025-02-11 08:04:21.876304 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:04:21.876318 [info]: Connection: keep-alive
+2025-02-11 08:04:21.876324 [info]: Cache-Control: max-age=0
+2025-02-11 08:04:21.876329 [info]: Upgrade-Insecure-Requests: 1
+2025-02-11 08:04:21.876335 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:04:21.876342 [info]: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+2025-02-11 08:04:21.876347 [info]: Referer: http://192.168.164.128:9006/blog_login.html
+2025-02-11 08:04:21.876352 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:04:21.876357 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:04:21.876362 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:04:21.876466 [info]: 
+2025-02-11 08:04:21.876602 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:04:21.876646 [info]: request:HTTP/1.1 200 OK
+Content-Length:4761
+
+2025-02-11 08:04:21.876654 [info]: request:HTTP/1.1 200 OK
+Content-Length:4761
+Connection:keep-alive
+
+2025-02-11 08:04:21.876660 [info]: request:HTTP/1.1 200 OK
+Content-Length:4761
+Connection:keep-alive
+
+
+2025-02-11 08:04:21.876905 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:04:21.876973 [info]: adjust timer once
+2025-02-11 08:04:22.026923 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:04:22.027089 [info]: adjust timer once
+2025-02-11 08:04:22.027219 [info]: GET /css/common.css HTTP/1.1
+2025-02-11 08:04:22.027322 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:04:22.027333 [info]: Connection: keep-alive
+2025-02-11 08:04:22.027339 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:04:22.027345 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:04:22.027350 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:04:22.027353 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:04:22.027355 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:04:22.027381 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:04:22.027386 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:04:22.027391 [info]: adjust timer once
+2025-02-11 08:04:22.027412 [info]: 
+2025-02-11 08:04:22.027451 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:04:22.027458 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+
+2025-02-11 08:04:22.027462 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+2025-02-11 08:04:22.027467 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+
+2025-02-11 08:04:22.027473 [info]: GET /css/register.css HTTP/1.1
+2025-02-11 08:04:22.027500 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:04:22.027506 [info]: Connection: keep-alive
+2025-02-11 08:04:22.027511 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:04:22.027517 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:04:22.027523 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:04:22.027528 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:04:22.027533 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:04:22.027539 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:04:22.027557 [info]: 
+2025-02-11 08:04:22.027589 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:04:22.027596 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+
+2025-02-11 08:04:22.027601 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+2025-02-11 08:04:22.027748 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+
+2025-02-11 08:04:22.027903 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:04:22.027980 [info]: adjust timer once
+2025-02-11 08:04:22.028162 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:04:22.028256 [info]: adjust timer once
+2025-02-11 08:04:22.029795 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:04:22.029964 [info]: adjust timer once
+2025-02-11 08:04:22.030018 [info]: GET /img/logo.png HTTP/1.1
+2025-02-11 08:04:22.030084 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:04:22.030094 [info]: Connection: keep-alive
+2025-02-11 08:04:22.030100 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:04:22.030106 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:04:22.030111 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:04:22.030116 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:04:22.030121 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:04:22.030126 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:04:22.030152 [info]: 
+2025-02-11 08:04:22.030266 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:04:22.030392 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+
+2025-02-11 08:04:22.030469 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+2025-02-11 08:04:22.030484 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+
+2025-02-11 08:04:22.031160 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:04:22.031309 [info]: adjust timer once
+2025-02-11 08:04:22.034793 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:04:22.034992 [info]: adjust timer once
+2025-02-11 08:04:22.035068 [info]: GET /img/beijing.jpg HTTP/1.1
+2025-02-11 08:04:22.035178 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:04:22.035190 [info]: Connection: keep-alive
+2025-02-11 08:04:22.035193 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:04:22.035198 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:04:22.035201 [info]: Referer: http://192.168.164.128:9006/css/common.css
+2025-02-11 08:04:22.035205 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:04:22.035208 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:04:22.035211 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:04:22.035233 [info]: 
+2025-02-11 08:04:22.035297 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:04:22.035351 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+
+2025-02-11 08:04:22.035360 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+2025-02-11 08:04:22.035366 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+
+2025-02-11 08:04:22.036220 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:04:22.036326 [info]: adjust timer once
+2025-02-11 08:04:22.081869 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:04:22.082068 [info]: adjust timer once
+2025-02-11 08:04:22.082125 [info]: GET /favicon.ico HTTP/1.1
+2025-02-11 08:04:22.082248 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:04:22.082260 [info]: Connection: keep-alive
+2025-02-11 08:04:22.082265 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:04:22.082271 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:04:22.082276 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:04:22.082281 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:04:22.082286 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:04:22.082299 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:04:22.082326 [info]: 
+2025-02-11 08:04:22.082376 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:04:22.082383 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+
+2025-02-11 08:04:22.082388 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+2025-02-11 08:04:22.082393 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+
+2025-02-11 08:04:22.087305 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:04:22.087422 [info]: adjust timer once
+2025-02-11 08:04:25.395733 [info]: timer tick
+2025-02-11 08:04:29.324534 [info]: close fd 16
+2025-02-11 08:04:29.324824 [info]: close fd 17
+2025-02-11 08:04:29.324973 [info]: close fd 18
+2025-02-11 08:04:30.395833 [info]: timer tick
+2025-02-11 08:04:35.396425 [info]: timer tick
+2025-02-11 08:04:40.396774 [info]: timer tick
+2025-02-11 08:04:45.396960 [info]: timer tick
+2025-02-11 08:04:50.397200 [info]: timer tick
+2025-02-11 08:04:55.397744 [info]: timer tick
+2025-02-11 08:05:00.398343 [info]: timer tick
+2025-02-11 08:05:05.398546 [info]: timer tick
+2025-02-11 08:05:10.398804 [info]: timer tick
+2025-02-11 08:05:15.399239 [info]: timer tick
+2025-02-11 08:05:20.399704 [info]: timer tick
+2025-02-11 08:05:25.400136 [info]: timer tick
+2025-02-11 08:05:30.400437 [info]: timer tick
+2025-02-11 08:05:35.400775 [info]: timer tick
+2025-02-11 08:05:40.400997 [info]: timer tick
+2025-02-11 08:05:45.401103 [info]: timer tick
+2025-02-11 08:05:50.401479 [info]: timer tick
+2025-02-11 08:05:55.401932 [info]: timer tick
+2025-02-11 08:06:00.402443 [info]: timer tick
+2025-02-11 08:06:05.403001 [info]: timer tick
+2025-02-11 08:06:10.403170 [info]: timer tick
+2025-02-11 08:06:15.403481 [info]: timer tick
+2025-02-11 08:06:20.403728 [info]: timer tick
+2025-02-11 08:06:25.404078 [info]: timer tick
+2025-02-11 08:06:30.404477 [info]: timer tick
+2025-02-11 08:06:35.404996 [info]: timer tick
+2025-02-11 08:06:40.405249 [info]: timer tick
+2025-02-11 08:06:45.405710 [info]: timer tick
+2025-02-11 08:06:50.406169 [info]: timer tick
+2025-02-11 08:06:55.406617 [info]: timer tick
+2025-02-11 08:07:00.406890 [info]: timer tick
+2025-02-11 08:07:05.407186 [info]: timer tick
+2025-02-11 08:07:10.407524 [info]: timer tick
+2025-02-11 08:07:15.407846 [info]: timer tick
+2025-02-11 08:07:20.408399 [info]: timer tick
+2025-02-11 08:07:25.408828 [info]: timer tick
+2025-02-11 08:07:30.409169 [info]: timer tick
+2025-02-11 08:07:35.409514 [info]: timer tick
+2025-02-11 08:07:40.409924 [info]: timer tick
+2025-02-11 08:07:45.410313 [info]: timer tick
+2025-02-11 08:07:50.410706 [info]: timer tick
+2025-02-11 08:07:55.411130 [info]: timer tick
+2025-02-11 08:08:00.411697 [info]: timer tick
+2025-02-11 08:08:05.412010 [info]: timer tick
+2025-02-11 08:08:10.412340 [info]: timer tick
+2025-02-11 08:08:15.412581 [info]: timer tick
+2025-02-11 08:08:20.412777 [info]: timer tick
+2025-02-11 08:08:25.413298 [info]: timer tick
+2025-02-11 08:08:30.413879 [info]: timer tick
+2025-02-11 08:08:35.414036 [info]: timer tick
+2025-02-11 08:08:40.414497 [info]: timer tick
+2025-02-11 08:08:45.414664 [info]: timer tick
+2025-02-11 08:08:50.414763 [info]: timer tick
+2025-02-11 08:08:55.415253 [info]: timer tick
+2025-02-11 08:09:00.415411 [info]: timer tick
+2025-02-11 08:09:05.415794 [info]: timer tick
+2025-02-11 08:09:10.416012 [info]: timer tick
+2025-02-11 08:09:15.416386 [info]: timer tick
+2025-02-11 08:09:20.416487 [info]: timer tick
+2025-02-11 08:09:25.416545 [info]: timer tick
+2025-02-11 08:09:30.416802 [info]: timer tick
+2025-02-11 08:09:35.417131 [info]: timer tick
+2025-02-11 08:09:40.417313 [info]: timer tick
+2025-02-11 08:09:45.417428 [info]: timer tick
+2025-02-11 08:09:50.417566 [info]: timer tick
+2025-02-11 08:09:55.418114 [info]: timer tick
+2025-02-11 08:10:00.418513 [info]: timer tick
+2025-02-11 08:10:05.418827 [info]: timer tick
+2025-02-11 08:10:10.418945 [info]: timer tick
+2025-02-11 08:10:15.419047 [info]: timer tick
+2025-02-11 08:10:20.419508 [info]: timer tick
+2025-02-11 08:10:25.420060 [info]: timer tick
+2025-02-11 08:10:30.420211 [info]: timer tick
+2025-02-11 08:10:35.420440 [info]: timer tick
+2025-02-11 08:10:40.421408 [info]: timer tick
+2025-02-11 08:10:45.421597 [info]: timer tick
+2025-02-11 08:10:50.421904 [info]: timer tick
+2025-02-11 08:10:55.422188 [info]: timer tick
+2025-02-11 08:11:00.422366 [info]: timer tick
+2025-02-11 08:11:05.422502 [info]: timer tick
+2025-02-11 08:11:10.422744 [info]: timer tick
+2025-02-11 08:11:15.423009 [info]: timer tick
+2025-02-11 08:11:20.423421 [info]: timer tick
+2025-02-11 08:11:25.423895 [info]: timer tick
+2025-02-11 08:11:30.424305 [info]: timer tick
+2025-02-11 08:11:35.424663 [info]: timer tick
+2025-02-11 08:11:40.424909 [info]: timer tick
+2025-02-11 08:11:45.425105 [info]: timer tick
+2025-02-11 08:11:50.425234 [info]: timer tick
+2025-02-11 08:11:55.425644 [info]: timer tick
+2025-02-11 08:12:00.425893 [info]: timer tick
+2025-02-11 08:12:05.426428 [info]: timer tick
+2025-02-11 08:12:10.426572 [info]: timer tick
+2025-02-11 08:12:15.426778 [info]: timer tick
+2025-02-11 08:12:20.426948 [info]: timer tick
+2025-02-11 08:12:25.427334 [info]: timer tick
+2025-02-11 08:12:30.427838 [info]: timer tick
+2025-02-11 08:12:35.428098 [info]: timer tick
+2025-02-11 08:12:40.428673 [info]: timer tick
+2025-02-11 08:12:45.428991 [info]: timer tick
+2025-02-11 08:12:50.429240 [info]: timer tick
+2025-02-11 08:12:55.429333 [info]: timer tick
+2025-02-11 08:13:00.429748 [info]: timer tick
+2025-02-11 08:13:05.430077 [info]: timer tick
+2025-02-11 08:13:10.430558 [info]: timer tick
+2025-02-11 08:13:15.430823 [info]: timer tick
+2025-02-11 08:13:20.431164 [info]: timer tick
+2025-02-11 08:13:25.431557 [info]: timer tick
+2025-02-11 08:13:30.432129 [info]: timer tick
+2025-02-11 08:13:35.432244 [info]: timer tick
+2025-02-11 08:13:40.432803 [info]: timer tick
+2025-02-11 08:13:45.433256 [info]: timer tick
+2025-02-11 08:13:50.433444 [info]: timer tick
+2025-02-11 08:13:55.433553 [info]: timer tick
+2025-02-11 08:14:00.433936 [info]: timer tick
+2025-02-11 08:14:05.434013 [info]: timer tick
+2025-02-11 08:14:10.434567 [info]: timer tick
+2025-02-11 08:14:15.434911 [info]: timer tick
+2025-02-11 08:14:20.435409 [info]: timer tick
+2025-02-11 08:14:25.435769 [info]: timer tick
+2025-02-11 08:14:30.435903 [info]: timer tick
+2025-02-11 08:14:35.436094 [info]: timer tick
+2025-02-11 08:14:40.436206 [info]: timer tick
+2025-02-11 08:14:45.436431 [info]: timer tick
+2025-02-11 08:14:50.436677 [info]: timer tick
+2025-02-11 08:14:55.437050 [info]: timer tick
+2025-02-11 08:15:00.437389 [info]: timer tick
+2025-02-11 08:15:05.437622 [info]: timer tick
+2025-02-11 08:15:10.437831 [info]: timer tick
+2025-02-11 08:15:15.438055 [info]: timer tick
+2025-02-11 08:15:20.438132 [info]: timer tick
+2025-02-11 08:15:25.438690 [info]: timer tick
+2025-02-11 08:15:30.439030 [info]: timer tick
+2025-02-11 08:15:35.439270 [info]: timer tick
+2025-02-11 08:15:40.439828 [info]: timer tick
+2025-02-11 08:15:45.440388 [info]: timer tick
+2025-02-11 08:15:50.440779 [info]: timer tick
+2025-02-11 08:15:55.440904 [info]: timer tick
+2025-02-11 08:16:00.441046 [info]: timer tick
+2025-02-11 08:16:05.441335 [info]: timer tick
+2025-02-11 08:16:10.441772 [info]: timer tick
+2025-02-11 08:16:15.442293 [info]: timer tick
+2025-02-11 08:16:20.442671 [info]: timer tick
+2025-02-11 08:16:25.443483 [info]: timer tick
+2025-02-11 08:16:30.443673 [info]: timer tick
+2025-02-11 08:16:35.443817 [info]: timer tick
+2025-02-11 08:16:40.444294 [info]: timer tick
+2025-02-11 08:16:45.444716 [info]: timer tick
+2025-02-11 08:16:50.444969 [info]: timer tick
+2025-02-11 08:16:55.445072 [info]: timer tick
+2025-02-11 08:17:00.445552 [info]: timer tick
+2025-02-11 08:17:05.446070 [info]: timer tick
+2025-02-11 08:17:10.446215 [info]: timer tick
+2025-02-11 08:17:15.446570 [info]: timer tick
+2025-02-11 08:17:20.446812 [info]: timer tick
+2025-02-11 08:17:25.446979 [info]: timer tick
+2025-02-11 08:17:30.447050 [info]: timer tick
+2025-02-11 08:17:35.447193 [info]: timer tick
+2025-02-11 08:17:40.447781 [info]: timer tick
+2025-02-11 08:17:45.448212 [info]: timer tick
+2025-02-11 08:17:50.448774 [info]: timer tick
+2025-02-11 08:17:55.449092 [info]: timer tick
+2025-02-11 08:18:00.449531 [info]: timer tick
+2025-02-11 08:18:05.449911 [info]: timer tick
+2025-02-11 08:18:10.450439 [info]: timer tick
+2025-02-11 08:18:15.450646 [info]: timer tick
+2025-02-11 08:18:20.450789 [info]: timer tick
+2025-02-11 08:18:25.451259 [info]: timer tick
+2025-02-11 08:18:30.451733 [info]: timer tick
+2025-02-11 08:18:35.452060 [info]: timer tick
+2025-02-11 08:18:40.452590 [info]: timer tick
+2025-02-11 08:18:45.452643 [info]: timer tick
+2025-02-11 08:18:50.452724 [info]: timer tick
+2025-02-11 08:18:55.452875 [info]: timer tick
+2025-02-11 08:19:00.453219 [info]: timer tick
+2025-02-11 08:19:05.453775 [info]: timer tick
+2025-02-11 08:19:10.454193 [info]: timer tick
+2025-02-11 08:19:15.454502 [info]: timer tick
+2025-02-11 08:19:20.454736 [info]: timer tick
+2025-02-11 08:19:25.455061 [info]: timer tick
+2025-02-11 08:19:30.455399 [info]: timer tick
+2025-02-11 08:19:35.455764 [info]: timer tick
+2025-02-11 08:19:40.456107 [info]: timer tick
+2025-02-11 08:19:45.456563 [info]: timer tick
+2025-02-11 08:19:50.456715 [info]: timer tick
+2025-02-11 08:19:55.456872 [info]: timer tick
+2025-02-11 08:20:00.457042 [info]: timer tick
+2025-02-11 08:20:01.909369 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:20:01.909843 [info]: adjust timer once
+2025-02-11 08:20:01.909892 [info]: GET /blog_register.html HTTP/1.1
+2025-02-11 08:20:01.909942 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:20:01.909998 [info]: Connection: keep-alive
+2025-02-11 08:20:01.910009 [info]: Cache-Control: max-age=0
+2025-02-11 08:20:01.910028 [info]: Upgrade-Insecure-Requests: 1
+2025-02-11 08:20:01.910064 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:20:01.910074 [info]: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+2025-02-11 08:20:01.910079 [info]: Referer: http://192.168.164.128:9006/blog_login.html
+2025-02-11 08:20:01.910083 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:20:01.910087 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:20:01.910091 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:20:01.910224 [info]: 
+2025-02-11 08:20:01.910347 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:20:01.910388 [info]: request:HTTP/1.1 200 OK
+Content-Length:4944
+
+2025-02-11 08:20:01.910396 [info]: request:HTTP/1.1 200 OK
+Content-Length:4944
+Connection:keep-alive
+
+2025-02-11 08:20:01.910401 [info]: request:HTTP/1.1 200 OK
+Content-Length:4944
+Connection:keep-alive
+
+
+2025-02-11 08:20:01.910921 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:20:01.911035 [info]: adjust timer once
+2025-02-11 08:20:01.938286 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:20:01.938457 [info]: adjust timer once
+2025-02-11 08:20:01.938540 [info]: GET /css/common.css HTTP/1.1
+2025-02-11 08:20:01.938608 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:20:01.938616 [info]: Connection: keep-alive
+2025-02-11 08:20:01.938622 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:20:01.938629 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:20:01.938635 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:20:01.938641 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:20:01.938647 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:20:01.938653 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:20:01.938678 [info]: 
+2025-02-11 08:20:01.938723 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:20:01.938758 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+
+2025-02-11 08:20:01.938769 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+2025-02-11 08:20:01.938774 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+
+2025-02-11 08:20:01.939058 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:20:01.939123 [info]: adjust timer once
+2025-02-11 08:20:01.939445 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:20:01.939648 [info]: adjust timer once
+2025-02-11 08:20:01.939690 [info]: GET /css/register.css HTTP/1.1
+2025-02-11 08:20:01.939722 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:20:01.939729 [info]: Connection: keep-alive
+2025-02-11 08:20:01.939734 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:20:01.939741 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:20:01.939742 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:20:01.939749 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:20:01.939794 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:20:01.939802 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:20:01.939807 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:20:01.939825 [info]: 
+2025-02-11 08:20:01.939767 [info]: adjust timer once
+2025-02-11 08:20:01.939778 [info]: GET /img/logo.png HTTP/1.1
+2025-02-11 08:20:01.939851 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:20:01.939879 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:20:01.939894 [info]: Connection: keep-alive
+2025-02-11 08:20:01.939901 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:20:01.939908 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:20:01.939915 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:20:01.939921 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:20:01.939887 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+
+2025-02-11 08:20:01.939932 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+2025-02-11 08:20:01.939927 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:20:01.939939 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+
+2025-02-11 08:20:01.939947 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:20:01.939965 [info]: 
+2025-02-11 08:20:01.939997 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:20:01.940015 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+
+2025-02-11 08:20:01.940022 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+2025-02-11 08:20:01.940027 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+
+2025-02-11 08:20:01.940194 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:20:01.940249 [info]: adjust timer once
+2025-02-11 08:20:01.940763 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:20:01.940841 [info]: adjust timer once
+2025-02-11 08:20:01.948456 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:20:01.948614 [info]: adjust timer once
+2025-02-11 08:20:01.948641 [info]: GET /img/beijing.jpg HTTP/1.1
+2025-02-11 08:20:01.948674 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:20:01.948681 [info]: Connection: keep-alive
+2025-02-11 08:20:01.948686 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:20:01.948693 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:20:01.948700 [info]: Referer: http://192.168.164.128:9006/css/common.css
+2025-02-11 08:20:01.948705 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:20:01.948710 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:20:01.948715 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:20:01.948739 [info]: 
+2025-02-11 08:20:01.948772 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:20:01.948779 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+
+2025-02-11 08:20:01.948809 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+2025-02-11 08:20:01.948817 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+
+2025-02-11 08:20:01.949616 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:20:01.949712 [info]: adjust timer once
+2025-02-11 08:20:01.967305 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:20:01.967499 [info]: adjust timer once
+2025-02-11 08:20:01.967589 [info]: GET /favicon.ico HTTP/1.1
+2025-02-11 08:20:01.967619 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:20:01.967626 [info]: Connection: keep-alive
+2025-02-11 08:20:01.967632 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:20:01.967650 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:20:01.967656 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:20:01.967661 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:20:01.967667 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:20:01.967672 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:20:01.967698 [info]: 
+2025-02-11 08:20:01.967756 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:20:01.967774 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+
+2025-02-11 08:20:01.967780 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+2025-02-11 08:20:01.967786 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+
+2025-02-11 08:20:01.968098 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:20:01.968187 [info]: adjust timer once
+2025-02-11 08:20:05.457122 [info]: timer tick
+2025-02-11 08:20:09.482880 [info]: close fd 16
+2025-02-11 08:20:09.483085 [info]: close fd 17
+2025-02-11 08:20:09.483222 [info]: close fd 18
+2025-02-11 08:20:10.457680 [info]: timer tick
+2025-02-11 08:20:15.458252 [info]: timer tick
+2025-02-11 08:20:20.458372 [info]: timer tick
+2025-02-11 08:20:25.458849 [info]: timer tick
+2025-02-11 08:20:30.458930 [info]: timer tick
+2025-02-11 08:20:35.459022 [info]: timer tick
+2025-02-11 08:20:40.459238 [info]: timer tick
+2025-02-11 08:20:45.459610 [info]: timer tick
+2025-02-11 08:20:50.459817 [info]: timer tick
+2025-02-11 08:20:55.460271 [info]: timer tick
+2025-02-11 08:21:00.460409 [info]: timer tick
+2025-02-11 08:21:05.460777 [info]: timer tick
+2025-02-11 08:21:10.460885 [info]: timer tick
+2025-02-11 08:21:15.461024 [info]: timer tick
+2025-02-11 08:21:20.461468 [info]: timer tick
+2025-02-11 08:21:25.461864 [info]: timer tick
+2025-02-11 08:21:30.462249 [info]: timer tick
+2025-02-11 08:21:35.462534 [info]: timer tick
+2025-02-11 08:21:40.462971 [info]: timer tick
+2025-02-11 08:21:45.463034 [info]: timer tick
+2025-02-11 08:21:50.463201 [info]: timer tick
+2025-02-11 08:21:55.463336 [info]: timer tick
+2025-02-11 08:22:00.463651 [info]: timer tick
+2025-02-11 08:22:05.464035 [info]: timer tick
+2025-02-11 08:22:10.464232 [info]: timer tick
+2025-02-11 08:22:15.464388 [info]: timer tick
+2025-02-11 08:22:20.464786 [info]: timer tick
+2025-02-11 08:22:25.464915 [info]: timer tick
+2025-02-11 08:22:30.465450 [info]: timer tick
+2025-02-11 08:22:35.465546 [info]: timer tick
+2025-02-11 08:22:40.465625 [info]: timer tick
+2025-02-11 08:22:45.466148 [info]: timer tick
+2025-02-11 08:22:50.466456 [info]: timer tick
+2025-02-11 08:22:55.466997 [info]: timer tick
+2025-02-11 08:23:00.467400 [info]: timer tick
+2025-02-11 08:23:05.467639 [info]: timer tick
+2025-02-11 08:23:10.468105 [info]: timer tick
+2025-02-11 08:23:15.468612 [info]: timer tick
+2025-02-11 08:23:20.468815 [info]: timer tick
+2025-02-11 08:23:25.469343 [info]: timer tick
+2025-02-11 08:23:30.469559 [info]: timer tick
+2025-02-11 08:23:35.469787 [info]: timer tick
+2025-02-11 08:23:40.469928 [info]: timer tick
+2025-02-11 08:23:45.470067 [info]: timer tick
+2025-02-11 08:23:50.470633 [info]: timer tick
+2025-02-11 08:23:55.470902 [info]: timer tick
+2025-02-11 08:24:00.471055 [info]: timer tick
+2025-02-11 08:24:05.471220 [info]: timer tick
+2025-02-11 08:24:10.471612 [info]: timer tick
+2025-02-11 08:24:15.471905 [info]: timer tick
+2025-02-11 08:24:20.472033 [info]: timer tick
+2025-02-11 08:24:25.472257 [info]: timer tick
+2025-02-11 08:24:30.472588 [info]: timer tick
+2025-02-11 08:24:35.472789 [info]: timer tick
+2025-02-11 08:24:40.473124 [info]: timer tick
+2025-02-11 08:24:45.473209 [info]: timer tick
+2025-02-11 08:24:50.473519 [info]: timer tick
+2025-02-11 08:24:55.473925 [info]: timer tick
+2025-02-11 08:25:00.474506 [info]: timer tick
+2025-02-11 08:25:05.474728 [info]: timer tick
+2025-02-11 08:25:10.474865 [info]: timer tick
+2025-02-11 08:25:15.475322 [info]: timer tick
+2025-02-11 08:25:20.475429 [info]: timer tick
+2025-02-11 08:25:25.475959 [info]: timer tick
+2025-02-11 08:25:30.476368 [info]: timer tick
+2025-02-11 08:25:35.476882 [info]: timer tick
+2025-02-11 08:25:40.477033 [info]: timer tick
+2025-02-11 08:25:45.477181 [info]: timer tick
+2025-02-11 08:25:50.477393 [info]: timer tick
+2025-02-11 08:25:55.477899 [info]: timer tick
+2025-02-11 08:26:00.478287 [info]: timer tick
+2025-02-11 08:26:05.478687 [info]: timer tick
+2025-02-11 08:26:10.478774 [info]: timer tick
+2025-02-11 08:26:15.479176 [info]: timer tick
+2025-02-11 08:26:20.479791 [info]: timer tick
+2025-02-11 08:26:25.480110 [info]: timer tick
+2025-02-11 08:26:30.480606 [info]: timer tick
+2025-02-11 08:26:35.481121 [info]: timer tick
+2025-02-11 08:26:40.481666 [info]: timer tick
+2025-02-11 08:26:45.482094 [info]: timer tick
+2025-02-11 08:26:50.482656 [info]: timer tick
+2025-02-11 08:26:55.483043 [info]: timer tick
+2025-02-11 08:26:57.872816 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:26:57.872948 [info]: adjust timer once
+2025-02-11 08:26:57.872984 [info]: GET /blog_register.html HTTP/1.1
+2025-02-11 08:26:57.872997 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:26:57.873002 [info]: Connection: keep-alive
+2025-02-11 08:26:57.873007 [info]: Cache-Control: max-age=0
+2025-02-11 08:26:57.873012 [info]: Upgrade-Insecure-Requests: 1
+2025-02-11 08:26:57.873016 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:26:57.873022 [info]: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+2025-02-11 08:26:57.873026 [info]: Referer: http://192.168.164.128:9006/blog_login.html
+2025-02-11 08:26:57.873031 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:26:57.873035 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:26:57.873056 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:26:57.873121 [info]: 
+2025-02-11 08:26:57.873155 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:26:57.873172 [info]: request:HTTP/1.1 200 OK
+Content-Length:4968
+
+2025-02-11 08:26:57.873178 [info]: request:HTTP/1.1 200 OK
+Content-Length:4968
+Connection:keep-alive
+
+2025-02-11 08:26:57.873183 [info]: request:HTTP/1.1 200 OK
+Content-Length:4968
+Connection:keep-alive
+
+
+2025-02-11 08:26:57.873555 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:26:57.873649 [info]: adjust timer once
+2025-02-11 08:26:57.961777 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:26:57.962057 [info]: adjust timer once
+2025-02-11 08:26:57.962102 [info]: GET /css/common.css HTTP/1.1
+2025-02-11 08:26:57.962302 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:26:57.962315 [info]: Connection: keep-alive
+2025-02-11 08:26:57.962321 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:26:57.962327 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:26:57.962332 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:26:57.962337 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:26:57.962342 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:26:57.962347 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:26:57.962258 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:26:57.962415 [info]: adjust timer once
+2025-02-11 08:26:57.962435 [info]: GET /css/register.css HTTP/1.1
+2025-02-11 08:26:57.962465 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:26:57.962471 [info]: Connection: keep-alive
+2025-02-11 08:26:57.962476 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:26:57.962482 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:26:57.962487 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:26:57.962492 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:26:57.962498 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:26:57.962503 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:26:57.962514 [info]: 
+2025-02-11 08:26:57.962546 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:26:57.962564 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+
+2025-02-11 08:26:57.962571 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+2025-02-11 08:26:57.962577 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+
+2025-02-11 08:26:57.962385 [info]: 
+2025-02-11 08:26:57.962620 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:26:57.962627 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+
+2025-02-11 08:26:57.962632 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+2025-02-11 08:26:57.962637 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+
+2025-02-11 08:26:57.962820 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:26:57.962911 [info]: adjust timer once
+2025-02-11 08:26:57.963222 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:26:57.963283 [info]: adjust timer once
+2025-02-11 08:26:57.963900 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:26:57.963980 [info]: adjust timer once
+2025-02-11 08:26:57.964017 [info]: GET /img/logo.png HTTP/1.1
+2025-02-11 08:26:57.964025 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:26:57.964030 [info]: Connection: keep-alive
+2025-02-11 08:26:57.964036 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:26:57.964041 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:26:57.964047 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:26:57.964052 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:26:57.964057 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:26:57.964062 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:26:57.964083 [info]: 
+2025-02-11 08:26:57.964119 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:26:57.964137 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+
+2025-02-11 08:26:57.964144 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+2025-02-11 08:26:57.964149 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+
+2025-02-11 08:26:57.964419 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:26:57.964480 [info]: adjust timer once
+2025-02-11 08:26:57.976938 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:26:57.977093 [info]: adjust timer once
+2025-02-11 08:26:57.977127 [info]: GET /img/beijing.jpg HTTP/1.1
+2025-02-11 08:26:57.977173 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:26:57.977182 [info]: Connection: keep-alive
+2025-02-11 08:26:57.977187 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:26:57.977194 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:26:57.977200 [info]: Referer: http://192.168.164.128:9006/css/common.css
+2025-02-11 08:26:57.977215 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:26:57.977221 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:26:57.977226 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:26:57.977251 [info]: 
+2025-02-11 08:26:57.977300 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:26:57.977318 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+
+2025-02-11 08:26:57.977325 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+2025-02-11 08:26:57.977331 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+
+2025-02-11 08:26:57.978223 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:26:57.978352 [info]: adjust timer once
+2025-02-11 08:26:57.994619 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:26:57.994875 [info]: adjust timer once
+2025-02-11 08:26:57.995198 [info]: GET /favicon.ico HTTP/1.1
+2025-02-11 08:26:57.995293 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:26:57.995310 [info]: Connection: keep-alive
+2025-02-11 08:26:57.995316 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:26:57.995323 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:26:57.995329 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:26:57.995334 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:26:57.995339 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:26:57.995344 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:26:57.995377 [info]: 
+2025-02-11 08:26:57.995493 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:26:57.995508 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+
+2025-02-11 08:26:57.995514 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+2025-02-11 08:26:57.995519 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+
+2025-02-11 08:26:57.995844 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:26:57.995933 [info]: adjust timer once
+2025-02-11 08:27:00.483128 [info]: timer tick
+2025-02-11 08:27:04.550466 [info]: close fd 17
+2025-02-11 08:27:04.550713 [info]: close fd 16
+2025-02-11 08:27:04.550870 [info]: close fd 18
+2025-02-11 08:27:05.483513 [info]: timer tick
+2025-02-11 08:27:10.484045 [info]: timer tick
+2025-02-11 08:27:15.484268 [info]: timer tick
+2025-02-11 08:27:20.484528 [info]: timer tick
+2025-02-11 08:27:24.061094 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:27:24.061216 [info]: adjust timer once
+2025-02-11 08:27:24.061248 [info]: GET /blog_register.html HTTP/1.1
+2025-02-11 08:27:24.061258 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:27:24.061264 [info]: Connection: keep-alive
+2025-02-11 08:27:24.061269 [info]: Cache-Control: max-age=0
+2025-02-11 08:27:24.061273 [info]: Upgrade-Insecure-Requests: 1
+2025-02-11 08:27:24.061278 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:27:24.061285 [info]: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+2025-02-11 08:27:24.061290 [info]: Referer: http://192.168.164.128:9006/blog_login.html
+2025-02-11 08:27:24.061295 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:27:24.061300 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:27:24.061306 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:27:24.061332 [info]: 
+2025-02-11 08:27:24.061361 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:27:24.061378 [info]: request:HTTP/1.1 200 OK
+Content-Length:4944
+
+2025-02-11 08:27:24.061386 [info]: request:HTTP/1.1 200 OK
+Content-Length:4944
+Connection:keep-alive
+
+2025-02-11 08:27:24.061391 [info]: request:HTTP/1.1 200 OK
+Content-Length:4944
+Connection:keep-alive
+
+
+2025-02-11 08:27:24.062149 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:27:24.062243 [info]: adjust timer once
+2025-02-11 08:27:24.091009 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:27:24.091199 [info]: adjust timer once
+2025-02-11 08:27:24.091221 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:27:24.091251 [info]: adjust timer once
+2025-02-11 08:27:24.091330 [info]: GET /css/common.css HTTP/1.1
+2025-02-11 08:27:24.091434 [info]: GET /css/register.css HTTP/1.1
+2025-02-11 08:27:24.091840 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:27:24.091925 [info]: Connection: keep-alive
+2025-02-11 08:27:24.091936 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:27:24.091943 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:27:24.091948 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:27:24.091952 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:27:24.091957 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:27:24.091962 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:27:24.091988 [info]: 
+2025-02-11 08:27:24.092024 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:27:24.092029 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+
+2025-02-11 08:27:24.092034 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+2025-02-11 08:27:24.092040 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+
+2025-02-11 08:27:24.091657 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:27:24.092288 [info]: Connection: keep-alive
+2025-02-11 08:27:24.092300 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:27:24.092307 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:27:24.092312 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:27:24.092318 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:27:24.092324 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:27:24.092329 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:27:24.092347 [info]: 
+2025-02-11 08:27:24.092378 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:27:24.092387 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+
+2025-02-11 08:27:24.092392 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+2025-02-11 08:27:24.092398 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+
+2025-02-11 08:27:24.092648 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:27:24.092717 [info]: adjust timer once
+2025-02-11 08:27:24.092950 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:27:24.093008 [info]: adjust timer once
+2025-02-11 08:27:24.093773 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:27:24.093889 [info]: adjust timer once
+2025-02-11 08:27:24.093918 [info]: GET /img/logo.png HTTP/1.1
+2025-02-11 08:27:24.093945 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:27:24.093952 [info]: Connection: keep-alive
+2025-02-11 08:27:24.093957 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:27:24.093963 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:27:24.093969 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:27:24.093974 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:27:24.093980 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:27:24.093985 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:27:24.094010 [info]: 
+2025-02-11 08:27:24.094041 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:27:24.094047 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+
+2025-02-11 08:27:24.094052 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+2025-02-11 08:27:24.094068 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+
+2025-02-11 08:27:24.094771 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:27:24.094885 [info]: adjust timer once
+2025-02-11 08:27:24.098463 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:27:24.098585 [info]: adjust timer once
+2025-02-11 08:27:24.098647 [info]: GET /img/beijing.jpg HTTP/1.1
+2025-02-11 08:27:24.098677 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:27:24.098683 [info]: Connection: keep-alive
+2025-02-11 08:27:24.098689 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:27:24.098695 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:27:24.098701 [info]: Referer: http://192.168.164.128:9006/css/common.css
+2025-02-11 08:27:24.098706 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:27:24.098711 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:27:24.098716 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:27:24.098754 [info]: 
+2025-02-11 08:27:24.098806 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:27:24.098813 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+
+2025-02-11 08:27:24.098818 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+2025-02-11 08:27:24.098823 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+
+2025-02-11 08:27:24.099647 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:27:24.099842 [info]: adjust timer once
+2025-02-11 08:27:24.113427 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:27:24.113569 [info]: adjust timer once
+2025-02-11 08:27:24.113593 [info]: GET /favicon.ico HTTP/1.1
+2025-02-11 08:27:24.113615 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:27:24.113620 [info]: Connection: keep-alive
+2025-02-11 08:27:24.113624 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:27:24.113630 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:27:24.113635 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:27:24.113639 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:27:24.113644 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:27:24.113649 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:27:24.113678 [info]: 
+2025-02-11 08:27:24.113714 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:27:24.113718 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+
+2025-02-11 08:27:24.113723 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+2025-02-11 08:27:24.113740 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+
+2025-02-11 08:27:24.113941 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:27:24.114016 [info]: adjust timer once
+2025-02-11 08:27:24.554913 [info]: close fd 17
+2025-02-11 08:27:24.555131 [info]: close fd 16
+2025-02-11 08:27:24.555271 [info]: close fd 18
+2025-02-11 08:27:25.484959 [info]: timer tick
+2025-02-11 08:27:30.485150 [info]: timer tick
+2025-02-11 08:27:35.485365 [info]: timer tick
+2025-02-11 08:27:40.485895 [info]: timer tick
+2025-02-11 08:27:45.486078 [info]: timer tick
+2025-02-11 08:27:50.486639 [info]: timer tick
+2025-02-11 08:27:55.487097 [info]: timer tick
+2025-02-11 08:28:00.487257 [info]: timer tick
+2025-02-11 08:28:05.487726 [info]: timer tick
+2025-02-11 08:28:10.487992 [info]: timer tick
+2025-02-11 08:28:15.488403 [info]: timer tick
+2025-02-11 08:28:20.489002 [info]: timer tick
+2025-02-11 08:28:25.489216 [info]: timer tick
+2025-02-11 08:28:30.489462 [info]: timer tick
+2025-02-11 08:28:35.489726 [info]: timer tick
+2025-02-11 08:28:40.490238 [info]: timer tick
+2025-02-11 08:28:45.490347 [info]: timer tick
+2025-02-11 08:28:50.490613 [info]: timer tick
+2025-02-11 08:28:55.490797 [info]: timer tick
+2025-02-11 08:29:00.491314 [info]: timer tick
+2025-02-11 08:29:05.491732 [info]: timer tick
+2025-02-11 08:29:10.492204 [info]: timer tick
+2025-02-11 08:29:15.492722 [info]: timer tick
+2025-02-11 08:29:20.493290 [info]: timer tick
+2025-02-11 08:29:25.493813 [info]: timer tick
+2025-02-11 08:29:30.494263 [info]: timer tick
+2025-02-11 08:29:35.494788 [info]: timer tick
+2025-02-11 08:29:40.495197 [info]: timer tick
+2025-02-11 08:29:45.495305 [info]: timer tick
+2025-02-11 08:29:50.495842 [info]: timer tick
+2025-02-11 08:29:55.495981 [info]: timer tick
+2025-02-11 08:30:00.496378 [info]: timer tick
+2025-02-11 08:30:05.496585 [info]: timer tick
+2025-02-11 08:30:10.496890 [info]: timer tick
+2025-02-11 08:30:15.497123 [info]: timer tick
+2025-02-11 08:30:20.497238 [info]: timer tick
+2025-02-11 08:30:25.497487 [info]: timer tick
+2025-02-11 08:30:30.497937 [info]: timer tick
+2025-02-11 08:30:35.498282 [info]: timer tick
+2025-02-11 08:30:40.498505 [info]: timer tick
+2025-02-11 08:30:45.498659 [info]: timer tick
+2025-02-11 08:30:50.498774 [info]: timer tick
+2025-02-11 08:30:55.499331 [info]: timer tick
+2025-02-11 08:31:00.499778 [info]: timer tick
+2025-02-11 08:31:05.500010 [info]: timer tick
+2025-02-11 08:31:10.500454 [info]: timer tick
+2025-02-11 08:31:15.500873 [info]: timer tick
+2025-02-11 08:31:20.501211 [info]: timer tick
+2025-02-11 08:31:25.501411 [info]: timer tick
+2025-02-11 08:31:30.501647 [info]: timer tick
+2025-02-11 08:31:35.501755 [info]: timer tick
+2025-02-11 08:31:40.502333 [info]: timer tick
+2025-02-11 08:31:45.502693 [info]: timer tick
+2025-02-11 08:31:50.503205 [info]: timer tick
+2025-02-11 08:31:55.503745 [info]: timer tick
+2025-02-11 08:32:00.503866 [info]: timer tick
+2025-02-11 08:32:05.504343 [info]: timer tick
+2025-02-11 08:32:10.504467 [info]: timer tick
+2025-02-11 08:32:15.504602 [info]: timer tick
+2025-02-11 08:32:20.504749 [info]: timer tick
+2025-02-11 08:32:25.505117 [info]: timer tick
+2025-02-11 08:32:30.505453 [info]: timer tick
+2025-02-11 08:32:35.505583 [info]: timer tick
+2025-02-11 08:32:40.505841 [info]: timer tick
+2025-02-11 08:32:45.506022 [info]: timer tick
+2025-02-11 08:32:50.506356 [info]: timer tick
+2025-02-11 08:32:55.506821 [info]: timer tick
+2025-02-11 08:33:00.507172 [info]: timer tick
+2025-02-11 08:33:05.507532 [info]: timer tick
+2025-02-11 08:33:10.508004 [info]: timer tick
+2025-02-11 08:33:15.508423 [info]: timer tick
+2025-02-11 08:33:20.508802 [info]: timer tick
+2025-02-11 08:33:25.509355 [info]: timer tick
+2025-02-11 08:33:30.509846 [info]: timer tick
+2025-02-11 08:33:35.510247 [info]: timer tick
+2025-02-11 08:33:40.510524 [info]: timer tick
+2025-02-11 08:33:45.510765 [info]: timer tick
+2025-02-11 08:33:50.511012 [info]: timer tick
+2025-02-11 08:33:55.511483 [info]: timer tick
+2025-02-11 08:34:00.511871 [info]: timer tick
+2025-02-11 08:34:05.512064 [info]: timer tick
+2025-02-11 08:34:10.512192 [info]: timer tick
+2025-02-11 08:34:15.512724 [info]: timer tick
+2025-02-11 08:34:20.513278 [info]: timer tick
+2025-02-11 08:34:25.513696 [info]: timer tick
+2025-02-11 08:34:30.514172 [info]: timer tick
+2025-02-11 08:34:35.514315 [info]: timer tick
+2025-02-11 08:34:40.514618 [info]: timer tick
+2025-02-11 08:34:45.514815 [info]: timer tick
+2025-02-11 08:34:50.515155 [info]: timer tick
+2025-02-11 08:34:55.515658 [info]: timer tick
+2025-02-11 08:35:00.515965 [info]: timer tick
+2025-02-11 08:35:05.516320 [info]: timer tick
+2025-02-11 08:35:10.516663 [info]: timer tick
+2025-02-11 08:35:15.516978 [info]: timer tick
+2025-02-11 08:35:20.517556 [info]: timer tick
+2025-02-11 08:35:25.517664 [info]: timer tick
+2025-02-11 08:35:30.518166 [info]: timer tick
+2025-02-11 08:35:35.518630 [info]: timer tick
+2025-02-11 08:35:40.519104 [info]: timer tick
+2025-02-11 08:35:45.519564 [info]: timer tick
+2025-02-11 08:35:50.519887 [info]: timer tick
+2025-02-11 08:35:55.520017 [info]: timer tick
+2025-02-11 08:36:00.520204 [info]: timer tick
+2025-02-11 08:36:05.520647 [info]: timer tick
+2025-02-11 08:36:08.762753 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:36:08.762941 [info]: adjust timer once
+2025-02-11 08:36:08.762976 [info]: GET /blog_register.html HTTP/1.1
+2025-02-11 08:36:08.763006 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:36:08.763013 [info]: Connection: keep-alive
+2025-02-11 08:36:08.763019 [info]: Cache-Control: max-age=0
+2025-02-11 08:36:08.763024 [info]: Upgrade-Insecure-Requests: 1
+2025-02-11 08:36:08.763030 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:36:08.763037 [info]: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+2025-02-11 08:36:08.763042 [info]: Referer: http://192.168.164.128:9006/blog_login.html
+2025-02-11 08:36:08.763047 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:36:08.763052 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:36:08.763057 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:36:08.763082 [info]: 
+2025-02-11 08:36:08.763137 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:36:08.763145 [info]: request:HTTP/1.1 200 OK
+Content-Length:4918
+
+2025-02-11 08:36:08.763150 [info]: request:HTTP/1.1 200 OK
+Content-Length:4918
+Connection:keep-alive
+
+2025-02-11 08:36:08.763156 [info]: request:HTTP/1.1 200 OK
+Content-Length:4918
+Connection:keep-alive
+
+
+2025-02-11 08:36:08.763401 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:36:08.763472 [info]: adjust timer once
+2025-02-11 08:36:08.790182 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:36:08.790357 [info]: adjust timer once
+2025-02-11 08:36:08.790396 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:36:08.790400 [info]: GET /css/common.css HTTP/1.1
+2025-02-11 08:36:08.790445 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:36:08.790454 [info]: Connection: keep-alive
+2025-02-11 08:36:08.790414 [info]: GET /css/register.css HTTP/1.1
+2025-02-11 08:36:08.790468 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:36:08.790406 [info]: adjust timer once
+2025-02-11 08:36:08.790471 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:36:08.790495 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:36:08.790478 [info]: Connection: keep-alive
+2025-02-11 08:36:08.790508 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:36:08.790503 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:36:08.790524 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:36:08.790532 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:36:08.790516 [info]: Accept: text/css,*/*;q=0.1
+2025-02-11 08:36:08.790538 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:36:08.790547 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:36:08.790561 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:36:08.790566 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:36:08.790571 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:36:08.790572 [info]: 
+2025-02-11 08:36:08.790588 [info]: 
+2025-02-11 08:36:08.790628 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:36:08.790641 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:36:08.790657 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+
+2025-02-11 08:36:08.790665 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+2025-02-11 08:36:08.790647 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+
+2025-02-11 08:36:08.790679 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+2025-02-11 08:36:08.790686 [info]: request:HTTP/1.1 200 OK
+Content-Length:2578
+Connection:keep-alive
+
+
+2025-02-11 08:36:08.790671 [info]: request:HTTP/1.1 200 OK
+Content-Length:3147
+Connection:keep-alive
+
+
+2025-02-11 08:36:08.791104 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:36:08.791201 [info]: adjust timer once
+2025-02-11 08:36:08.791402 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:36:08.791467 [info]: adjust timer once
+2025-02-11 08:36:08.792178 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:36:08.792287 [info]: adjust timer once
+2025-02-11 08:36:08.792315 [info]: GET /img/logo.png HTTP/1.1
+2025-02-11 08:36:08.792345 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:36:08.792352 [info]: Connection: keep-alive
+2025-02-11 08:36:08.792357 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:36:08.792363 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:36:08.792368 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:36:08.792373 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:36:08.792378 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:36:08.792450 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:36:08.792535 [info]: 
+2025-02-11 08:36:08.792592 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:36:08.792600 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+
+2025-02-11 08:36:08.792619 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+2025-02-11 08:36:08.792624 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+
+2025-02-11 08:36:08.793338 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:36:08.793442 [info]: adjust timer once
+2025-02-11 08:36:08.799398 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:36:08.799546 [info]: adjust timer once
+2025-02-11 08:36:08.799577 [info]: GET /img/beijing.jpg HTTP/1.1
+2025-02-11 08:36:08.799634 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:36:08.799653 [info]: Connection: keep-alive
+2025-02-11 08:36:08.799660 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:36:08.799666 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:36:08.799673 [info]: Referer: http://192.168.164.128:9006/css/common.css
+2025-02-11 08:36:08.799678 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:36:08.799683 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:36:08.799687 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:36:08.799714 [info]: 
+2025-02-11 08:36:08.799750 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:36:08.799756 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+
+2025-02-11 08:36:08.799760 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+2025-02-11 08:36:08.799766 [info]: request:HTTP/1.1 200 OK
+Content-Length:34011
+Connection:keep-alive
+
+
+2025-02-11 08:36:08.800582 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:36:08.800702 [info]: adjust timer once
+2025-02-11 08:36:08.817346 [info]: deal with the client(192.168.164.1)
+2025-02-11 08:36:08.817564 [info]: adjust timer once
+2025-02-11 08:36:08.817762 [info]: GET /favicon.ico HTTP/1.1
+2025-02-11 08:36:08.817860 [info]: Host: 192.168.164.128:9006
+2025-02-11 08:36:08.817875 [info]: Connection: keep-alive
+2025-02-11 08:36:08.817879 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-02-11 08:36:08.817884 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-02-11 08:36:08.817890 [info]: Referer: http://192.168.164.128:9006/blog_register.html
+2025-02-11 08:36:08.817894 [info]: Accept-Encoding: gzip, deflate
+2025-02-11 08:36:08.817899 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-02-11 08:36:08.817903 [info]: Cookie: session_id=866425d016f49e8a788b322370901f62; username=111; isLogin=true
+2025-02-11 08:36:08.817936 [info]: 
+2025-02-11 08:36:08.817965 [info]: request:HTTP/1.1 200 OK
+
+2025-02-11 08:36:08.817970 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+
+2025-02-11 08:36:08.817974 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+2025-02-11 08:36:08.817978 [info]: request:HTTP/1.1 200 OK
+Content-Length:932
+Connection:keep-alive
+
+
+2025-02-11 08:36:08.818189 [info]: send data to the client(192.168.164.1)
+2025-02-11 08:36:08.818252 [info]: adjust timer once
+2025-02-11 08:36:10.520790 [info]: timer tick
+2025-02-11 08:36:15.521132 [info]: timer tick
+2025-02-11 08:36:20.521339 [info]: timer tick
+2025-02-11 08:36:25.521718 [info]: timer tick
+2025-02-11 08:36:30.521873 [info]: timer tick
+2025-02-11 08:36:35.522156 [info]: timer tick
+2025-02-11 08:36:40.522466 [info]: timer tick
+2025-02-11 08:36:45.522841 [info]: timer tick
+2025-02-11 08:36:50.522955 [info]: timer tick
+2025-02-11 08:36:55.523156 [info]: timer tick
+2025-02-11 08:37:00.523507 [info]: timer tick
+2025-02-11 08:37:05.523899 [info]: timer tick
+2025-02-11 08:37:10.524264 [info]: timer tick
+2025-02-11 08:37:15.524741 [info]: timer tick
+2025-02-11 08:37:20.525268 [info]: timer tick
+2025-02-11 08:37:25.525435 [info]: timer tick
+2025-02-11 08:37:30.525875 [info]: timer tick
+2025-02-11 08:37:35.525982 [info]: timer tick
+2025-02-11 08:37:40.526491 [info]: timer tick
+2025-02-11 08:37:45.526774 [info]: timer tick
+2025-02-11 08:37:50.527248 [info]: timer tick
+2025-02-11 08:37:55.527720 [info]: timer tick
+2025-02-11 08:38:00.528109 [info]: timer tick
+2025-02-11 08:38:05.528213 [info]: timer tick
+2025-02-11 08:38:10.528356 [info]: timer tick
+2025-02-11 08:38:15.528866 [info]: timer tick
+2025-02-11 08:38:20.529183 [info]: timer tick
+2025-02-11 08:38:25.529327 [info]: timer tick
+2025-02-11 08:38:30.529567 [info]: timer tick
+2025-02-11 08:38:35.530079 [info]: timer tick
+2025-02-11 08:38:40.530371 [info]: timer tick
+2025-02-11 08:38:45.530458 [info]: timer tick
+2025-02-11 08:38:50.530680 [info]: timer tick
+2025-02-11 08:38:55.530804 [info]: timer tick
+2025-02-11 08:39:00.531067 [info]: timer tick
+2025-02-11 08:39:05.531366 [info]: timer tick
+2025-02-11 08:39:10.531636 [info]: timer tick
+2025-02-11 08:39:15.531913 [info]: timer tick
+2025-02-11 08:39:20.532382 [info]: timer tick
+2025-02-11 08:39:25.532647 [info]: timer tick
+2025-02-11 08:39:30.533116 [info]: timer tick
+2025-02-11 08:39:35.533413 [info]: timer tick
+2025-02-11 08:39:40.533502 [info]: timer tick
+2025-02-11 08:39:45.533868 [info]: timer tick
+2025-02-11 08:39:50.534003 [info]: timer tick
+2025-02-11 08:39:55.534170 [info]: timer tick
+2025-02-11 08:40:00.534670 [info]: timer tick
+2025-02-11 08:40:05.534921 [info]: timer tick
+2025-02-11 08:40:10.535340 [info]: timer tick
+2025-02-11 08:40:15.535614 [info]: timer tick
+2025-02-11 08:40:20.535938 [info]: timer tick
+2025-02-11 08:40:25.536392 [info]: timer tick
+2025-02-11 08:40:30.536823 [info]: timer tick
+2025-02-11 08:40:35.537113 [info]: timer tick
+2025-02-11 08:40:40.537438 [info]: timer tick
+2025-02-11 08:40:45.538038 [info]: timer tick
+2025-02-11 08:40:50.538183 [info]: timer tick
+2025-02-11 08:40:55.538619 [info]: timer tick
+2025-02-11 08:41:00.538979 [info]: timer tick
+2025-02-11 08:41:05.539182 [info]: timer tick
+2025-02-11 08:41:10.539428 [info]: timer tick
+2025-02-11 08:41:15.539987 [info]: timer tick
+2025-02-11 08:41:20.540335 [info]: timer tick
+2025-02-11 08:41:25.540662 [info]: timer tick
+2025-02-11 08:41:30.541265 [info]: timer tick
+2025-02-11 08:41:35.541446 [info]: timer tick
+2025-02-11 08:41:40.541688 [info]: timer tick
+2025-02-11 08:41:45.542051 [info]: timer tick
+2025-02-11 08:41:50.542285 [info]: timer tick
+2025-02-11 08:41:55.542556 [info]: timer tick
+2025-02-11 08:42:00.543085 [info]: timer tick
+2025-02-11 08:42:05.543319 [info]: timer tick
+2025-02-11 08:42:10.543748 [info]: timer tick
+2025-02-11 08:42:15.544223 [info]: timer tick
+2025-02-11 08:42:20.544403 [info]: timer tick
+2025-02-11 08:42:25.544923 [info]: timer tick
+2025-02-11 08:42:30.545319 [info]: timer tick
+2025-02-11 08:42:35.545746 [info]: timer tick
+2025-02-11 08:42:40.546037 [info]: timer tick
+2025-02-11 08:42:45.546355 [info]: timer tick
+2025-02-11 08:42:50.546877 [info]: timer tick
+2025-02-11 08:42:55.547015 [info]: timer tick
+2025-02-11 08:43:00.547126 [info]: timer tick
+2025-02-11 08:43:05.547662 [info]: timer tick
+2025-02-11 08:43:10.548224 [info]: timer tick
+2025-02-11 08:43:15.548722 [info]: timer tick
+2025-02-11 08:43:20.549065 [info]: timer tick
+2025-02-11 08:43:25.549354 [info]: timer tick
+2025-02-11 08:43:30.549885 [info]: timer tick
+2025-02-11 08:43:35.550022 [info]: timer tick
+2025-02-11 08:43:40.550339 [info]: timer tick
+2025-02-11 08:43:45.550499 [info]: timer tick
+2025-02-11 08:43:50.551019 [info]: timer tick
+2025-02-11 08:43:55.551300 [info]: timer tick
+2025-02-11 08:44:00.551741 [info]: timer tick
+2025-02-11 08:44:05.552066 [info]: timer tick
+2025-02-11 08:44:10.552354 [info]: timer tick
+2025-02-11 08:44:15.552759 [info]: timer tick
+2025-02-11 08:44:20.552993 [info]: timer tick
+2025-02-11 08:44:25.553169 [info]: timer tick
+2025-02-11 08:44:30.553648 [info]: timer tick
+2025-02-11 08:44:35.553851 [info]: timer tick
+2025-02-11 08:44:40.554307 [info]: timer tick
+2025-02-11 08:44:45.554679 [info]: timer tick
+2025-02-11 08:44:50.554969 [info]: timer tick
+2025-02-11 08:44:55.555398 [info]: timer tick
+2025-02-11 08:45:00.555904 [info]: timer tick
+2025-02-11 08:45:05.556324 [info]: timer tick
+2025-02-11 08:45:10.556428 [info]: timer tick
+2025-02-11 08:45:15.556581 [info]: timer tick
+2025-02-11 08:45:20.556781 [info]: timer tick
+2025-02-11 08:45:25.557179 [info]: timer tick
+2025-02-11 08:45:30.557602 [info]: timer tick
+2025-02-11 08:45:35.558048 [info]: timer tick
+2025-02-11 08:45:40.558386 [info]: timer tick
+2025-02-11 08:45:45.558684 [info]: timer tick
+2025-02-11 08:45:50.558936 [info]: timer tick
+2025-02-11 08:45:55.559126 [info]: timer tick
+2025-02-11 08:46:00.559539 [info]: timer tick
+2025-02-11 08:46:05.559943 [info]: timer tick
+2025-02-11 08:46:10.560408 [info]: timer tick
+2025-02-11 08:46:15.560953 [info]: timer tick
+2025-02-11 08:46:20.561085 [info]: timer tick
+2025-02-11 08:46:25.561661 [info]: timer tick
+2025-02-11 08:46:30.562127 [info]: timer tick
+2025-02-11 08:46:35.562288 [info]: timer tick
+2025-02-11 08:46:40.562880 [info]: timer tick
+2025-02-11 08:46:45.563078 [info]: timer tick
+2025-02-11 08:46:50.563373 [info]: timer tick
+2025-02-11 08:46:55.563779 [info]: timer tick
+2025-02-11 08:47:00.564124 [info]: timer tick
+2025-02-11 08:47:05.564616 [info]: timer tick
+2025-02-11 08:47:10.565031 [info]: timer tick
+2025-02-11 08:47:15.565151 [info]: timer tick
+2025-02-11 08:47:20.565260 [info]: timer tick
+2025-02-11 08:47:25.565418 [info]: timer tick
+2025-02-11 08:47:30.566002 [info]: timer tick
+2025-02-11 08:47:35.566132 [info]: timer tick
+2025-02-11 08:47:40.566572 [info]: timer tick
+2025-02-11 08:47:45.567071 [info]: timer tick
+2025-02-11 08:47:50.567178 [info]: timer tick
+2025-02-11 08:47:55.567488 [info]: timer tick
+2025-02-11 08:48:00.567827 [info]: timer tick
+2025-02-11 08:48:05.568341 [info]: timer tick
+2025-02-11 08:48:10.568818 [info]: timer tick
+2025-02-11 08:48:15.568951 [info]: timer tick
+2025-02-11 08:48:20.569499 [info]: timer tick
+2025-02-11 08:48:25.569921 [info]: timer tick
+2025-02-11 08:48:30.570143 [info]: timer tick
+2025-02-11 08:48:35.570494 [info]: timer tick
+2025-02-11 08:48:40.570846 [info]: timer tick
+2025-02-11 08:48:45.571049 [info]: timer tick
+2025-02-11 08:48:50.571378 [info]: timer tick
+2025-02-11 08:48:55.571567 [info]: timer tick
+2025-02-11 08:49:00.571771 [info]: timer tick
+2025-02-11 08:49:05.572336 [info]: timer tick
+2025-02-11 08:49:10.572521 [info]: timer tick
+2025-02-11 08:49:15.573094 [info]: timer tick
+2025-02-11 08:49:20.573345 [info]: timer tick
+2025-02-11 08:49:25.573676 [info]: timer tick
+2025-02-11 08:49:30.573855 [info]: timer tick
+2025-02-11 08:49:35.574412 [info]: timer tick
+2025-02-11 08:49:40.574707 [info]: timer tick
+2025-02-11 08:49:45.574932 [info]: timer tick
+2025-02-11 08:49:50.575365 [info]: timer tick
+2025-02-11 08:49:55.575918 [info]: timer tick
+2025-02-11 08:50:00.576164 [info]: timer tick
+2025-02-11 08:50:05.576362 [info]: timer tick
+2025-02-11 08:50:10.576761 [info]: timer tick
+2025-02-11 08:50:15.576893 [info]: timer tick
+2025-02-11 08:50:20.577264 [info]: timer tick
+2025-02-11 08:50:25.577816 [info]: timer tick
+2025-02-11 08:50:30.578172 [info]: timer tick
+2025-02-11 08:50:35.578410 [info]: timer tick
+2025-02-11 08:50:40.578883 [info]: timer tick

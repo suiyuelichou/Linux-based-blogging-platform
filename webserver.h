@@ -66,7 +66,7 @@ public:
     int m_thread_num;
 
     //epoll_event相关
-    int m_pipefd[2];    //用于信号处理的管道
+    int m_pipefd[2];    //用于信号处理的管道 数据从 m_pipefd[1] 写入，从 m_pipefd[0] 读取
     int m_epollfd;      //epoll实例的文件描述符
     epoll_event events[MAX_EVENT_NUMBER];   //存储事件的数组
 

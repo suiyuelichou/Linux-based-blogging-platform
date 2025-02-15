@@ -28,20 +28,92 @@
         <div class="login-dialog">
             <h3>注&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;册</h3>
             <!-- 使用form包裹一下下列内容，便于给后续服务器提交数据 -->
-            <form action="3CGISQL.cgi" method="post">
+            <form action="3CGISQL.cgi" method="post" onsubmit="return validatePassword();">
                 <div class="row">
                     <span>用户名</span>
-                    <input type="text" name="user" id="username" placeholder="请输入用户名" required="required">
+                    <div class="input-group">
+                        <input type="text" name="user" id="username" pattern="[a-zA-Z0-9]{6,20}" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" placeholder="请输入用户名" required="required" onblur="checkUsername();">
+                        <!-- 添加问号，并用 data-hint 存储提示信息 -->
+                        <span class="tooltip" data-hint="用户名只能包含字母、数字, 长度6-20位">�</span>
+                    </div>
                 </div>
+                <!-- 修改密码输入部分的HTML结构 -->
                 <div class="row">
                     <span>密&nbsp;&nbsp;&nbsp;&nbsp;码</span>
-                    <input type="password" name="password" id="password" placeholder="请输入密码" required="required">
-                </div>
+                    <div class="input-group">
+                        <input type="password" name="password" id="password" placeholder="请输入密码" required="required" onblur="checkPassword()">
+                        <div id="password-hint" class="hint-text">密码8-16位,并包含字母和（数字或符号）</div>
+                    </div>
+                </div>    
+                <div class="row">
+                    <span>确认密码</span>
+                    <div class="input-group">
+                        <input type="password" id="confirm-password" placeholder="请再次输入密码" required="required" onblur="checkConfirmPassword()">
+                        <div id="confirm-password-hint" class="hint-text">两次输入的密码不一致</div>
+                    </div>
+                </div>                        
                 <div class="row">
                     <input type="submit" value="注    册" id="submit">
                 </div>
             </form>
         </div>
     </div>
+
+    <script>
+        function validatePassword() {
+            let password = document.getElementById("password").value;
+            let confirmPassword = document.getElementById("confirm-password").value;
+            let regex = /^(?=.*[A-Za-z])(?=.*\d|.*[^A-Za-z\d]).{8,}$/;
+
+            if (!regex.test(password)) {
+                alert("密码至少8位, 并包含字母和（数字或符号）");
+                return false;
+            }
+
+            if (password !== confirmPassword) {
+                alert("两次输入的密码不一致！");
+                return false;
+            }
+            return true;
+        }
+
+        // 用户名验证
+        function checkUsername() {
+            let username = document.getElementById("username").value;
+            let hint = document.getElementsById("username-hint");
+            
+            // 只允许字母、数字
+            let regex = /^[a-zA-Z0-9]{6,20}$/;
+            if (!regex.test(username)) {
+                hint.style.display = "block";
+            } else{
+                hint.style.display = "none";
+            }
+        }
+
+        function checkPassword() {
+            let password = document.getElementById("password").value;
+            let hint = document.getElementById("password-hint");
+            let regex = /^(?=.*[A-Za-z])(?=.*\d|.*[^A-Za-z\d]).{8,}$/;
+
+            if (!regex.test(password)) {
+                hint.style.display = "block"; // 显示提示信息
+            } else {
+                hint.style.display = "none";  // 隐藏提示信息
+            }
+        }
+
+        function checkConfirmPassword() {
+            let password = document.getElementById("password").value;
+            let confirmPassword = document.getElementById("confirm-password").value;
+            let hint = document.getElementById("confirm-password-hint");
+
+            if (confirmPassword && password !== confirmPassword) {
+                hint.style.display = "block"; // 显示提示
+            } else {
+                hint.style.display = "none";  // 隐藏提示
+            }
+        }
+    </script>
 </body>
 </html>

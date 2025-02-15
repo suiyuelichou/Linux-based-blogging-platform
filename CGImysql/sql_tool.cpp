@@ -1134,6 +1134,72 @@ void sql_blog_tool::modify_password_by_username(string username, string password
     mysql_stmt_close(stmt);
 }
 
+// 存储用户头像路径
+bool sql_blog_tool::update_avatar_path(string username, string file_path) {
+    // 获取连接池实例并获取 MySQL 连接
+    connection_pool* pool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII con(&mysql, pool);
+
+    // 构建 SQL 查询语句
+    string query = "UPDATE user SET avatar = ? WHERE username = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed: " << mysql_error(mysql) << endl;
+        return false;
+    }
+
+    // 预处理 SQL 语句
+    if (mysql_stmt_prepare(stmt, query.c_str(), query.length())) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 准备绑定参数
+    MYSQL_BIND bind_param[2];
+    memset(bind_param, 0, sizeof(bind_param));
+
+    // 绑定 file_path 参数
+    bind_param[0].buffer_type = MYSQL_TYPE_STRING;
+    bind_param[0].buffer = (char*)file_path.c_str();
+    bind_param[0].buffer_length = file_path.length();
+    bind_param[0].is_null = 0;
+
+    // 绑定 username 参数
+    bind_param[1].buffer_type = MYSQL_TYPE_STRING;
+    bind_param[1].buffer = (char*)username.c_str();
+    bind_param[1].buffer_length = username.length();
+    bind_param[1].is_null = 0;
+
+    // 绑定参数到语句
+    if (mysql_stmt_bind_param(stmt, bind_param)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 执行查询
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 检查受影响的行数
+    if (mysql_stmt_affected_rows(stmt) == 0) {
+        cerr << "No rows were updated. Check if the username exists." << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 清理
+    mysql_stmt_close(stmt);
+
+    return true;
+}
+
+
 // 检查消息是否属于该用户
 bool sql_blog_tool::check_message_belongs_to_user(int userid, int messageid)
 {
