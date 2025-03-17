@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --background: #f8fafc;
+            --text: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --input-border: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --background: #0f172a;
+            --text: #f8fafc;
+            --card-bg: rgba(30, 41, 59, 0.9);
+            --input-border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #6366f1, #8b5cf6);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container {
+            width: 90%;
+            max-width: 400px;
+            padding: 2.5rem;
+            background: var(--card-bg);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--text);
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--input-border);
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            background: transparent;
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="login-container">
+        <h2>管理员登录</h2>
+        <form action="admins_login" method="post">
+            <div class="input-group">
+                <input type="text" name="username" id="username" placeholder="用户名" autocomplete="username" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" id="password" placeholder="密码" autocomplete="current-password" required>
+            </div>
+            <div class="error" id="error-msg" style="display: none; color: red; text-align: center;">
+                用户名或密码错误！
+            </div>
+            <button type="submit" class="login-btn">登录系统</button>
+        </form>
+    </div>
+</body>
+</html>

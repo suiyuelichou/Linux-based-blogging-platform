@@ -8,6 +8,12 @@
 #include <iomanip>
 #include <sstream>
 #include <chrono>
+#include <regex>
+#include <bcrypt/BCrypt.hpp>
+#include <unordered_map>
+#include <stdexcept>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 //定义http响应的一些状态信息
 const char *ok_200_title = "OK";
@@ -53,6 +59,8 @@ void http_conn::initmysql_result(connection_pool *connPool)
         string temp2(row[1]);
         users[temp1] = temp2;
     }
+
+    mysql_free_result(result);
 }
 
 //对文件描述符设置非阻塞
@@ -314,6 +322,13 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char *text)
     //当url为/时，显示判断界面
     if (strlen(m_url) == 1)     // 若长度为1，说明请求的是'/'
         strcat(m_url, "blog_home.html");
+
+    // 检测管理员路径
+    if (strstr(m_url, "/admins") != nullptr) {
+        is_admin_request = true;  // 标记为管理员请求
+        // LOG_INFO("Admin request detected: %s", m_url);
+    }
+
     m_check_state = CHECK_STATE_HEADER;
     return NO_REQUEST;
 }
@@ -375,7 +390,11 @@ http_conn::HTTP_CODE http_conn::parse_headers(char *text)
     else if(strncasecmp(text, "Cookie:", 7) == 0){
         text += 7;
         text += strspn(text, " \t");
-        cookie.parseCookieHeader(text);     // 解析并存储cookie字符串
+        if(is_admin_request){
+            cookie_admin.parseCookieHeader(text);
+        }else{
+            cookie.parseCookieHeader(text);     // 解析并存储cookie字符串
+        }
     }
     else    // 若某一行的请求头不属于上述之一，则会重复写入日志，并在前面添加报警
     {
@@ -390,7 +409,6 @@ http_conn::HTTP_CODE http_conn::parse_content(char *text)
     if (m_read_idx >= (m_content_length + m_checked_idx))
     {
         text[m_content_length] = '\0';
-        // cout << strlen(text) << endl;
         //POST请求中最后为输入的用户名和密码
         m_string = text;
         return GET_REQUEST;
@@ -398,31 +416,131 @@ http_conn::HTTP_CODE http_conn::parse_content(char *text)
     return NO_REQUEST;
 }
 
-// 解析http请求体内容并存储 这是json数据的
-unordered_map<string, string> http_conn::parse_post_data(const string& body){
+// 解析http请求体内容并存储 这是表单类型的数据的（经过部分修改，也能解析简单的json）
+#include <string>
+#include <unordered_map>
+#include <stdexcept>
+
+using namespace std;
+
+unordered_map<string, string> http_conn::parse_post_data(const string& body) {
     unordered_map<string, string> post_data;
-    string::size_type start = 0;
-    string::size_type pos;
+    
+    // Trim whitespace
+    auto trim = [](const string& str) {
+        size_t first = str.find_first_not_of(" \t\n\r");
+        size_t last = str.find_last_not_of(" \t\n\r");
+        return first != string::npos ? str.substr(first, last - first + 1) : "";
+    };
 
-    while((pos = body.find('&', start)) != string::npos){
-        string pair = body.substr(start, pos - start);
-        string::size_type equalPos = pair.find('=');
+    // Check if it's a JSON object
+    if (!body.empty() && body[0] == '{' && body.back() == '}') {
+        string key, value;
+        bool inKey = true, inString = false, escaping = false;
+        int bracketCount = 0, bracketLevel = 0;
 
-        if(equalPos != string::npos){
-            string key = pair.substr(0, equalPos);
-            string value = pair.substr(equalPos + 1);
+        for (size_t i = 1; i < body.size() - 1; ++i) {
+            char c = body[i];
+
+            // Handle escaping
+            if (escaping) {
+                if (inKey) key += c;
+                else value += c;
+                escaping = false;
+                continue;
+            }
+
+            // Escape character
+            if (c == '\\') {
+                escaping = true;
+                if (inKey) key += c;
+                else value += c;
+                continue;
+            }
+
+            // Handle nested objects and arrays
+            if (c == '{' || c == '[') {
+                bracketCount++;
+                if (inKey) key += c;
+                else value += c;
+                bracketLevel++;
+                continue;
+            }
+
+            if (c == '}' || c == ']') {
+                bracketCount--;
+                if (inKey) key += c;
+                else value += c;
+                bracketLevel--;
+                continue;
+            }
+
+            // String handling
+            if (c == '"') {
+                if (!inString) {
+                    // Start of a string
+                    inString = true;
+                }
+                else {
+                    // End of a string
+                    if (bracketLevel == 0) {
+                        if (inKey) {
+                            // Finished reading key
+                            inKey = false;
+                        }
+                        else {
+                            // Finished reading value
+                            post_data[trim(key)] = trim(value);
+                            key.clear();
+                            value.clear();
+                            inKey = true;
+                        }
+                    }
+                    inString = false;
+                }
+                continue;
+            }
+
+            // Add characters if inside a string or key/value
+            if (inString || bracketLevel > 0) {
+                if (inKey) key += c;
+                else value += c;
+                continue;
+            }
+
+            // Normal parsing
+            if (!inString) {
+                if (c == ':' && bracketLevel == 0) {
+                    inKey = false;
+                }
+                else if (c == ',' && bracketLevel == 0) {
+                    inKey = true;
+                }
+            }
+        }
+    }
+    // Fallback to form-urlencoded parsing
+    else {
+        size_t start = 0, pos;
+        while ((pos = body.find('&', start)) != string::npos) {
+            string pair = body.substr(start, pos - start);
+            size_t equalPos = pair.find('=');
+            if (equalPos != string::npos) {
+                string key = pair.substr(0, equalPos);
+                string value = pair.substr(equalPos + 1);
+                post_data[key] = value;
+            }
+            start = pos + 1;
+        }
+
+        // Process last pair
+        string lastPair = body.substr(start);
+        size_t lastEqualPos = lastPair.find('=');
+        if (lastEqualPos != string::npos) {
+            string key = lastPair.substr(0, lastEqualPos);
+            string value = lastPair.substr(lastEqualPos + 1);
             post_data[key] = value;
         }
-        start = pos + 1;
-    }
-
-    // 处理最后一个键值对
-    string lastPair = body.substr(start);
-    string::size_type lastEqualPost = lastPair.find('=');
-    if(lastEqualPost != string::npos){
-        string key = lastPair.substr(0, lastEqualPost);
-        string value = lastPair.substr(lastEqualPost + 1);
-        post_data[key] = value;
     }
 
     return post_data;
@@ -530,6 +648,78 @@ string http_conn::generate_unique_filename(const std::string &filename)
     return base_name + "_" + std::to_string(milliseconds) + extension;
 }
 
+// 检测注册的用户名是否合法
+bool http_conn::is_valid_username(const char *name)
+{
+    int len = strlen(name);
+    if (len < 6 || len > 20) return false;
+
+    for (int i = 0; i < len; ++i) {
+        if (!isalnum(name[i])) return false; // 只能是字母或数字
+    }
+    return true;
+}
+
+// 检测注册的密码是否合法
+bool http_conn::is_valid_password(const char *password)
+{
+    int len = strlen(password);
+    if (len < 8 || len > 16) return false;
+
+    bool has_letter = false, has_digit_or_symbol = false;
+    for (int i = 0; i < len; ++i) {
+        if (isalpha(password[i])) has_letter = true;
+        if (isdigit(password[i]) || ispunct(password[i])) has_digit_or_symbol = true;
+    }
+
+    return has_letter && has_digit_or_symbol;
+}
+
+// 辅助函数：解析单个ID
+void http_conn::parse_id(char *start, size_t length, vector<int> &ids)
+{
+    char num_buf[32] = {0};
+    size_t num_len = 0;
+    
+    // 提取有效数字字符
+    for (size_t i = 0; i < length && num_len < sizeof(num_buf)-1; ++i) {
+        if (isdigit(start[i])) {
+            num_buf[num_len++] = start[i];
+        }
+    }
+    
+    if (num_len > 0) {
+        int id = atoi(num_buf);
+        if (id > 0) ids.push_back(id);
+    }
+}
+
+// 添加转义字符处理函数
+string escapeJsonString(const string& input) {
+    string output;
+    for (char c : input) {
+        switch (c) {
+            case '"': output += "\\\""; break;   // 双引号转义
+            case '\\': output += "\\\\"; break;  // 反斜杠转义
+            case '\b': output += "\\b"; break;   // 退格符
+            case '\f': output += "\\f"; break;   // 换页符
+            case '\n': output += "\\n"; break;   // 换行符
+            case '\r': output += "\\r"; break;   // 回车符
+            case '\t': output += "\\t"; break;   // 制表符
+            default:
+                // 处理其他不可打印字符
+                if (iscntrl(c)) {
+                    char buf[8];
+                    snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
+                    output += buf;
+                } else {
+                    output += c;
+                }
+        }
+    }
+    return output;
+};
+
 // 处理从客户端读取的HTTP请求（判断请求是否成功）
 http_conn::HTTP_CODE http_conn::process_read()
 {
@@ -591,7 +781,6 @@ http_conn::HTTP_CODE http_conn::process_read()
                 // 检查是否读取到了完整的请求体
                 if(m_read_idx - m_content_start >= m_content_length){
                     text = m_read_buf + m_content_start;
-                    cout << strlen(text) << endl;
                     LOG_INFO("%s", text);
                     text[m_content_length] = '\0';
                     m_string = text;
@@ -640,23 +829,35 @@ http_conn::HTTP_CODE http_conn::do_request()
             password[j] = m_string[i];
         password[j] = '\0';
 
-        //如果是注册，先检测数据库中是否有重名的
+        // 如果是注册，先检测数据库中是否有重名的
+        // 修改：在这里进行用户名和密码的后端检测
         if (*(p + 1) == '3')
         {
-            //没有重名的，进行增加数据
-            char *sql_insert = (char *)malloc(sizeof(char) * 200);
-            strcpy(sql_insert, "INSERT INTO user(username, password) VALUES(");
-            strcat(sql_insert, "'");
-            strcat(sql_insert, name);
-            strcat(sql_insert, "', '");
-            strcat(sql_insert, password);
-            strcat(sql_insert, "')");
+            // 校验用户名
+            if (!is_valid_username(name))
+            {
+                strcpy(m_url, "/blog_registerError.html"); // 用户名不符合要求
+            }
 
-            if (users.find(name) == users.end())    //哈希表中不存在相同的用户名
+            // 校验密码
+            if (!is_valid_password(password))
+            {
+                strcpy(m_url, "/blog_registerError.html"); // 密码不符合要求
+            }
+
+            // 生成 bcrypt 哈希
+            std::string hashed_password = BCrypt::generateHash(password);
+
+            // 没有重名的，进行增加数据
+            char *sql_insert = (char *)malloc(sizeof(char) * 200);
+            snprintf(sql_insert, 300, "INSERT INTO user(username, password) VALUES('%s', '%s')", name, hashed_password.c_str());
+
+            if (users.find(name) == users.end()) // 哈希表中不存在相同的用户名
             {
                 m_lock.lock();
-                int res = mysql_query(mysql, sql_insert);   // 执行sql_insert中的语句
-                users.insert(pair<string, string>(name, password));     //数据插入成功后，将用户名和密码也存入users中
+                int res = mysql_query(mysql, sql_insert); // 执行sql_insert中的语句
+                if (!res)
+                    users.insert(pair<string, string>(name, hashed_password)); // 数据插入成功后，存入users中
                 m_lock.unlock();
 
                 if (!res)
@@ -666,27 +867,45 @@ http_conn::HTTP_CODE http_conn::do_request()
             }
             else
                 strcpy(m_url, "/blog_registerError.html");
+
+            free(sql_insert); // 释放分配的内存
         }
         else if (*(p + 1) == '2')   //如果是登录，直接判断
         {
-            //若浏览器端输入的用户名和密码在表中可以查找到，返回1，否则返回0
-            if (users.find(name) != users.end() && users[name] == password){
-                // 创建新会话
-                // cookie.createSession(name);
-                char *m_url_real = (char *)malloc(sizeof(char) * 200);
-                try{
-                    cookie.createSession(name);
-                    current_username = name;
-                    islogin = true;
-                    strcpy(m_url, "/blog_user_home.html");
-                    strcpy(m_url_real, "/blog_user_home.html");
-                } catch(const runtime_error& e){    // 若当前用户已登录，再登录会返回错误页面(用户已登录)
-                    strcpy(m_url, "/blog_loginErrorExit.html");
-                    strcpy(m_url_real, "/blog_loginErrorExit.html");
-                }
+            //若浏览器端输入的用户名存在
+            if (users.find(name) != users.end()){
+                // 数据库中存储的哈希密码
+                std::string stored_hash = users[name];
+                // 验证密码   这里后面要把users[name] == password（方便测试）删掉，只保留哈希的验证
+                if (BCrypt::validatePassword(password, stored_hash) || users[name] == password){
+                    // 创建新会话
+                    // cookie.createSession(name);
+                    char *m_url_real = (char *)malloc(sizeof(char) * 200);
+                    try{
+                        cookie.createSession(name);
 
-                strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
-                free(m_url_real);
+                        sql_blog_tool tool;
+                        int userid = tool.get_userid(name);
+                        tool.update_last_login_time(userid);
+
+                        current_username = name;
+                        islogin = true;
+                        strcpy(m_url, "/blog_user_home.html");
+                        strcpy(m_url_real, "/blog_user_home.html");
+                    } catch(const runtime_error& e){    // 若当前用户已登录，再登录会返回错误页面(用户已登录)
+                        strcpy(m_url, "/blog_loginErrorExit.html");
+                        strcpy(m_url_real, "/blog_loginErrorExit.html");
+                    }
+
+                    strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+                    free(m_url_real);
+                }else{
+                    strcpy(m_url, "/blog_loginError.html");
+                    char *m_url_real = (char *)malloc(sizeof(char) * 200);
+                    strcpy(m_url_real, "/blog_loginError.html");
+                    strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+                    free(m_url_real);
+                }
             }
             else{
                 strcpy(m_url, "/blog_loginError.html");
@@ -712,6 +931,30 @@ http_conn::HTTP_CODE http_conn::do_request()
             return LOGIN_REQUEST;
         }
 
+    }
+    // 检查当前用户名是否已经被注册
+    else if(strstr(m_url, "/check_username_is_exist?username=") != nullptr){
+        // 解析 username
+        const char* usernameStart = strstr(m_url, "username=");
+        if (usernameStart == nullptr) {
+            return BAD_REQUEST;
+        }
+
+        // 跳过 "username=" 的长度
+        string username = usernameStart + 9;
+
+        // 检查用户名是否为空
+        if (username.empty()) {
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        if(tool.check_username_is_exist(username)){
+            jsonData = "{\"exists\": true}";
+        } else {
+            jsonData = "{\"exists\": false}";
+        }
+        return BLOG_DATA;
     }
     // 这里用来判断是否将用户新建的博客保存进数据库
     else if(cgi == 1 && strstr(m_url, "/blog") != nullptr){
@@ -746,7 +989,12 @@ http_conn::HTTP_CODE http_conn::do_request()
             blog.set_user_id(userid);
             blog.set_blog_postTime(postTime);
 
-            tool.insert_blog(blog);
+            
+            if(tool.insert_blog(blog)){
+                tool.increase_article_count(userid);
+            }else{
+                return BAD_REQUEST;
+            }
 
             return REDIRECT_USER_HOME;
         }
@@ -823,7 +1071,9 @@ http_conn::HTTP_CODE http_conn::do_request()
 
             // 判断用户删除的是不是自己的博客
             if(userid == userId){
-                tool.delete_blog_by_blogid(blogId);
+                if(tool.delete_blog_by_blogid(blogId)){
+                    tool.decrease_article_count(userid);
+                }
                 return REDIRECT_USER_HOME;
             }else{
                 return BAD_REQUEST;
@@ -995,6 +1245,8 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData += "\"userId\": " + std::to_string(blog.get_user_id()) + ",";
         jsonData += "\"postTime\": \"" + blog.get_blog_postTime() + "\"";
         jsonData += "}";
+
+        tool.increase_blog_view_count(blog.get_blog_id());
 
         return BLOG_DETAIL;
     }
@@ -1366,31 +1618,32 @@ http_conn::HTTP_CODE http_conn::do_request()
             strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
             free(m_url_real);
         }else{
+            cookie.removeSession(username);
             return REDIRECT_HOME;
         }
     }
-    else if (strstr(m_url, "/logout")){     // 注销并重定向到登录界面
+    else if (strstr(m_url, "/logout_user")){     // 注销并重定向到登录界面
         string username = cookie.getCookie("username");
         cookie.removeSession(username);
         return REDIRECT;
     }
-    else if (strstr(m_url, "/comments"))
-    {
-        // 创建 JSON 格式的测试数据
-        jsonData = R"([
-            {
-                "text": "这是第一条留言",
-		        "timestamp": "2024-11-13 3:03:14"
-            },
-            {
-                "text": "这是第二条留言",
-		        "timestamp": "2024-11-13 16:03:14"
-            }
-        ])";
+    // else if (strstr(m_url, "/comments"))
+    // {
+    //     // 创建 JSON 格式的测试数据
+    //     jsonData = R"([
+    //         {
+    //             "text": "这是第一条留言",
+	// 	        "timestamp": "2024-11-13 3:03:14"
+    //         },
+    //         {
+    //             "text": "这是第二条留言",
+	// 	        "timestamp": "2024-11-13 16:03:14"
+    //         }
+    //     ])";
         
-        // 将 JSON 数据加入响应
-        return BLOG_DETAIL;
-    }
+    //     // 将 JSON 数据加入响应
+    //     return BLOG_DETAIL;
+    // }
     else if (strstr(m_url, "/message_board.html"))
     {
         char *m_url_real = (char *)malloc(sizeof(char) * 200);
@@ -1402,6 +1655,7 @@ http_conn::HTTP_CODE http_conn::do_request()
     else if(strstr(m_url, "/user_center.html")){
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
+        cout << username << " " << session_id << endl;
 
         if(cookie.validateSession(username, session_id)){
             char *m_url_real = (char *)malloc(sizeof(char) * 200);
@@ -1618,8 +1872,6 @@ http_conn::HTTP_CODE http_conn::do_request()
         int userid = tool.get_userid(username);
 
         if(cookie.validateSession(username, session_id) && tool.check_message_belongs_to_user(userid, messageId)){
-            // cout << 111 << endl;
-            // cout << messageId << endl;
             // 标记消息为已读
             bool success = tool.mark_message_as_read(messageId);
 
@@ -1677,8 +1929,6 @@ http_conn::HTTP_CODE http_conn::do_request()
         int userid = tool.get_userid(username);
 
         if(cookie.validateSession(username, session_id) && tool.check_message_belongs_to_user(userid, messageId)){
-            // cout << 111 << endl;
-            // cout << messageId << endl;
             // 标记消息为已读
             bool success = tool.delete_message(messageId);
 
@@ -1688,6 +1938,1256 @@ http_conn::HTTP_CODE http_conn::do_request()
             }else{
                 jsonData = "{\"status\": \"error\", \"message\": \"删除消息失败\"}";
                 return BAD_REQUEST;
+            }
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-登录逻辑
+    else if(strstr(m_url, "/admins/admins_login")){
+        // 避免重复登录
+        string user = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+        // 若已登录则直接返回主页
+        if(cookie_admin.validateSession(user, session_id)){
+            char *m_url_real = (char *)malloc(sizeof(char) * 200);
+            strcpy(m_url_real, "/admins/admin_homepage.html");
+            strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+            free(m_url_real);
+        }else{
+            // 对请求体的内容进行解码
+            string body = url_decode(m_string);
+
+            // 获取请求体的内容
+            auto post_data = parse_post_data(body);
+
+            // 获取用户名和密码
+            string username = post_data["username"];
+            string password = post_data["password"];
+
+            // 从数据库中获取对应username的密码
+            sql_blog_tool tool;
+            string stored_hash = tool.get_admin_password_by_username(username);
+
+            // 验证密码 插眼 这里后面也要删
+            if(BCrypt::validatePassword(password, stored_hash) || password == stored_hash){
+                // 为当前的用户创建新会话
+                char *m_url_real = (char *)malloc(sizeof(char) * 200);
+                try{
+                    cookie_admin.createSession(username);
+                    current_username = username;
+                    islogin = true;
+                    strcpy(m_url, "/admins/admin_homepage.html");
+                    strcpy(m_url_real, "/admins/admin_homepage.html");
+                } catch(const runtime_error& e){    // 若当前用户已登录，再登录会返回错误页面(用户已登录)
+                    strcpy(m_url, "/blog_loginErrorExit.html");
+                    strcpy(m_url_real, "/blog_loginErrorExit.html");
+                }
+
+                strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+                free(m_url_real);
+            }else{
+
+            }
+            // 文件检查与映射
+            if (stat(m_real_file, &m_file_stat) < 0)
+                return NO_RESOURCE;
+
+            if (!(m_file_stat.st_mode & S_IROTH))
+                return FORBIDDEN_REQUEST;
+
+            if (S_ISDIR(m_file_stat.st_mode))
+                return BAD_REQUEST;     // 插眼
+
+            int fd = open(m_real_file, O_RDONLY);   // 以只读模式打开文件，返回文件描述符fd
+            m_file_address = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);   //通过mmap将文件的内容映射到进程的地址空间中
+            close(fd);
+            return ADMIN_LOGIN_REQUEST;
+        }
+    }
+    // 管理员-登录页面
+    else if(strstr(m_url, "/admins/login")){
+        // 检验是否登录 已登录：跳转主页 未登录：跳转登录页面
+        // 可以通过 检测请求中有没有cookie 判定是否跳转到登录界面
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+        // 若为空说明没登录（有可能已登录，cookie有保留）
+        if(session_id.empty() || username.empty()){
+            char *m_url_real = (char *)malloc(sizeof(char) * 200);
+            strcpy(m_url_real, "/admins/admin_login.html");
+            strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+            free(m_url_real);
+        }else{  
+            // 若不为空，则检验会话是否有效
+            if(cookie_admin.validateSession(username, session_id)){
+                char *m_url_real = (char *)malloc(sizeof(char) * 200);
+                strcpy(m_url_real, "/admins/admin_homepage.html");
+                strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+                free(m_url_real);
+            }else{
+                // 若客户端发来的cookie无效，则将其的cookie设置失效
+                cookie_admin.forceClearClientCookies();
+                return REDIRECT_ADMIN;
+            }
+        }
+        
+    }
+    // 管理员-主页面
+    else if(strstr(m_url, "/admins/admin_homepage.html")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            char *m_url_real = (char *)malloc(sizeof(char) * 200);
+            strcpy(m_url_real, "/admins/admin_homepage.html");
+            strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+
+            free(m_url_real);
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员注销
+    else if (strstr(m_url, "/logout_admin")){     // 注销并重定向到登录界面
+        string username = cookie_admin.getCookie("username");
+        cookie_admin.removeSession(username);
+        return REDIRECT_ADMIN;
+    }
+    // 管理员-仪表盘
+    else if(strstr(m_url, "/admins/stats")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            sql_blog_tool tool;
+            int blog_count = tool.get_total_blog_count();
+            int user_count = tool.get_user_count();
+            int comment = tool.get_comment_count();
+            int like = tool.get_like_count();
+
+            jsonData = "{";
+            jsonData += "\"totalPosts\":" + to_string(blog_count) + ",";
+            jsonData += "\"totalUsers\":" + to_string(user_count) + ",";
+            jsonData += "\"totalComments\":" + to_string(comment) + ",";
+            jsonData += "\"totalLikes\":" + to_string(like);
+            jsonData += "}";
+
+            return BLOG_DATA;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-文章管理-获取文章列表
+    else if(m_method == GET && strstr(m_url, "/admins/posts?")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            int page = 1, size = 10;
+            string sortField = "postTime"; // 默认排序字段(关键词) 按时间or按名称
+            string sortOrder = "desc"; // 默认排序方式 升序or降序
+            int categoryId = -1; // 默认不筛选分类
+            string searchKeyword = ""; // 默认无搜索
+
+            // 解析url参数
+            char* pageParam = strstr(m_url, "page=");
+            char* sizeParam = strstr(m_url, "pageSize=");
+            char* sortParam = strstr(m_url, "sort=");
+            char* categoryIdParam = strstr(m_url, "categoryId=");
+            char* searchParam = strstr(m_url, "search=");
+
+            if (pageParam) {
+                page = std::atoi(pageParam + 5);
+                if (page <= 0) page = 1;
+            }
+            if (sizeParam) {
+                size = std::atoi(sizeParam + 9);
+                if (size <= 0 || size > 100) size = 20;
+            }
+            if (sortParam) {
+                string sortStr = string(sortParam + 5);
+                size_t pos = sortStr.rfind("_");
+                if (pos != string::npos) {
+                    sortField = sortStr.substr(0, pos);
+                    sortOrder = sortStr.substr(pos + 1);
+
+                    // 防止将后续的 &categoryId=1 作为排序顺序的一部分
+                    size_t ampPos = sortOrder.find("&");
+                    if (ampPos != string::npos) {
+                        sortOrder = sortOrder.substr(0, ampPos);  // 只取排序方向部分
+                    }
+                }
+            }
+            if (categoryIdParam) {
+                categoryId = std::atoi(categoryIdParam + 11); // 解析 categoryId 参数
+                if (categoryId <= 0) categoryId = -1; // 如果 categoryId 非法，返回-1，不做筛选
+            }
+            if (searchParam) {
+            searchKeyword = string(searchParam + 7);
+            size_t ampPos = searchKeyword.find("&");
+            if (ampPos != string::npos) {
+                searchKeyword = searchKeyword.substr(0, ampPos);
+            }
+            searchKeyword = url_decode(searchKeyword);  // 进行 URL 解码
+            }
+            
+            // 查询数据库
+            sql_blog_tool tool;
+            vector<Blog> blogs;
+            int totalCount = 0;
+
+            if (!searchKeyword.empty()) {
+                if (categoryId != -1) {
+                    // 分类 + 关键词搜索
+                    blogs = tool.get_blogs_by_category_and_search(categoryId, searchKeyword, page, size, sortField, sortOrder);
+                    totalCount = tool.get_total_blog_count_by_category_and_search(categoryId, searchKeyword);
+                } else {
+                    // 仅搜索
+                    blogs = tool.get_blogs_by_search(page, size, sortField, sortOrder, searchKeyword);
+                    totalCount = tool.get_total_blog_count_by_search(searchKeyword);
+                }
+            } else {
+                if (categoryId != -1) {
+                    // 仅分类
+                    blogs = tool.get_blogs_by_category_and_page(categoryId, page, size, sortField, sortOrder);
+                    totalCount = tool.get_total_blog_count_by_category(categoryId);
+                } else {
+                    // 普通查询
+                    blogs = tool.get_blogs_by_page_and_sort(page, size, sortField, sortOrder);
+                    totalCount = tool.get_total_blog_count();
+                }
+            }
+
+            // 构造 JSON 响应
+            jsonData = "{";
+            jsonData += "\"posts\": [";
+            for (int i = 0; i < blogs.size(); i++) {
+                Blog blog = blogs[i];
+                string categoryName = tool.get_cotegoriename_by_cotegorieid(blog.get_category_id());
+                User user = tool.get_userdata_by_userid(blog.get_user_id());
+                string escapedTitle = escapeJsonString(blog.get_blog_title());
+                string escapedContent = escapeJsonString(blog.get_blog_content());
+
+                jsonData += "{";
+                jsonData += "\"id\": \"" + std::to_string(blog.get_blog_id()) + "\",";
+                jsonData += "\"title\": \"" + escapedTitle + "\",";
+                jsonData += "\"user\": \"" + user.get_username() + "\",";
+                jsonData += "\"categoryId\": \"" + std::to_string(blog.get_category_id()) + "\",";
+                jsonData += "\"categoryName\": \"" + categoryName + "\",";
+                jsonData += "\"createdAt\": \"" + blog.get_blog_postTime() + "\",";
+                jsonData += "\"updatedAt\": \"" + blog.get_updatedAt() + "\",";
+                jsonData += "\"views\": \"" + std::to_string(blog.get_views()) + "\"";
+                jsonData += "}";
+                if (i < blogs.size() - 1) jsonData += ",";
+            }
+            jsonData += "],";
+            int totalPages = (totalCount / 10) + 1;
+            jsonData += "\"totalPages\": " + std::to_string(totalPages) + ",";
+            jsonData += "\"currentPage\": " + std::to_string(page) + ",";
+            jsonData += "\"totalPosts\": " + std::to_string(totalCount);
+            jsonData += "}";
+
+            return BLOG_DATA;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-文章管理-获取单个文章详情
+    else if(m_method == GET && strstr(m_url, "/admins/posts/")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            // 提取博客 ID
+            char* postIdParam = strstr(m_url, "/admins/posts/") + 14; // 跳过 "/admins/posts/"
+            if (postIdParam) {
+                int blogId = std::atoi(postIdParam); // 将字符串转换为整数
+                if (blogId > 0) {
+                    // 根据博客 ID 查询数据库
+                    sql_blog_tool tool;
+                    Blog blog = tool.select_blog_by_id(blogId);
+                    string escapedTitle = escapeJsonString(blog.get_blog_title());
+                    string escapedContent = escapeJsonString(blog.get_blog_content());
+                    // 构造 JSON 响应
+                    jsonData = "{";
+                    jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
+                    jsonData += "\"title\": \"" + escapedTitle + "\",";
+                    jsonData += "\"categoryId\": \"" + std::to_string(blog.get_category_id()) + "\",";
+                    jsonData += "\"content\": \"" + escapedContent + "\",";
+                    // jsonData += "\"excerpt\": \"" + string("文章摘要...") + "\",";
+                    // jsonData += "\"status\": \"" + string("published") + "\",";
+
+                    // 处理 tags 数组
+                    vector<string> tags = tool.get_tags_by_blogid(blogId); // 假设此方法返回 vector<string>
+                    jsonData += "\"tags\": [";
+                    for (size_t i = 0; i < tags.size(); i++) {
+                        jsonData += "\"" + tags[i] + "\"";
+                        if (i < tags.size() - 1) jsonData += ",";
+                    }
+                    jsonData += "],";
+
+                    jsonData += "\"createdAt\": \"" + blog.get_blog_postTime() + "\",";
+                    jsonData += "\"updatedAt\": \"" + blog.get_updatedAt() + "\",";
+                    jsonData += "\"views\": " + string("100");
+                    jsonData += "}";
+
+                    return BLOG_DATA;
+                }else{
+                    return BAD_REQUEST; // 如果 blogId 无效
+                }
+            }
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // // 管理员-文章管理-更新文章
+    // else if(m_method == PATCH && strstr(m_url, "/admins/posts/")){
+    //     string username = cookie_admin.getCookie("username");
+    //     string session_id = cookie_admin.getCookie("session_id");
+
+    //     if(cookie_admin.validateSession(username, session_id)){
+    //         sql_blog_tool tool;
+    //         // 提取文章ID
+    //         char* postIdParam = strstr(m_url, "/admins/posts/") + 14; // 跳过 "/admins/posts/"
+    //         int postId = std::atoi(postIdParam);
+    //         Blog post = tool.select_blog_by_id(postId);
+
+    //         // 解析JSON格式的请求体
+    //         json requestJson = json::parse(m_string);
+            
+    //         string title = requestJson["title"];
+    //         string categoryId = requestJson["categoryId"];
+    //         string content = requestJson["content"];
+            
+    //         // 处理标签数组
+    //         vector<string> tagsList;
+    //         if(requestJson.contains("tags") && requestJson["tags"].is_array()) {
+    //             for(const auto& tag : requestJson["tags"]) {
+    //                 tagsList.push_back(tag);
+    //             }
+    //         }
+            
+    //         // 校验文章数据
+    //         if (title.empty() || content.empty()) {
+    //             return BAD_REQUEST;
+    //         }
+
+    //         Blog updatedPost;
+    //         updatedPost.set_blog_id(postId);
+    //         updatedPost.set_blog_title(title);
+    //         updatedPost.set_category_id(std::atoi(categoryId.c_str()));
+    //         updatedPost.set_blog_content(content);
+            
+    //         // 更新文章
+    //         if(tool.update_blog_by_blogid(postId, updatedPost)){
+    //             // 更新标签关联
+    //             tool.delete_blog_tags(postId); // 先删除旧标签关联
+    //             for(const auto& tag : tagsList) {
+    //                 // 如果标签不存在，先创建标签
+    //                 int tagId = tool.get_tag_id_by_name(tag);
+    //                 if(tagId == -1) {
+    //                     tagId = tool.create_tag(tag);
+    //                 }
+    //                 if(tagId != -1) {
+    //                     tool.add_blog_tag(postId, tagId);
+    //                 }
+    //             }
+                
+    //             Blog newPost = tool.select_blog_by_id(postId);
+    //             jsonData = "{";
+    //             jsonData += "\"id\":\"" + to_string(newPost.get_blog_id()) + "\",";
+    //             jsonData += "\"title\":\"" + newPost.get_blog_title() + "\"";
+    //             jsonData += "}";
+    //             return BLOG_DATA;
+    //         }
+    //         return BAD_REQUEST;
+    //     }
+    //     else{
+    //         return BAD_REQUEST;
+    //     }
+    // }
+    // 管理员-文章管理-删除文章
+    else if(m_method == DELETE && strstr(m_url, "/admins/posts")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            char* postIdParam = strstr(m_url, "/admins/posts/") + 14; // 跳过 "/admins/posts/"
+            if (postIdParam) {
+                int blogId = std::atoi(postIdParam); // 将字符串转换为整数
+                if (blogId > 0) {
+                    sql_blog_tool tool;
+                    tool.delete_blog_by_blogid(blogId);
+                    jsonData = "{";
+                    jsonData += "\"message\":" + string("文章删除成功");
+                    jsonData += "}";
+                }
+            }
+            return BLOG_DATA;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-文章管理-获取文章分类列表
+    else if(strstr(m_url, "/admins/blogcategories")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){   
+            // 查询数据库
+            sql_blog_tool tool;
+            vector<Categories> categories = tool.get_cotegories_all();
+
+            // 构造 JSON 响应
+            jsonData += "[";
+            for (int i = 0; i < categories.size(); i++) {
+                Categories categorie = categories[i];
+                jsonData += "{";
+                jsonData += "\"id\": " + std::to_string(categorie.get_id()) + ",";
+                jsonData += "\"name\": \"" + categorie.get_name() + "\"";
+                jsonData += "}";
+                if (i < categories.size() - 1) jsonData += ",";
+            }
+            jsonData += "]";
+            return BLOG_DATA;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-评论管理-获取评论列表（分页、搜索、筛选）
+    else if(m_method == GET && strstr(m_url, "/admins/comments?")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            int page = 1, size = 10;
+            string searchKeyword = ""; // 默认无搜索
+            string sortField = "created_at";
+            string sortOrder = "desc";
+
+            // 解析url参数
+            char* pageParam = strstr(m_url, "page=");
+            char* sizeParam = strstr(m_url, "pageSize=");
+            char* searchParam = strstr(m_url, "search=");
+            char* sortParam = strstr(m_url, "sort=");
+
+            if (pageParam) {
+                page = std::atoi(pageParam + 5);
+                if (page <= 0) page = 1;
+            }
+            if (sizeParam) {
+                size = std::atoi(sizeParam + 9);
+                if (size <= 0 || size > 100) size = 20;
+            }
+            if (searchParam) {
+                searchKeyword = string(searchParam + 7);
+                size_t ampPos = searchKeyword.find("&");
+                if (ampPos != string::npos) {
+                    searchKeyword = searchKeyword.substr(0, ampPos);
+                }
+                searchKeyword = url_decode(searchKeyword);  // 进行 URL 解码
+            }
+            if (sortParam) {
+                string sortStr = string(sortParam + 5);
+                size_t pos = sortStr.rfind("_");  // 改为 rfind("_")，确保取最后一个 "_"
+
+                if (pos != string::npos) {
+                    sortField = sortStr.substr(0, pos);
+                    sortOrder = sortStr.substr(pos + 1);
+
+                    // 防止将后续的 &categoryId=1 作为排序顺序的一部分
+                    size_t ampPos = sortOrder.find("&");
+                    if (ampPos != string::npos) {
+                        sortOrder = sortOrder.substr(0, ampPos);  // 只取排序方向部分
+                    }
+                }
+            }
+            
+            // 查询数据库
+            sql_blog_tool tool;
+            vector<Comments> comments;
+            int totalCount = 0;
+
+            if (!searchKeyword.empty()) {
+                comments = tool.get_comments_by_page_and_sort_and_search(page, size, sortField, sortOrder, searchKeyword);
+                totalCount = tool.get_total_comments_count_by_search(searchKeyword);
+            } else {
+                comments = tool.get_comments_by_page_and_sort(page, size, sortField, sortOrder);
+                totalCount = tool.get_comment_count();
+            }
+
+            // 构造 JSON 响应
+            jsonData = "{";
+            jsonData += "\"comments\": [";
+            for (int i = 0; i < comments.size(); i++) {
+                Comments comment = comments[i];
+                Blog blog = tool.select_blog_by_id(comment.get_blog_id());
+                string escapedUser = escapeJsonString(comment.get_username());
+                string escapedContent = escapeJsonString(comment.get_content());
+                
+
+                jsonData += "{";
+                jsonData += "\"id\": " + std::to_string(comment.get_comment_id()) + ",";
+                jsonData += "\"author\": \"" + escapedUser + "\",";
+                // jsonData += "\"email\": \"" + user.get_eamil() + "\",";
+                jsonData += "\"content\": \"" + comment.get_content() + "\",";
+                jsonData += "\"articleId\": " + std::to_string(comment.get_blog_id()) + ",";
+                jsonData += "\"articleTitle\": \"" + blog.get_blog_title() + "\",";
+                // jsonData += "\"status\": \"" + std::string("approved") + "\",";
+                jsonData += "\"createdAt\": \"" + comment.get_comment_time() + "\"";
+                jsonData += "}";
+                if (i < comments.size() - 1) jsonData += ",";
+            }
+            jsonData += "],";
+            int totalPages = (totalCount + size - 1) / size; // 使用整数除法向上取整的技巧
+            jsonData += "\"totalPages\": " + std::to_string(totalPages);
+            jsonData += "}";
+
+            return BLOG_DATA;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-评论管理-获取单个评论详情
+    // else if(m_method == GET && strstr(m_url, "/admins/comments")){
+    //     string username = cookie_admin.getCookie("username");
+    //     string session_id = cookie_admin.getCookie("session_id");
+
+    //     if(cookie_admin.validateSession(username, session_id)){
+    //         char* commentIdParam = strstr(m_url, "/admins/comments/") + 17; // 跳过 "/admins/posts/"
+    //         if (commentIdParam) {
+    //             int commentId = std::atoi(commentIdParam); // 将字符串转换为整数
+    //             if (commentId > 0) {
+    //                 sql_blog_tool tool;
+    //                 Comments comment = tool.get_comment_by_commentId(commentId);
+    //                 Blog blog = tool.select_blog_by_id(comment.get_blog_id());
+    //                 string escapedUser = escapeJsonString(comment.get_username());
+    //                 string escapedContent = escapeJsonString(comment.get_content());
+
+    //                 jsonData += "{";
+    //                 jsonData += "\"id\": " + std::to_string(comment.get_comment_id()) + ",";
+    //                 jsonData += "\"author\": \"" + escapedUser + "\",";
+    //                 jsonData += "\"email\": \"" + string("1111@example.com") + "\",";
+    //                 jsonData += "\"content\": \"" + escapedContent + "\",";
+    //                 jsonData += "\"articleId\": " + std::to_string(comment.get_blog_id()) + ",";
+    //                 jsonData += "\"articleTitle\": \"" + blog.get_blog_title() + "\",";
+    //                 // jsonData += "\"status\": \"" + std::string("approved") + "\",";
+    //                 jsonData += "\"createdAt\": \"" + comment.get_comment_time() + "\"";
+    //                 jsonData += "}";
+
+    //                 return BLOG_DATA;
+    //             }else{
+    //                 return BAD_REQUEST;
+    //             }
+    //         }
+    //         return BLOG_DATA;
+    //     }else{
+    //         return BAD_REQUEST;
+    //     }
+    // }
+    // 管理员-评论管理-更新评论
+    // else if(m_method == PATCH && strstr(m_url, "/admins/comments")){
+    //     string username = cookie_admin.getCookie("username");
+    //     string session_id = cookie_admin.getCookie("session_id");
+
+    //     if(cookie_admin.validateSession(username, session_id)){
+    //         char* commentIdParam = strstr(m_url, "/admins/comments/") + 17; // 跳过 "/admins/posts/"
+    //         if (commentIdParam) {
+    //             int commentId = std::atoi(commentIdParam); // 将字符串转换为整数
+    //             if (commentId > 0) {
+    //                 auto post_data = parse_post_data(m_string);
+    //                 string newcontent = post_data["content"];
+    //                 string newstatus = post_data["status"];
+    //                 Comments comment;
+    //                 comment.set_content(newcontent);
+                    
+
+    //                 sql_blog_tool tool;
+    //                 if(tool.update_comment_by_commentid(commentId, comment)){
+    //                     jsonData += "{";
+    //                     jsonData += "\"success\": " + string("true") + ",";
+    //                     jsonData += "\"message\": \"" + string("评论更新成功") + "\"";
+    //                     jsonData += "}";
+
+    //                     return BLOG_DATA;
+    //                 }
+
+    //             }else{
+    //                 return BAD_REQUEST;
+    //             }
+    //         }
+    //         return BLOG_DATA;
+    //     }else{
+    //         return BAD_REQUEST;
+    //     }
+    // }
+    // 管理员-评论管理-删除单条评论
+    else if(m_method == DELETE && strstr(m_url, "/admins/comments")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            char* commentIdParam = strstr(m_url, "/admins/comments/") + 17; // 跳过 "/admins/posts/"
+            if (commentIdParam) {
+                int commentId = std::atoi(commentIdParam); // 将字符串转换为整数
+                if (commentId > 0) {
+                    sql_blog_tool tool;
+                    bool result = tool.delete_comment_by_commentid(commentId);
+                    if(result){
+                        jsonData = "{";
+                        jsonData += "\"success\":" + string("true") + ",";
+                        jsonData += "\"message\":\"" + string("评论已删除") + "\"";
+                        jsonData += "}";
+                    }else{
+                        return BAD_REQUEST;
+                    }
+                }else{
+                    return BAD_REQUEST;
+                }
+            }
+            return BLOG_DATA;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-评论管理-批量删除评论
+    // else if (m_method == POST && strstr(m_url, "/admins/comments/batch-delete")) {
+    //     string username = cookie_admin.getCookie("username");
+    //     string session_id = cookie_admin.getCookie("session_id");
+
+    //     if (cookie_admin.validateSession(username, session_id)) {
+    //         vector<int> commentIds;
+            
+    //         // 获取原始字符串指针
+    //         char* input = m_string;
+            
+    //         // 查找ids数组起始位置
+    //         char* array_start = strstr(input, "\"ids\"");
+    //         if (!array_start) return BAD_REQUEST;
+            
+    //         array_start = strchr(array_start, '[');  // 定位到数组开始
+    //         if (!array_start) return BAD_REQUEST;
+            
+    //         char* array_end = strchr(array_start, ']'); // 定位到数组结束
+    //         if (!array_end) return BAD_REQUEST;
+
+    //         // 遍历数组内容
+    //         char* current = array_start + 1;
+    //         while (current < array_end) {
+    //             // 跳过空白字符
+    //             while (current < array_end && isspace(*current)) ++current;
+    //             if (current >= array_end) break;
+
+    //             // 处理引号（支持带引号和不带引号的数字）
+    //             char* value_start = current;
+    //             if (*value_start == '"') {
+    //                 ++value_start;  // 跳过开头的引号
+    //                 char* value_end = strchr(value_start, '"');
+    //                 if (!value_end || value_end > array_end) break;
+    //                 current = value_end + 1;  // 移动到下一个元素
+    //                 parse_id(value_start, value_end - value_start, commentIds);
+    //             } else {
+    //                 // 不带引号的数字
+    //                 char* comma = strchr(current, ',');
+    //                 char* value_end = (comma && comma < array_end) ? comma : array_end;
+    //                 parse_id(current, value_end - current, commentIds);
+    //                 current = value_end + 1;
+    //             }
+
+    //             // 跳过逗号
+    //             while (current < array_end && (*current == ',' || isspace(*current))) ++current;
+    //         }
+
+    //         if (commentIds.empty()) return BAD_REQUEST;
+
+    //         // 执行批量删除
+    //         sql_blog_tool tool;
+    //         int affectedCount = tool.batch_delete_comments(commentIds);
+
+    //         // 构造响应（使用安全格式化）
+    //         char buffer[256];
+    //         snprintf(buffer, sizeof(buffer), 
+    //             "{\"success\":true,\"message\":\"已成功删除%d条评论\",\"affectedCount\":%d}",
+    //             affectedCount, affectedCount);
+    //         jsonData = buffer;
+
+    //         return BLOG_DATA;
+    //     } else {
+    //         return BAD_REQUEST;
+    //     }
+    // }
+    // 管理员-用户管理-获取用户列表（分页、搜索、筛选）
+    else if(m_method == GET && strstr(m_url, "/admins/users?")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            int page = 1, size = 10;
+            string sortField = "register_time"; // 默认排序字段(关键词) 按注册时间、登录时间、名称、文章数
+            string sortOrder = "desc"; // 默认排序方式 升序or降序
+            string status = "";         // 默认全部状态  可使用、已封禁
+            string searchKeyword = ""; // 默认无搜索 搜索用户名、邮箱
+
+            // 解析url参数
+            char* pageParam = strstr(m_url, "page=");
+            char* sizeParam = strstr(m_url, "pageSize=");
+            char* sortParam = strstr(m_url, "sort=");
+            char* statusParam = strstr(m_url, "status=");
+            char* searchParam = strstr(m_url, "search=");
+
+            if (pageParam) {
+                page = std::atoi(pageParam + 5);
+                if (page <= 0) page = 1;
+            }
+            if (sizeParam) {
+                size = std::atoi(sizeParam + 9);
+                if (size <= 0 || size > 100) size = 20;
+            }
+            if (sortParam) {
+                string sortStr = string(sortParam + 5);
+                size_t pos = sortStr.rfind("_");  // 改为 rfind("_")，确保取最后一个 "_"
+
+                if (pos != string::npos) {
+                    sortField = sortStr.substr(0, pos);
+                    sortOrder = sortStr.substr(pos + 1);
+
+                    // 防止将后续的 &categoryId=1 作为排序顺序的一部分
+                    size_t ampPos = sortOrder.find("&");
+                    if (ampPos != string::npos) {
+                        sortOrder = sortOrder.substr(0, ampPos);  // 只取排序方向部分
+                    }
+                }
+            }
+            if (statusParam) {
+                status = string(statusParam + 7);
+                size_t ampPos = status.find("&");
+                if (ampPos != string::npos) {
+                    status = status.substr(0, ampPos);
+                }
+            }
+            if (searchParam) {
+                searchKeyword = string(searchParam + 7);
+                size_t ampPos = searchKeyword.find("&");
+                if (ampPos != string::npos) {
+                    searchKeyword = searchKeyword.substr(0, ampPos);
+                }
+                searchKeyword = url_decode(searchKeyword);  // 进行 URL 解码
+            }
+            
+            // 查询数据库
+            sql_blog_tool tool;
+            vector<User> users;
+            int totalCount = 0;
+
+            if (searchKeyword.empty()) {
+                if (status.empty()) {
+                    // 分页查询+排序
+                    users = tool.get_users_by_page_and_sort(page, size, sortField, sortOrder);
+                    totalCount = tool.get_user_count();
+                } else {
+                    // 状态+分页查询+排序
+                    users = tool.get_users_by_page_and_sort_and_status(page, size, sortField, sortOrder, status);
+                    totalCount = tool.get_user_count_by_status(status);
+                }
+            } else {
+                if (status.empty()) {
+                    // 搜索+分页查询+排序
+                    users = tool.get_users_by_page_and_sort_and_search(page, size, sortField, sortOrder, searchKeyword);
+                    totalCount = tool.get_user_count_by_search(searchKeyword);
+                } else {
+                    // 状态+搜索+分页查询+排序
+                    users = tool.get_users_by_page_and_sort_and_status_search(page, size, sortField, sortOrder, status, searchKeyword);
+                    totalCount = tool.get_user_count_by_status_search(status, searchKeyword);
+                }
+            }
+
+            // 构造 JSON 响应
+            jsonData = "{";
+            jsonData += "\"users\": [";
+            for (int i = 0; i < users.size(); i++) {
+                User user = users[i];
+
+                jsonData += "{";
+                jsonData += "\"id\": \"" + std::to_string(user.get_userid()) + "\",";
+                jsonData += "\"username\": \"" + user.get_username() + "\",";
+                jsonData += "\"email\": \"" + user.get_eamil() + "\",";
+                jsonData += "\"status\": \"" + user.get_status() + "\",";
+                jsonData += "\"createdAt\": \"" + user.get_register_time() + "\",";
+                jsonData += "\"lastLogin\": \"" + user.get_last_login_time() + "\",";
+                jsonData += "\"avatar\": \"" + string("") + "\",";
+                jsonData += "\"postsCount\": \"" + std::to_string(user.get_article_count()) + "\"";
+                jsonData += "}";
+                if (i < users.size() - 1) jsonData += ",";
+            }
+            jsonData += "],";
+            int totalPages = (totalCount / 10) + 1;
+            jsonData += "\"totalPages\": " + std::to_string(totalPages) + ",";
+            jsonData += "\"currentPage\": " + std::to_string(page) + ",";
+            jsonData += "\"totalUsers\": " + std::to_string(totalCount);
+            jsonData += "}";
+
+            return BLOG_DATA;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-用户管理-获取用户详情
+    else if(m_method == GET && strstr(m_url, "/admins/users/")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){   
+            // 提取博客 ID
+            char* userIdParam = strstr(m_url, "/admins/users/") + 14; // 跳过 "/admins/users/"
+            if (userIdParam) {
+                int userId = std::atoi(userIdParam); // 将字符串转换为整数
+                if (userId > 0) {
+                    // 根据博客 ID 查询数据库
+                    sql_blog_tool tool;
+                    User user = tool.get_userdata_by_userid(userId);
+                    string escapedBio = escapeJsonString(user.get_description());
+                    // 构造 JSON 响应
+                    jsonData = "{";
+                    jsonData += "\"id\": " + std::to_string(user.get_userid()) + ",";
+                    jsonData += "\"username\": \"" + user.get_username() + "\",";
+                    jsonData += "\"email\": \"" + user.get_eamil() + "\",";
+                    jsonData += "\"status\": \"" + user.get_status() + "\",";
+                    jsonData += "\"bio\": \"" + escapedBio + "\",";
+                    jsonData += "\"createdAt\": \"" + user.get_register_time() + "\",";
+                    jsonData += "\"lastLogin\": \"" + user.get_register_time() + "\"";
+                    jsonData += "}";
+
+                    return BLOG_DATA;
+                }else{
+                    return BAD_REQUEST; // 如果 userId 无效
+                }
+            }
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-用户管理-添加新用户
+    else if(m_method == POST && strstr(m_url, "/admins/users")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){   
+            auto post_data = parse_post_data(m_string);
+            string username = post_data["username"];
+            string password = post_data["password"];
+            string email = post_data["email"];
+            string status = post_data["status"];
+            string bio = post_data["bio"];
+
+            if (username.empty()) return BAD_REQUEST;
+            if(password.empty()) return BAD_REQUEST;
+            if(status.empty()) return BAD_REQUEST;
+
+            sql_blog_tool tool;
+            if(tool.check_username_is_exist(username)){
+                jsonData = "{\"exists\": true}";
+                return BAD_REQUEST;
+            }
+            // 校验用户名
+            if (!is_valid_username(username.c_str()))
+            {
+                return BAD_REQUEST;
+            }
+
+            // 校验密码
+            if (!is_valid_password(password.c_str()))
+            {
+                return BAD_REQUEST;
+            }
+
+            // 生成 bcrypt 哈希
+            std::string hashed_password = BCrypt::generateHash(password);
+
+            User user;
+            user.set_username(username);
+            user.set_password(hashed_password);
+            user.set_email(email);
+            user.set_status(status);
+            user.set_description(bio);
+
+            // 将该用户插入用户表
+            if(tool.add_user_from_admin(user)){
+                users.insert(pair<string, string>(username, hashed_password)); // 数据插入成功后，存入users中
+                jsonData = "{";
+                        jsonData += "\"success\":" + string("true") + ",";
+                        jsonData += "\"message\":\"" + string("用户创建成功") + "\",";
+                        jsonData += "\"userId\":\"" + to_string(user.get_userid()) + "\"";
+                        jsonData += "}";
+                return BLOG_DATA;
+            }
+
+            return BLOG_DATA;
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-用户管理-更新用户
+    else if(m_method == PATCH && strstr(m_url, "/admins/users/")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            sql_blog_tool tool;
+            // 提取用户数据  
+            char* userIdParam = strstr(m_url, "/admins/users/") + 14; // 跳过 "/admins/users/"
+            int userId = std::atoi(userIdParam);
+            User olduser = tool.get_userdata_by_userid(userId);
+
+            auto post_data = parse_post_data(m_string);
+            string newusername = post_data["username"];
+            string newpassword = post_data["password"];
+            string email = post_data["email"];
+            string status = post_data["status"];
+            string bio = post_data["bio"];
+            
+            if(!newusername.empty() && tool.check_username_is_exist(newusername)){
+                jsonData = "{\"exists\": true}";
+                return BAD_REQUEST;
+            }
+            // 校验用户名
+            if (!newusername.empty() && !is_valid_username(newusername.c_str()))
+            {
+                return BAD_REQUEST;
+            }
+            // 校验密码
+            if (!newpassword.empty() && !is_valid_password(newpassword.c_str()))
+            {
+                return BAD_REQUEST;
+            }
+
+            // 生成 bcrypt 哈希
+            std::string hashed_password;
+            if(!newpassword.empty()) hashed_password = BCrypt::generateHash(newpassword);
+
+            User user;
+            user.set_username(newusername);
+            user.set_password(hashed_password);
+            user.set_email(email);
+            user.set_status(status);
+            user.set_description(bio);
+
+            // 将该用户插入用户表
+            if(tool.update_user_by_userid(userId, user)){
+                auto it = users.find(olduser.get_username());
+                if (it != users.end()) {
+                    std::string oldpassword = it->second; // 旧密码
+
+                    // 如果 password 变更，则更新
+                    if (!newpassword.empty() && newpassword != oldpassword) {
+                        it->second = newpassword;
+                    }
+
+                    // 如果 username 变更，则删除旧的键值对，插入新的
+                    if (!newusername.empty() && newusername != olduser.get_username()) {
+                        users.erase(it);
+                        users.insert({newusername, newpassword}); // 保持旧密码
+                    }
+
+                    // 如果都变，则删除旧的键值对，插入新的
+                    if (!newusername.empty() && newusername != olduser.get_username() && !newpassword.empty() && newpassword != olduser.get_password()) {
+                        users.erase(it);
+                        users.insert({newusername, newpassword}); // 保持旧密码
+                    }
+                } else {
+                    // 如果旧用户名不存在
+                    return BAD_REQUEST;
+                }
+
+                User newUser = tool.get_userdata_by_userid(userId);
+                jsonData = "{";
+                        jsonData += "\"message\":\"" + string("用户更新成功") + "\",";
+                        jsonData += "\"user\": " + 
+                            jsonData += "\"username\":\"" + newUser.get_username() + "\",";
+                            jsonData += "\"email\":\"" + newUser.get_eamil() + "\",";
+                            jsonData += "\"status\":\"" + newUser.get_status() + "\",";
+                            jsonData += "\"bio\":\"" + newUser.get_description() + "\"";
+                         + "}";
+                        jsonData += "}";
+                        jsonData += "}";
+                return BLOG_DATA;
+            }
+            return BLOG_DATA;
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-用户管理-删除指定用户
+    else if(m_method == DELETE && strstr(m_url, "/admins/users/")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){   
+            // 提取博客 ID
+            char* userIdParam = strstr(m_url, "/admins/users/") + 14; // 跳过 "/admins/users/"
+            if (userIdParam) {
+                int userId = std::atoi(userIdParam); // 将字符串转换为整数
+                if (userId > 0) {
+                    // 根据博客 ID 查询数据库
+                    sql_blog_tool tool;
+                    bool result = tool.delete_user_by_userid(userId);
+                    if(result) return BLOG_DATA;
+                    return BAD_REQUEST;
+                }else{
+                    return BAD_REQUEST; // 如果 userId 无效
+                }
+            }
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-分类管理-获取分类列表（分页、搜索、筛选）
+    else if(m_method == GET && strstr(m_url, "/admins/categories?")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            int page = 1, size = 10;
+            string sortField = "created_at"; // 默认排序字段(关键词) 按创建时间、名称、文章数
+            string sortOrder = "desc"; // 默认排序方式 升序or降序
+            string searchKeyword = ""; // 默认无搜索 搜索用户名、邮箱
+
+            // 解析url参数
+            char* pageParam = strstr(m_url, "page=");
+            char* sizeParam = strstr(m_url, "pageSize=");
+            char* sortParam = strstr(m_url, "sort=");
+            char* searchParam = strstr(m_url, "search=");
+
+            if (pageParam) {
+                page = std::atoi(pageParam + 5);
+                if (page <= 0) page = 1;
+            }
+            if (sizeParam) {
+                size = std::atoi(sizeParam + 9);
+                if (size <= 0 || size > 100) size = 20;
+            }
+            if (sortParam) {
+                string sortStr = string(sortParam + 5);
+                size_t pos = sortStr.rfind("_");  // 改为 rfind("_")，确保取最后一个 "_"
+
+                if (pos != string::npos) {
+                    sortField = sortStr.substr(0, pos);
+                    sortOrder = sortStr.substr(pos + 1);
+
+                    size_t ampPos = sortOrder.find("&");
+                    if (ampPos != string::npos) {
+                        sortOrder = sortOrder.substr(0, ampPos);  // 只取排序方向部分
+                    }
+                }
+            }
+            if (searchParam) {
+                searchKeyword = string(searchParam + 7);
+                size_t ampPos = searchKeyword.find("&");
+                if (ampPos != string::npos) {
+                    searchKeyword = searchKeyword.substr(0, ampPos);
+                }
+                searchKeyword = url_decode(searchKeyword);  // 进行 URL 解码
+            }
+            
+            // 查询数据库
+            sql_blog_tool tool;
+            vector<Categories> categories;
+            int totalCount = 0;
+
+            if(sortField == "article_count") {
+                // 使用特殊的排序逻辑，按博客数量排序
+                if(searchKeyword.empty()) {
+                    categories = tool.get_categories_by_articles_count(page, size, sortOrder);
+                    totalCount = tool.get_categorie_count();
+                } else {
+                    categories = tool.get_categories_by_articles_count_and_search(page, size, sortOrder, searchKeyword);
+                    totalCount = tool.get_total_categories_count_by_search(searchKeyword);
+                }
+            } else if(searchKeyword.empty()) {
+                // 其他排序逻辑保持不变
+                categories = tool.get_categories_by_page_and_sort(page, size, sortField, sortOrder);
+                totalCount = tool.get_categorie_count();
+            } else {
+                // 其他排序逻辑保持不变
+                categories = tool.get_categories_by_page_and_sort_and_search(page, size, sortField, sortOrder, searchKeyword);
+                totalCount = tool.get_total_categories_count_by_search(searchKeyword);
+            }
+
+            // 构造 JSON 响应
+            jsonData = "{";
+            jsonData += "\"categories\": [";
+            for (int i = 0; i < categories.size(); i++) {
+                Categories categorie = categories[i];
+                int searchId = categorie.get_id();
+                int articlesCount = tool.get_total_blog_count_by_category(searchId);
+
+                jsonData += "{";
+                jsonData += "\"id\": \"" + std::to_string(categorie.get_id()) + "\",";
+                jsonData += "\"name\": \"" + categorie.get_name() + "\",";
+                jsonData += "\"description\": \"" + categorie.get_description() + "\",";
+                jsonData += "\"icon\": \"" + string("") + "\",";
+                jsonData += "\"createdAt\": \"" + categorie.get_created_at() + "\",";
+                jsonData += "\"articlesCount\": \"" + std::to_string(articlesCount) + "\"";
+                jsonData += "}";
+                if (i < categories.size() - 1) jsonData += ",";
+            }
+            jsonData += "],";
+            int totalPages = (totalCount / 10) + 1;
+            jsonData += "\"totalPages\": " + std::to_string(totalPages) + ",";
+            // jsonData += "\"currentPage\": " + std::to_string(page) + ",";
+            jsonData += "\"totalCount\": " + std::to_string(totalCount);
+            jsonData += "}";
+
+            return BLOG_DATA;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-分类管理-获取分类详情
+    else if(m_method == GET && strstr(m_url, "/admins/categories/")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){   
+            // 提取博客 ID
+            char* categorieIdParam = strstr(m_url, "/admins/categories/") + 19;
+            if (categorieIdParam) {
+                int categorieId = std::atoi(categorieIdParam); // 将字符串转换为整数
+                if (categorieId > 0) {
+                    // 根据博客 ID 查询数据库
+                    sql_blog_tool tool;
+                    Categories categorie = tool.get_categorie_by_categorieid(categorieId);
+                    int searchId = categorie.get_id();
+                    int articlesCount = tool.get_total_blog_count_by_category(searchId);
+
+                    // 构造 JSON 响应
+                    jsonData = "{";
+                    jsonData += "\"id\": " + std::to_string(categorie.get_id()) + ",";
+                    jsonData += "\"name\": \"" + categorie.get_name() + "\",";
+                    jsonData += "\"description\": \"" + categorie.get_description() + "\",";
+                    jsonData += "\"icon\": \"" + string("") + "\",";
+                    jsonData += "\"createdAt\": \"" + categorie.get_created_at() + "\",";
+                    jsonData += "\"updatedAt\": \"" + categorie.get_updated_at() + "\",";
+                    jsonData += "\"articlesCount\": \"" + to_string(articlesCount) + "\"";
+                    jsonData += "}";
+
+                    return BLOG_DATA;
+                }else{
+                    return BAD_REQUEST; // 如果 userId 无效
+                }
+            }
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-分类管理-添加新分类
+    else if(m_method == POST && strstr(m_url, "/admins/categories")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){   
+            auto post_data = parse_post_data(m_string);
+            string name = post_data["name"];
+            string description = post_data["description"];
+
+            if (name.empty()) return BAD_REQUEST;
+
+            sql_blog_tool tool;
+            Categories categorie;
+            categorie.set_name(name);
+            categorie.set_description(description);
+
+            if(tool.add_categorie(categorie)){
+                Categories category = tool.get_categorie_by_name(name);
+                jsonData = "{";
+                        jsonData += "\"id\":\"" + to_string(category.get_id()) + "\",";
+                        jsonData += "\"name\":\"" + category.get_name() + "\",";
+                        jsonData += "\"description\":\"" + category.get_description() + "\",";
+                        jsonData += "\"createdAt\":\"" + category.get_created_at() + "\",";
+                        jsonData += "\"updatedAt\":\"" + category.get_updated_at() + "\"";
+                        jsonData += "}";
+                return BLOG_DATA;
+            }
+
+            return BLOG_DATA;
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-分类管理-更新分类
+    else if(m_method == PATCH && strstr(m_url, "/admins/categories/")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            sql_blog_tool tool;
+            // 提取用户数据  
+            char* categorieIdParam = strstr(m_url, "/admins/categories/") + 19; // 跳过 "/admins/categories/"
+            int categorieId = std::atoi(categorieIdParam);
+
+            auto post_data = parse_post_data(m_string);
+            string newname = post_data["name"];
+            string newdescription = post_data["description"];
+
+            Categories categorie;
+            if(!newname.empty()) {
+                categorie.set_name(newname);
+            }
+            if(!newdescription.empty()) {
+                categorie.set_description(newdescription);
+            }
+
+            if(tool.update_categorie_by_categorieid(categorieId, categorie)){
+                Categories newcategorie = tool.get_categorie_by_categorieid(categorieId);
+                jsonData = "{";
+                        jsonData += "\"id\":\"" + to_string(newcategorie.get_id()) + "\",";
+                        jsonData += "\"name\":\"" + newcategorie.get_name() + "\",";
+                        jsonData += "\"description\":\"" + newcategorie.get_description() + "\",";
+                        jsonData += "\"updatedAt\":\"" + newcategorie.get_updated_at() + "\"";
+                        jsonData += "}";
+                return BLOG_DATA;
+            }
+            return BLOG_DATA;
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-分类管理-删除指定分类
+    else if(m_method == DELETE && strstr(m_url, "/admins/categories/")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){   
+            // 提取博客 ID
+            char* categorieIdParam = strstr(m_url, "/admins/categories/") + 19; // 跳过 "/admins/categories/"
+            if (categorieIdParam) {
+                int categorieId = std::atoi(categorieIdParam); // 将字符串转换为整数
+                if (categorieId > 0) {
+                    // 根据博客 ID 查询数据库
+                    sql_blog_tool tool;
+                    bool result = tool.delete_categorie_by_categorieid(categorieId);
+                    if(result){
+                        jsonData = "{";
+                        jsonData = "\"message\": \"" + string("分类删除成功") + "\",";
+                        jsonData = "\"deletedCategoryId\": \"" + to_string(categorieId) + "\"";
+                        jsonData = "}";
+                        return BLOG_DATA;
+                    }
+                    return BAD_REQUEST;
+                }else{
+                    return BAD_REQUEST; // 如果 userId 无效
+                }
             }
         }
         else{
@@ -1890,10 +3390,20 @@ bool http_conn::process_write(HTTP_CODE ret)
         add_response(cookie_header.c_str());
         add_headers(strlen(ok_302_title));
     }
+    case REDIRECT_ADMIN:
+    {
+        add_status_line(302, ok_302_title);
+        add_response("Location: /admins/admin_login.html\r\n");
+        string cookie_header = cookie_admin.generateCookieHeaders();
+        add_response(cookie_header.c_str());
+        add_headers(strlen(ok_302_title));
+    }
     case REDIRECT_HOME:
     {
         add_status_line(302, ok_302_title);
         add_response("Location: /blog_home.html\r\n");
+        string cookie_header = cookie.generateCookieHeaders();
+        add_response(cookie_header.c_str());
         add_headers(strlen(ok_302_title));
     }
     case REDIRECT_USER_HOME:
@@ -1936,6 +3446,33 @@ bool http_conn::process_write(HTTP_CODE ret)
         {
             // 添加cookie响应头  
             string cookie_headers = cookie.generateCookieHeaders();
+            if(!cookie_headers.empty()){
+                add_response(cookie_headers.c_str());
+            }  
+            add_headers(m_file_stat.st_size);       
+            m_iv[0].iov_base = m_write_buf;
+            m_iv[0].iov_len = m_write_idx;
+            m_iv[1].iov_base = m_file_address;
+            m_iv[1].iov_len = m_file_stat.st_size;
+            m_iv_count = 2;
+            bytes_to_send = m_write_idx + m_file_stat.st_size;
+            return true;
+        }
+        else
+        {
+            const char *ok_string = "<html><body></body></html>";
+            add_headers(strlen(ok_string));
+            if (!add_content(ok_string))
+                return false;
+        }
+    }
+    case ADMIN_LOGIN_REQUEST:
+    {
+        add_status_line(200, ok_200_title);
+        if (m_file_stat.st_size != 0)   // 若文件不为空
+        {
+            // 添加cookie响应头  
+            string cookie_headers = cookie_admin.generateCookieHeaders();
             if(!cookie_headers.empty()){
                 add_response(cookie_headers.c_str());
             }  

@@ -37,7 +37,7 @@ class http_conn
 {
 public:
     static const int FILENAME_LEN = 200;        // 文件名的最大长度
-    static const int READ_BUFFER_SIZE = 65535;   // 读缓冲区大小
+    static const int READ_BUFFER_SIZE = 2048;   // 读缓冲区大小
     static const int WRITE_BUFFER_SIZE = 1024;  // 写缓冲区大小
 
     // HTTP 请求方法
@@ -77,7 +77,9 @@ public:
         BLOG_DETAIL,       // 返回博客详情
         BLOG_USER_HOME,
         LOGIN_REQUEST,       // 登录请求
-        REDIRECT,            // 重定向到登录界面
+        ADMIN_LOGIN_REQUEST, // 管理员登录请求
+        REDIRECT_ADMIN,     // 重定向到管理员登录界面
+        REDIRECT,            // 重定向到用户登录界面
         REDIRECT_HOME,       // 重定向到游客主页面
         REDIRECT_USER_HOME,       // 重定向到用户主页面
         OK         // 返回一个请求成功
@@ -136,6 +138,9 @@ private:
     string handle_file_upload(const string& boundary, const string& body, const string& upload_dir);  // 用于解析 multipart/form-data 并保存文件
     string sanitize_filename(const std::string &filename);  // 移除文件名中的潜在危险字符
     string generate_unique_filename(const std::string &filename);   // 生成一个唯一的文件名，避免文件名冲突
+    bool is_valid_username(const char *name);   // 检测注册的用户名是否合法
+    bool is_valid_password(const char *password);   // 检测注册的密码是否合法
+    void parse_id(char* start, size_t length, vector<int>& ids);
 
 public:
     static int m_epollfd;   //epoll文件描述符
@@ -186,7 +191,9 @@ private:
     string current_username;    // 每个连接独立的用户名
     bool islogin;        // 用于标志是否已经登录
     string jsonData;    // 用于存储json数据
-    Cookie cookie;      // Cookie对象
+    Cookie cookie;      // 用户Cookie对象
+    Cookie_admin cookie_admin;// 管理员Cookie对象
+    bool is_admin_request = false;  // 判断是否为管理员请求
 };
 
 #endif

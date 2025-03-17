@@ -17,6 +17,7 @@ Log::~Log()
     if (m_fp != NULL)
     {
         fclose(m_fp);
+        m_fp = nullptr;
     }
 }
 // 异步需要设置阻塞队列的长度，同步不需要设置
@@ -40,8 +41,8 @@ bool Log::init(const char *file_name, int close_log, int log_buf_size, int split
 
     // 获取当前的系统时间，并转换为易于访问的结构体形式
     time_t t = time(NULL);
-    struct tm *sys_tm = localtime(&t);
-    struct tm my_tm = *sys_tm;
+    struct tm my_tm;
+    localtime_r(&t, &my_tm);  // 线程安全版本
 
     const char *p = strrchr(file_name, '/');// 返回file_name中最后出现的'/'的指针
     char log_full_name[256] = {0};
@@ -75,8 +76,8 @@ void Log::write_log(int level, const char *format, ...)
     struct timeval now = {0, 0};
     gettimeofday(&now, NULL);
     time_t t = now.tv_sec;
-    struct tm *sys_tm = localtime(&t);
-    struct tm my_tm = *sys_tm;
+    struct tm my_tm;
+    localtime_r(&t, &my_tm);  // 线程安全版本
 
     char s[16] = {0};//记录日志类型
     switch (level)

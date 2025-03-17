@@ -159,6 +159,109 @@ ok，将数据类型从char* 转换为string可以解决这个图片上传这个
 4. 密码在保存时要进行加密存储（如哈希+盐值？），还要进行加密传输（HTTPS）
 5. 同一用户在短时间内连续失败5次，则临时封禁登录（如10分钟）
 
+### 2025-2-17()
+1. 修复了一个bug，当用户登录后，查询自己的个人信息时，有可能查看到其他用户的信息。原因：因为部分用户的部分字段可能为空，在进行数据库操作时没有考虑到，因此导致的查询出错。
+2. 注册的前端界面已全部完成，包括所有的检测。
+3. 添加了后端的用户名和密码检测,若绕过前端代码，则后端代码的检测返回统一的错误页面。
+4. 只有当：
+  * 用户名格式正确
+  * 用户名未被占用
+  * 密码符合要求
+  * 两次密码一致  
+注册按钮才会被启用，否则点击无效！🎯
+
+### 2025-2-18()
+1. 加密存储使用哈希+盐值，用的是https://github.com/trusch/libbcrypt库。保留初始的登录认证，便于测试if (BCrypt::validatePassword(password, stored_hash) || users[name] == password)。后续删除users[name] == password，只保留哈希的认证
+2. nginx执行文件：/usr/local/nginx/sbin  暂停：./nginx -s stop 启动：./nginx 重启：./nginx -s reload
+3. 使用nginx进行反向代理，使客户端数据传输到服务器时是使用的HTTPS。
+客户端-->nginx（HTTPS）
+nginx-->C++服务器(HTTP)
+确保了数据的传输安全
+
+### 2025-2-22()
+1. 添加了管理员后端界面（目前只有前端），也需要进行登录才可使用，博客页面不提供管理员页面的入口，只有管理员才会知道，普通用户可以误入管理员登录界面。
+2. 添加了管理员表，以及部分的数据库操作内容。
+3. 有个bug，cookie总是存储不进管理员的username，但是可以存session。
+是忽略了一个问题，Cookie是使用静态变量存储具体的cookie值的，虽然创建了新的cookie_admin实例，但是实际上使用的还是同一个存储点。
+4. 直接把Cookie类copy了，新建一个Cookie_admin用于管理管理员的cookie（虽蠢但快。。。）
+5. 有个新问题，只有当用户点击logout进行注销后，才会进行重定向将客户端的cookie置空。当在同一个浏览器先登录管理员账号后，获取了cookie，然后直接访问用户的页面，能够直接进入用户页面，并且发布博客。
+6. 可以通过设置path路径，
+角色	Cookie 名称示例	作用域
+管理员	admin_session_id	Path=/admins_login
+用户	user_session_id	Path=/blog
+访问 /admins_login/* 时，浏览器自动发送 admin_session_id
+访问 /blog/* 时，浏览器自动发送 user_session_id
+
+### 2025-2-23()
+1. 需要注意的是，因为博客平台和管理员后台的Path路径不同，因此在清除cookie时要注意，使用path="/admins"路径是无法清除path="/"的cookie的
+2. 管理员和用户同时登录，当管理员的注销时，会导致用户的cookie被同步清除(应该管理员的注销path路径设置为"/")。但是只清除了客户端的cookie，没有清除服务器的，导致该用户无法正常登录。
+3. 管理员和用户之间的转换会有点问题，得慢慢调了。。。。
+
+### 2025-2-26
+1. 完成管理员后台的仪表盘。
+2. 完成管理员文章管理的前端内容，后端数据库有部分表没有对应的列，暂时使用死数据进行替换。
+
+新增管理员添加用户
+改进的json字符串的解析函数
+
+### 2025-3-6
+1. 新增管理员修改用户信息、包括用户密码。删除用户
+2. 对几个数据库操作进行完善，减少了bug的出现。
+3. 用户管理全部完成，经过功能测试无bug出现!!!!!!!!这个是最完善的，其它模块后面要参考这个的数据库操作，ui界面等
+4. 因为几个模块的代码全都放在一个js文件中，因此模块出现了部分冲突。在命名时要将各个id加上专门名称。如userButtom。
+
+### 2025-3-7
+1. 今天遇到的一个问题，前端发送请求，要求后端返回 按照使用了不同分类的博客数量 进行返回。即：使用了不同分类的博客总数。
+解决了，直接将博客数量分出来，get_categories_by_articles_count_and_search。不过当分类过多时，会有性能问题，因为在函数里面还会为每一个分类查询当前分类拥有的博客总数。后续可以考虑在分类表添加一个博客总数的字段？
+2. 完成分类管理模块
+
+### 2025-3-8
+1. 自己写的json解析使我破防，抓紧安装了#include <nlohmann/json.hpp>
+
+
+### 2025-3-14(这里记录管理员后台的总进度)
+1. 仪表盘已完成，显示文章、用户、评论、点赞总数
+2. 文章管理已完成，~~还有一个浏览量要思考如何实现（后续估计是在博客表中新加一个浏览量的字段）~~(已增加)
+3. 评论管理已完成，~~后续在后端返回评论用户的Email就行了~~搞定，直接把返回Email删了，反正没啥必要
+4. 用户管理已完成，~~还差一个最近登录的字段，还有文章总数~~。已搞定
+5. 分类管理要改一下js代码，对js代码进行封装
+
+### 2025-3-16
+1. 今天进行压力测试，发现只要客户端超过一个，服务器会直接崩溃，返回段错误。
+使用``valgrind``工具进行内存调试，但是存在较多的内存泄漏。。。。无法发现最根本的问题（不是很会看）。
+故使用``gdb``进行调试，直接返回了出现问题的堆栈。
+Program received signal SIGSEGV, Segmentation fault.
+[Switching to Thread 0x7ffff3b7a700 (LWP 97841)]
+0x000000000042d4cd in std::_List_const_iterator<st_mysql*>::operator++ (this=0x7ffff3b79d70) at /usr/include/c++/4.8.2/bits/stl_list.h:235
+235             _M_node = _M_node->_M_next;
+Missing separate debuginfos, use: debuginfo-install glibc-2.17-326.el7_9.3.x86_64 libgcc-4.8.5-44.el7.x86_64 libstdc++-4.8.5-44.el7.x86_64  
+
+主要原因：链表迭代器自增操作，但是迭代器指向的链表节点已被释放，访问的是无效内存
+解决方案如下：👇**需注意这个操作治标不治本，但现在先暂时这么操作**
+```cpp
+MYSQL *connection_pool::GetConnection()
+{
+	MYSQL *con = NULL;
+
+	if (connList.empty()){  // 这里原本是0 == connList.size() 需要对链表进行遍历，极高的增加了访问到下面被pop_front()掉的内存概率。而empty()直接检查头指针，效率更高，能有效降低多线程竞争的概率
+		LOG_ERROR("The database connection pool is empty!");
+		return NULL;
+	}
+
+	reserve.wait();
+	
+	lock.lock();
+
+	con = connList.front();
+	connList.pop_front(); // 这里pop掉了，如果其它线程刚好使用connList.size()进行遍历，就有可能访问到这个刚被释放掉的内存
+
+	--m_FreeConn;
+	++m_CurConn;
+
+	lock.unlock();
+	return con;
+}
+```
 
 ## 更新日志
 

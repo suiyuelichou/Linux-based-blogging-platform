@@ -91,3 +91,74 @@
     color: rgb(163, 134, 143); /* 鼠标悬停时改变颜色 */
     text-decoration: underline; /* 鼠标悬停时加下划线 */
 }
+
+
+/* 
+***问号图标样式 ***
+*/
+.tooltip {
+    position: absolute;
+    right: 10px;   /* 根据实际情况调整 */
+    top: 35%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 14px;
+    /* 使用 flex 布局，使问号文字在容器内居中 */
+    display: flex;
+    align-items: center;   
+    justify-content: center;
+}
+
+/* 鼠标悬停时显示提示信息 */
+.tooltip:hover::after {
+    content: attr(data-hint);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    animation: fadeIn 0.2s ease-out forwards;
+    margin-bottom: 8px;
+}
+
+/* 添加小三角指示 */
+.tooltip:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% - 5px);
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+
+.input-group {
+    position: relative; /* 为提示定位做准备 */
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}

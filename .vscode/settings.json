@@ -41,6 +41,27 @@
         "utility": "cpp",
         "chrono": "cpp",
         "ratio": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "bitset": "cpp",
+        "deque": "cpp",
+        "regex": "cpp",
+        "atomic": "cpp",
+        "strstream": "cpp",
+        "complex": "cpp",
+        "condition_variable": "cpp",
+        "csetjmp": "cpp",
+        "csignal": "cpp",
+        "forward_list": "cpp",
+        "unordered_set": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp",
+        "rope": "cpp",
+        "slist": "cpp",
+        "future": "cpp",
+        "mutex": "cpp",
+        "system_error": "cpp",
+        "cfenv": "cpp",
+        "cinttypes": "cpp",
+        "valarray": "cpp"
     }
 }

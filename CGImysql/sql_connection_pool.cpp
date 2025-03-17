@@ -66,15 +66,16 @@ MYSQL *connection_pool::GetConnection()
 {
 	MYSQL *con = NULL;
 
-	if (0 == connList.size()){
-		LOG_ERROR("The database connection pool is empty!");
-		// cout << "The database connection pool is empty!" << endl;
-		return NULL;
-	}
-
 	reserve.wait();
 	
 	lock.lock();
+
+	if (connList.empty()){
+		LOG_ERROR("The database connection pool is empty!");
+		// cout << "The database connection pool is empty!" << endl;
+		lock.unlock();
+		return NULL;
+	}
 
 	con = connList.front();
 	connList.pop_front();
@@ -116,6 +117,7 @@ void connection_pool::DestroyPool()
 		{
 			MYSQL *con = *it;
 			mysql_close(con);	// 关闭数据库连接
+			con = nullptr;	// 避免悬空指针
 		}
 		m_CurConn = 0;
 		m_FreeConn = 0;

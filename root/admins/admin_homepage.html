@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客管理后台</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body data-theme="light">
+
+    <!-- 顶部导航栏 -->
+    <header class="topbar">
+        <h2>博客管理</h2>
+        <div class="topbar-links">
+            <a href="/blog_home.html">🏠 返回博客</a>
+            <a href="/logout_admin">🚪 退出登录</a>
+            <span class="theme-toggle">🌙 切换模式</span>
+        </div>
+    </header>
+
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <ul>
+            <li data-tab="dashboard" class="active">📊 仪表盘</li>
+            <li data-tab="posts">📝 文章管理</li>
+            <li data-tab="comments">💬 评论管理</li>
+            <li data-tab="users">👥 用户管理</li>
+            <li data-tab="categories">📁 分类管理</li>
+            <!-- <li data-tab="tags">🏷️ 标签管理</li> -->
+            <li data-tab="settings">⚙️ 系统管理</li>
+        </ul>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="content-wrapper">
+        <div class="main-content">
+            <h1 id="page-title">📊 仪表盘</h1>
+            <section id="dashboard" class="tab-content active">
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>📌 总文章数</h3>
+                        <p id="totalPosts">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>👥 用户总数</h3>
+                        <p id="totalUsers">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>💬 评论总数</h3>
+                        <p id="totalComments">0</p>
+                    </div>
+                    <div class="card">
+                        <h3>📈 点赞总数</h3>
+                        <p id="totalLikes">0</p>
+                    </div>
+                    <!-- <div class="card">
+                        <h3>📈 今日访问</h3>
+                        <p id="dailyVisits">0</p>
+                    </div> -->
+                </div>
+            </section>
+
+            <!-- 文章管理标签页内容 -->
+            <section id="posts" class="tab-content">
+                <div class="posts-header">
+                    <h2>文章管理</h2>
+                    <div class="posts-actions">
+                        <div class="search-container">
+                            <input type="text" id="blog-postSearch" placeholder="搜索文章...">
+                            <button id="blog-searchBtn">🔍</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 筛选选项 -->
+                <div class="filter-options">
+                    <!-- 移除了状态筛选 -->
+                    <div class="filter-group">
+                        <label for="blog-categoryFilter">分类:</label>
+                        <select id="blog-categoryFilter">
+                            <option value="all">全部分类</option>
+                            <!-- 分类选项将通过JS动态添加 -->
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="blog-sortBy">排序:</label>
+                        <select id="blog-sortBy">
+                            <option value="postTime_desc">创建时间 ↓</option>
+                            <option value="postTime_asc">创建时间 ↑</option>
+                            <option value="updatedAt_desc">更新时间 ↓</option>
+                            <option value="updatedAt_asc">更新时间 ↑</option>
+                            <option value="title_asc">标题 (A-Z)</option>
+                            <option value="title_desc">标题 (Z-A)</option>
+                            <option value="view_count_desc">浏览量 ↓</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 文章列表表格 -->
+                <div class="table-container">
+                    <table id="blog-postsTable">
+                        <thead>
+                            <tr>
+                                <th width="35%">标题</th>
+                                <th width="10%">作者</th>
+                                <th width="15%">分类</th>
+                                <!-- 移除了状态列 -->
+                                <th width="12%">创建时间</th>
+                                <th width="12%">更新时间</th>
+                                <th width="8%">浏览量</th>
+                                <th width="8%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blog-postsTableBody">
+                            <!-- 文章数据将通过JS动态添加 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控制 -->
+                <div class="post-pagination">
+                    <button id="blog-prevPage" disabled>上一页</button>
+                    <span id="blog-pageInfo">第 <span id="blog-currentPage">1</span> 页，共 <span id="blog-totalPages">1</span> 页</span>
+                    <button id="blog-nextPage">下一页</button>
+                </div>
+
+                <!-- 文章查看模态框 -->
+                <div id="blog-postModal" class="post-modal">
+                    <div class="post-modal-content">
+                        <span class="blog-close">&times;</span>
+                        <h2 id="blog-modalTitle">查看文章</h2>
+                        <form id="blog-postForm">
+                            <input type="hidden" id="blog-postId">
+                            <div class="form-group">
+                                <label for="blog-title">标题</label>
+                                <input type="text" id="blog-title" name="title" readonly>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="blog-category">分类</label>
+                                    <select id="blog-category" name="category" disabled>
+                                        <!-- 分类选项将通过JS动态添加 -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="blog-tags">标签</label>
+                                <input type="text" id="blog-tags" name="tags" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="blog-content">内容</label>
+                                <textarea id="blog-content" name="content" rows="15" readonly></textarea>
+                            </div>
+                            <!-- 移除了文章摘要 -->
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 删除确认模态框 -->
+                <div id="blog-deleteModal" class="post-modal">
+                    <div class="post-modal-content delete-modal">
+                        <h3>确认删除</h3>
+                        <p>您确定要删除这篇文章吗？此操作无法撤销。</p>
+                        <div class="modal-actions">
+                            <button id="blog-cancelDelete" class="secondary-btn">取消</button>
+                            <button id="blog-confirmDelete" class="danger-btn">删除</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 评论管理标签页内容 -->
+            <section id="comments" class="tab-content">
+                <div class="comments-header">
+                    <h2>评论管理</h2>
+                    <div class="comments-actions">
+                        <div class="search-container">
+                            <input type="text" id="comment-search" placeholder="搜索评论...">
+                            <button id="comment-search-btn">🔍</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 筛选选项 -->
+                <div class="filter-options">
+                    <div class="filter-group">
+                        <label for="commentSortBy">排序:</label>
+                        <select id="commentSortBy">
+                            <option value="comment_time_desc">发布时间 ↓</option>
+                            <option value="comment_time_asc">发布时间 ↑</option>
+                            <option value="username_asc">评论者 (A-Z)</option>
+                            <option value="username_desc">评论者 (Z-A)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 评论列表表格 -->
+                <div class="table-container">
+                    <table id="commentsTable">
+                        <thead>
+                            <tr>
+                                <th width="20%">评论者</th>
+                                <th width="40%">内容</th>
+                                <th width="20%">所属文章</th>
+                                <th width="15%">发布时间</th>
+                                <th width="5%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commentsTableBody">
+                            <!-- 评论数据将通过JS动态添加 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控制 -->
+                <div class="comment-pagination">
+                    <button id="commentPrevPage" disabled>上一页</button>
+                    <span id="commentPageInfo">第 <span id="commentCurrentPage">1</span> 页，共 <span id="commentTotalPages">1</span> 页</span>
+                    <button id="commentNextPage">下一页</button>
+                </div>
+
+                <!-- 删除确认模态框 -->
+                <div id="commentDeleteModal" class="comment-modal">
+                    <div class="comment-modal-content comment-delete-modal">
+                        <h3>确认删除</h3>
+                        <p>您确定要删除此评论吗？此操作无法撤销。</p>
+                        <div class="modal-actions">
+                            <button id="commentCancelDelete" class="secondary-btn">取消</button>
+                            <button id="commentConfirmDelete" class="danger-btn">删除</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 用户管理标签页内容 -->
+            <section id="users" class="tab-content">
+                <div class="users-header">
+                    <h2>用户管理</h2>
+                    <div class="users-actions">
+                        <button id="createUserBtn" class="primary-btn">👤 添加新用户</button>
+                        <div class="search-container">
+                            <input type="text" id="userSearch" placeholder="搜索用户...">
+                            <button id="userSearchBtn">🔍</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 筛选选项 -->
+                <div class="filter-options">
+                    <div class="filter-group">
+                        <label for="userStatusFilter">状态:</label>
+                        <select id="userStatusFilter">
+                            <option value="all">全部</option>
+                            <option value="active">已激活</option>
+                            <!-- <option value="inactive">未激活</option> -->
+                            <option value="blocked">已封禁</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="userSortBy">排序:</label>
+                        <select id="userSortBy">
+                            <option value="register_time_desc">注册时间 ↓</option>
+                            <option value="register_time_asc">注册时间 ↑</option>
+                            <option value="last_login_time_desc">最近登录 ↓</option>
+                            <option value="last_login_time_asc">最近登录 ↑</option>
+                            <option value="username_asc">用户名 (A-Z)</option>
+                            <option value="username_desc">用户名 (Z-A)</option>
+                            <option value="article_count_desc">文章数 ↓</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 用户列表表格 -->
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th width="8%">头像</th>
+                                <th width="18%">用户名</th>
+                                <th width="22%">邮箱</th>
+                                <th width="12%">状态</th>
+                                <th width="12%">注册时间</th>
+                                <th width="12%">最近登录</th>
+                                <th width="8%">文章数</th>
+                                <th width="10%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- 用户数据将通过JS动态添加 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控制 -->
+                <div class="user-pagination">
+                    <button id="userPrevPage" disabled>上一页</button>
+                    <span id="pageInfo">第 <span id="userCurrentPage">1</span> 页，共 <span id="userTotalPages">1</span> 页</span>
+                    <button id="userNextPage">下一页</button>
+                </div>
+
+                <!-- 用户表单模态框 -->
+                <div id="userModal" class="user-modal">
+                    <div class="user-modal-content">
+                        <span class="user-close">&times;</span>
+                        <h2 id="userModalTitle">添加新用户</h2>
+                        <form id="userForm">
+                            <input type="hidden" id="userId">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="username">用户名</label>
+                                    <input type="text" id="username" name="username" required pattern="[a-zA-Z0-9]{6,20}" title="用户名只能包含字母、数字，长度6-20位">
+                                    <small class="field-help">只能包含字母、数字,长度6-20位</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">邮箱</label>
+                                    <input type="email" id="email" name="email">
+                                </div>
+                            </div>
+                            <div class="form-row" id="passwordFields">
+                                <div class="form-group">
+                                    <label for="password">密码</label>
+                                    <input type="password" id="password" name="password" pattern="^(?=.*[A-Za-z])(?=.*[\d\W]).{8,16}$" title="密码8-16位，包含字母和（数字或符号）">
+                                    <small class="field-help">密码8-16位，包含字母和（数字或符号）</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirmPassword">确认密码</label>
+                                    <input type="password" id="confirmPassword" name="confirmPassword">
+                                    <small class="field-help">请再次输入相同的密码</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="status">状态</label>
+                                    <select id="userStatus" name="status">
+                                        <option value="active">已激活</option>
+                                        <option value="blocked">已封禁</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="bio">个人简介</label>
+                                <textarea id="bio" name="bio" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="resetPasswordBtn" class="secondary-btn">重置密码</button>
+                                <button type="submit" class="primary-btn">保存</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 删除确认模态框 -->
+                <div id="userDeleteModal" class="user-modal">
+                    <div class="user-modal-content userdelete-modal">
+                        <h3>确认删除</h3>
+                        <p>您确定要删除此用户吗？此操作无法撤销，并且将删除该用户的所有文章和评论。</p>
+                        <div class="modal-actions">
+                            <button id="userCancelDelete" class="secondary-btn">取消</button>
+                            <button id="userConfirmDelete" class="danger-btn">删除</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 分类管理标签页内容 -->
+            <section id="categories" class="tab-content">
+                <div class="categories-header">
+                    <h2>分类管理</h2>
+                    <div class="categories-actions">
+                        <button id="createCategoryBtn" class="primary-btn">📁 添加新分类</button>
+                        <div class="search-container">
+                            <input type="text" id="category2Search" placeholder="搜索分类...">
+                            <button id="search2CatBtn">🔍</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 筛选选项 -->
+                <div class="filter-options">
+                    <div class="filter-group">
+                        <label for="categorySortBy">排序:</label>
+                        <select id="categorySortBy">
+                            <option value="created_at_desc">创建时间 ↓</option>
+                            <option value="created_at_asc">创建时间 ↑</option>
+                            <option value="name_asc">分类名称 (A-Z)</option>
+                            <option value="name_desc">分类名称 (Z-A)</option>
+                            <option value="article_count_desc">文章数量 ↓</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 分类列表表格 -->
+                <div class="table-container">
+                    <table id="categoriesTable">
+                        <thead>
+                            <tr>
+                                <th width="8%">图标</th>
+                                <th width="35%">分类名称</th>
+                                <th width="35%">描述</th>
+                                <th width="12%">创建时间</th>
+                                <th width="10%">文章数</th>
+                                <th width="10%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTableBody">
+                            <!-- 分类数据将通过JS动态添加 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控制 -->
+                <div class="category-pagination">
+                    <button id="categoryprevPage" disabled>上一页</button>
+                    <span id="catPageInfo">第 <span id="categorycurrentPage">1</span> 页，共 <span id="categorytotalPages">1</span> 页</span>
+                    <button id="categorynextPage">下一页</button>
+                </div>
+
+                <!-- 分类表单模态框 -->
+                <div id="categoryModal" class="category-modal">
+                    <div class="category-modal-content">
+                        <span class="cat-close">&times;</span>
+                        <h2 id="categorymodalTitle">添加新分类</h2>
+                        <form id="categoryForm">
+                            <input type="hidden" id="categoryId">
+                            <div class="form-group">
+                                <label for="categoryName">分类名称</label>
+                                <input type="text" id="categoryName" name="categoryName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="categoryDescription">分类描述</label>
+                                <textarea id="categoryDescription" name="description" rows="3"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="primary-btn">保存</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 删除确认模态框 -->
+                <div id="categorydeleteModal" class="category-modal">
+                    <div class="category-modal-content categorydelete-modal">
+                        <h3>确认删除</h3>
+                        <p>您确定要删除此分类吗？此操作将会将该分类下的文章移至未分类。</p>
+                        <div class="modal-actions">
+                            <button id="categorycancelDelete" class="secondary-btn">取消</button>
+                            <button id="categoryconfirmDelete" class="danger-btn">删除</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 系统管理标签页内容 -->
+            <section id="settings" class="tab-content">
+                <div class="settings-header">
+                    <h2>系统管理</h2>
+                </div>
+            </section>
+                
+
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

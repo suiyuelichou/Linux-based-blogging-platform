@@ -31,7 +31,11 @@
             <form action="2CGISQL.cgi" method="post">
                 <div class="row">
                     <span>用户名</span>
-                    <input type="text" name="user" id="username" placeholder="用户名" required="required">
+                    <div class="input-group">
+                        <input type="text" name="user" id="username" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" placeholder="请输入用户名" required="required">
+                        <!-- 添加问号，并用 data-hint 存储提示信息 -->
+                        <span class="tooltip" data-hint="用户名只能包含字母、数字, 长度6-20位">�</span>
+                    </div>
                 </div>
                 <div class="row">
                     <span>密&nbsp;&nbsp;&nbsp;&nbsp;码</span>
@@ -46,5 +50,9 @@
             </div>
         </div>
     </div>
+
+    <script>
+
+    </script>
 </body>
 </html>

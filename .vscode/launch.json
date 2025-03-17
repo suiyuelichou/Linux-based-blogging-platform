@@ -20,8 +20,15 @@
                 }
             ],
             "preLaunchTask": "build-debug", // 参考 tasks.json 中的任务
-            "miDebuggerPath": "/usr/bin/gdb" // 调试器路径
+            "miDebuggerPath": "/usr/bin/gdb", // 调试器路径
+            "logging": {
+                "trace": true,
+                "traceResponse": true,
+                "engineLogging": true
+            }
+            
         }
+        
     ]
 }
 
