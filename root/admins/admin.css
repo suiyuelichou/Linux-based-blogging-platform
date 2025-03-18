@@ -998,6 +998,207 @@ input:invalid {
 
 
 
+/* 标签管理页面样式 */
+.tags-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.tags-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+/* 标签颜色展示 */
+.tag-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    margin: 0 auto;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 颜色选择器 */
+.color-picker {
+    display: flex;
+    align-items: center;
+}
+
+.color-picker input[type="color"] {
+    width: 50px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.color-preview {
+    width: 40px;
+    height: 40px;
+    margin-left: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background-color: #3498db;
+}
+
+/* 标签分页样式 */
+.tag-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    gap: 15px;
+}
+
+.tag-pagination button {
+    padding: 8px 15px;
+    background-color: var(--card-bg);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.tag-pagination button:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.tag-pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 标签模态框样式 */
+.tag-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.tag-modal-content {
+    background-color: var(--card-bg);
+    margin: 5% auto;
+    padding: 25px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 600px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.tag-close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.tag-close:hover {
+    color: var(--primary-color);
+}
+
+/* 标签删除模态框 */
+.tag-delete-modal {
+    max-width: 500px;
+    text-align: center;
+}
+
+.tag-delete-modal h3 {
+    margin-top: 0;
+    color: var(--danger-color, #e74c3c);
+}
+
+/* 标签表格样式 */
+.tag-name {
+    display: flex;
+    align-items: center;
+}
+
+.tag-badge {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 16px;
+    color: white;
+    margin-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    display: inline-block;
+}
+
+/* 标签描述截断 */
+.tag-description {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 通知提示样式 */
+#notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.notification {
+    background-color: #3498db;
+    color: white;
+    padding: 12px 15px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 250px;
+    max-width: 350px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.notification-success {
+    background-color: #2ecc71;
+}
+
+.notification-error {
+    background-color: #e74c3c;
+}
+
+.notification-warning {
+    background-color: #f39c12;
+}
+
+.notification-close {
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

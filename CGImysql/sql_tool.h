@@ -176,6 +176,41 @@ private:
 	int blog_count;
 };
 
+// 标签类
+class Tags{
+public:
+	void set_id(int id);
+	int get_id();
+	void set_name(string name);
+	string get_name();
+	void set_description(string description);
+	string get_description();
+	void set_created_at(string created_at);
+	string get_created_at();
+	void set_updated_at(string updated_at);
+	string get_updated_at();
+
+private:
+	int m_id;
+	string m_name;
+	string m_description;
+	string m_created_at;
+	string m_updated_at;
+};
+
+// 博客标签关联类
+class Blog_tags{
+public:
+	void set_blog_id(int blog_id);
+	int get_blog_id();
+	void set_tag_id(int tag_id);
+	int get_tag_id();
+
+private:
+	int m_blog_id;	// 博客id
+	int m_tag_id;	// 标签id
+};
+
 // 对blog和user表进行数据库操作
 class sql_blog_tool{
 public:
@@ -197,6 +232,10 @@ public:
 	vector<Categories> get_categories_by_page_and_sort_and_search(int page, int size, const string& sortField, const string& sortOrder, const string& search);// 分页+排序+搜索
 	vector<Categories> get_categories_by_articles_count(int page, int size, const string& sortOrder);
 	vector<Categories> get_categories_by_articles_count_and_search(int page, int size, const string& sortOrder, const string& searchKeyword);
+	vector<Tags> get_tags_by_blog_count(int page, int size, const string& sortOrder);	// 获取标签按博客数量排序
+	vector<Tags> get_tags_by_blog_count_and_search(int page, int size, const string& sortOrder, const string& searchKeyword);	// 获取标签按博客数量排序+搜索
+	vector<Tags> get_tags_by_page_and_sort(int page, int size, const string& sortField, const string& sortOrder);	// 获取标签按指定字段排序
+	vector<Tags> get_tags_by_page_and_sort_and_search(int page, int size, const string& sortField, const string& sortOrder, const string& searchKeyword);	// 获取标签按指定字段排序+搜索
 	int get_total_blog_count();							// 获取博客的总条数
 	int get_total_blog_count_by_category(int categoryId);// 根据分类获取博客的总条数
 	int get_total_blog_count_by_search(const string& keyword);	// 获取符合搜索条件的博客总数
@@ -210,6 +249,9 @@ public:
 	int get_categorie_count();							// 获取分类总数
 	int get_comment_count();							// 获取评论总数
 	int get_like_count();								// 获取点赞总数
+	int get_tag_count();								// 获取标签总数
+	int get_total_tags_count_by_search(const string& keyword);				// 获取符合搜索条件的标签总数
+	int get_total_blog_count_by_tag(int tagid);		// 获取指定标签的博客总数
 	Blog select_blog_by_id(int blogid);					// 通过博客id查询博客内容
 	int get_userid_by_blogid(int blogid);				// 通过博客id获取对应的用户id
 	void modify_blog_by_blogid(Blog blog);				// 通过博客id修改博客的标题和内容
@@ -264,12 +306,15 @@ public:
 	Categories get_categorie_by_categorieid(int categorieId);	// 根据分类id获取分类信息
 	Categories get_categorie_by_name(const string& categorieName);	// 根据分类名称获取分类信息
 	bool add_categorie(Categories categorie);	// 添加分类
+	bool add_tag(Tags tag);					// 添加标签
 	bool update_categorie_by_categorieid(int categorieid, Categories categorie);
 	bool delete_categorie_by_categorieid(int categorieid);
+	bool delete_tag_by_tagid(int tagid);		// 删除标签
 	vector<string> get_tags_by_blogid(int blogid);		// 通过博客id获取该博客的标签
 
 	bool delete_blog_tags(int blogid);	// 根据博客id删除旧的标签关联
-	int get_tag_id_by_name(string tag); // 
+	int get_tag_id_by_name(string tag); // 根据标签名称获取标签id
+	Tags get_tag_by_tagname(const string& tagname);	// 根据标签名称获取标签信息
 	int create_tag(string tag);
 	bool add_blog_tag(int blogid, int tagid);
 

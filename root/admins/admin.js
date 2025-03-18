@@ -1329,9 +1329,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // 分类管理模块 - 使用立即执行函数创建命名空间避免冲突
 const CategoryManager = (function() {
     // 私有变量 - 添加category前缀以明确区分
-    let categoryCurrentPage = 1;
-    let categoryTotalPages = 1;
-    let categoryPageSize = 10;
+let categoryCurrentPage = 1;
+let categoryTotalPages = 1;
+let categoryPageSize = 10;
     let categoryCurrentId = null; // 用于编辑和删除操作
     let categoryIsInitialized = false; // 标记是否已初始化
 
@@ -1356,9 +1356,9 @@ const CategoryManager = (function() {
 
     // 初始化函数
     function init() {
-        // 获取分类列表
-        fetchCategories();
-        
+    // 获取分类列表
+    fetchCategories();
+    
         // 绑定事件监听器 - 只在首次初始化时添加
         if (!categoryIsInitialized) {
             bindEventListeners();
@@ -1442,7 +1442,6 @@ const CategoryManager = (function() {
             categoryModalCloseBtn.removeEventListener('click', closeCategoryModal);
             categoryModalCloseBtn.addEventListener('click', closeCategoryModal);
         }
-        
         if (elements.cancelDeleteBtn) {
             elements.cancelDeleteBtn.removeEventListener('click', closeDeleteModal);
             elements.cancelDeleteBtn.addEventListener('click', closeDeleteModal);
@@ -1756,6 +1755,385 @@ document.addEventListener('DOMContentLoaded', function() {
         categoryTabTrigger.addEventListener('click', function() {
             // 每次点击时调用初始化函数（但内部会判断是否需要重新绑定事件）
             setTimeout(CategoryManager.init, 100);
+        });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// 标签管理模块
+// 标签管理模块
+const TagManager = (function() {
+    // 私有变量
+    let tagCurrentPage = 1;
+    let tagTotalPages = 1;
+    let tagPageSize = 10;
+    let tagCurrentId = null; // 用于删除操作
+    let tagIsInitialized = false; // 标记是否已初始化
+    
+    // DOM元素选择器 - 使用惰性加载
+    const elements = {
+        get tagsTableBody() { return document.getElementById('tagsTableBody'); },
+        get tagModal() { return document.getElementById('tagModal'); },
+        get deleteModal() { return document.getElementById('tagDeleteModal'); },
+        get tagForm() { return document.getElementById('tagForm'); },
+        get modalTitle() { return document.getElementById('tagModalTitle'); },
+        get createTagBtn() { return document.getElementById('createTagBtn'); },
+        get prevPageBtn() { return document.getElementById('tagPrevPage'); },
+        get nextPageBtn() { return document.getElementById('tagNextPage'); },
+        get currentPageSpan() { return document.getElementById('tagCurrentPage'); },
+        get totalPagesSpan() { return document.getElementById('tagTotalPages'); },
+        get sortBySelect() { return document.getElementById('tagSortBy'); },
+        get tagSearch() { return document.getElementById('tagSearch'); },
+        get searchBtn() { return document.getElementById('tagSearchBtn'); },
+        get cancelDeleteBtn() { return document.getElementById('tagCancelDelete'); },
+        get confirmDeleteBtn() { return document.getElementById('tagConfirmDelete'); }
+    };
+
+    // 初始化函数
+    function init() {
+        // 获取标签列表
+        fetchTags();
+        
+        // 绑定事件监听器 - 只在首次初始化时添加
+        if (!tagIsInitialized) {
+            bindEventListeners();
+            tagIsInitialized = true;
+        }
+    }
+
+    // 绑定所有事件监听器
+    function bindEventListeners() {
+        // 分页按钮事件
+        elements.prevPageBtn?.addEventListener('click', () => navigateTagPage(tagCurrentPage - 1));
+        elements.nextPageBtn?.addEventListener('click', () => navigateTagPage(tagCurrentPage + 1));
+        
+        // 筛选器事件
+        elements.sortBySelect?.addEventListener('change', applyTagFilters);
+        elements.searchBtn?.addEventListener('click', applyTagFilters);
+        elements.tagSearch?.addEventListener('keypress', e => {
+            if (e.key === 'Enter') applyTagFilters();
+        });
+        
+        // 创建标签按钮
+        elements.createTagBtn?.addEventListener('click', openCreateTagModal);
+        
+        // 表单提交事件
+        elements.tagForm?.addEventListener('submit', handleTagSubmit);
+        
+        // 模态框关闭按钮
+        document.querySelector('#tagModal .tag-close')?.addEventListener('click', closeTagModal);
+        
+        // 删除确认模态框按钮
+        elements.cancelDeleteBtn?.addEventListener('click', closeDeleteModal);
+        elements.confirmDeleteBtn?.addEventListener('click', deleteTag);
+        
+        // 使用事件代理为表格添加事件监听
+        elements.tagsTableBody?.addEventListener('click', handleTableClick);
+    }
+    
+    // 表格点击事件处理
+    function handleTableClick(e) {
+        // 只处理删除按钮点击
+        if (e.target.classList.contains('delete-tag-btn')) {
+            openDeleteConfirmation(e.target.dataset.id);
+        }
+    }
+
+    // 获取标签列表
+    function fetchTags() {
+        // 获取当前的筛选值
+        const sort = elements.sortBySelect?.value || '';
+        const search = elements.tagSearch?.value || '';
+        
+        // 构建查询参数
+        const params = new URLSearchParams({
+            page: tagCurrentPage,
+            pageSize: tagPageSize
+        });
+        
+        if (sort) params.append('sort', sort);
+        if (search) params.append('search', search);
+        
+        // 显示加载中提示
+        if (elements.tagsTableBody) {
+            elements.tagsTableBody.innerHTML = '<tr><td colspan="4" class="loading-message">加载中...</td></tr>';
+        }
+        
+        // 发送请求
+        fetch(`/admins/tags?${params.toString()}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP错误 ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // 更新标签列表
+                renderTagsTable(data.tags);
+                
+                // 更新分页信息
+                tagTotalPages = data.totalPages || 1;
+                if (elements.currentPageSpan) elements.currentPageSpan.textContent = tagCurrentPage;
+                if (elements.totalPagesSpan) elements.totalPagesSpan.textContent = tagTotalPages;
+                
+                // 更新分页按钮状态
+                if (elements.prevPageBtn) elements.prevPageBtn.disabled = tagCurrentPage <= 1;
+                if (elements.nextPageBtn) elements.nextPageBtn.disabled = tagCurrentPage >= tagTotalPages;
+            })
+            .catch(error => {
+                console.error('获取标签列表失败:', error);
+                if (elements.tagsTableBody) {
+                    elements.tagsTableBody.innerHTML = '<tr><td colspan="4" class="error-message">获取标签数据失败，请稍后重试</td></tr>';
+                }
+            });
+    }
+
+    // 渲染标签表格
+    function renderTagsTable(tags) {
+        if (!elements.tagsTableBody) return;
+        
+        elements.tagsTableBody.innerHTML = '';
+        
+        if (!tags || tags.length === 0) {
+            elements.tagsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="no-data-message">没有找到匹配的标签</td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tags.forEach(tag => {
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${tag.name}</td>
+                <td><div class="tag-description" title="${tag.description || ''}">${tag.description || '无描述'}</div></td>
+                <td>${new Date(tag.createdAt).toLocaleDateString('zh-CN')}</td>
+                <td>${tag.blogCount || tag.articlesCount || tag.article_count || 0}</td>
+                <td>
+                    <button class="post-action-btn delete-tag-btn" data-id="${tag.id}" title="删除">🗑️</button>
+                </td>
+            `;
+            
+            elements.tagsTableBody.appendChild(row);
+        });
+    }
+
+    // 应用筛选器
+    function applyTagFilters() {
+        tagCurrentPage = 1; // 重置为第一页
+        fetchTags();
+    }
+    
+    // 标签页面导航
+    function navigateTagPage(page) {
+        if (page < 1 || page > tagTotalPages) return;
+        tagCurrentPage = page;
+        fetchTags();
+    }
+
+    // 打开创建标签模态框
+    function openCreateTagModal() {
+        if (!elements.modalTitle || !elements.tagForm || !elements.tagModal) return;
+        
+        elements.modalTitle.textContent = '添加标签';
+        elements.tagForm.reset();
+        tagCurrentId = null;
+        
+        elements.tagModal.style.display = 'block';
+    }
+
+    // 关闭标签模态框
+    function closeTagModal() {
+        if (elements.tagModal) elements.tagModal.style.display = 'none';
+    }
+
+    // 处理标签表单提交
+    function handleTagSubmit(e) {
+        e.preventDefault();
+        
+        // 获取表单数据
+        const nameField = document.getElementById('tagName');
+        const descriptionField = document.getElementById('tagDescription');
+        
+        if (!nameField) {
+            showNotification('表单数据不完整', 'error');
+            return;
+        }
+        
+        // 处理表单数据
+        const formData = {
+            name: nameField.value.trim(),
+            description: descriptionField ? descriptionField.value.trim() : ''
+        };
+        
+        // 表单验证
+        if (!formData.name) {
+            showNotification('标签名称不能为空', 'error');
+            return;
+        }
+        
+        // 创建标签
+        fetch('/admins/tags', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    // 尝试解析错误消息
+                    return response.json().then(err => {
+                        throw new Error(err.message || '操作失败');
+                    });
+                }
+                return response.json();
+            })
+            .then(() => {
+                closeTagModal();
+                fetchTags(); // 刷新标签列表
+                
+                // 显示操作成功的通知
+                showNotification('标签已成功创建', 'success');
+            })
+            .catch(error => {
+                console.error('保存标签失败:', error);
+                showNotification(`保存标签失败: ${error.message || '请稍后重试'}`, 'error');
+            });
+    }
+
+    // 打开删除确认对话框
+    function openDeleteConfirmation(tagId) {
+        tagCurrentId = tagId;
+        if (elements.deleteModal) elements.deleteModal.style.display = 'block';
+    }
+
+    // 关闭删除确认对话框
+    function closeDeleteModal() {
+        if (elements.deleteModal) elements.deleteModal.style.display = 'none';
+    }
+
+    // 删除标签
+    function deleteTag() {
+        if (!tagCurrentId) return;
+        
+        // 禁用删除按钮，防止重复点击
+        if (elements.confirmDeleteBtn) {
+            elements.confirmDeleteBtn.disabled = true;
+            elements.confirmDeleteBtn.textContent = '删除中...';
+        }
+        
+        fetch(`/admins/tags/${tagCurrentId}`, {
+            method: 'DELETE'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    // 尝试解析错误消息
+                    return response.json().then(err => {
+                        throw new Error(err.message || '删除失败');
+                    });
+                }
+                return response.json();
+            })
+            .then(() => {
+                closeDeleteModal();
+                fetchTags(); // 刷新标签列表
+                showNotification('标签已成功删除', 'success');
+            })
+            .catch(error => {
+                console.error('删除标签失败:', error);
+                showNotification(`删除标签失败: ${error.message || '请稍后重试'}`, 'error');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                if (elements.confirmDeleteBtn) {
+                    elements.confirmDeleteBtn.disabled = false;
+                    elements.confirmDeleteBtn.textContent = '删除';
+                }
+            });
+    }
+    
+    // 显示操作通知
+    function showNotification(message, type = 'info') {
+        // 检查是否已存在通知容器，如果不存在则创建
+        let notificationContainer = document.getElementById('notification-container');
+        if (!notificationContainer) {
+            notificationContainer = document.createElement('div');
+            notificationContainer.id = 'notification-container';
+            document.body.appendChild(notificationContainer);
+        }
+        
+        // 创建通知元素
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                ${message}
+            </div>
+            <span class="notification-close">&times;</span>
+        `;
+        
+        // 添加到容器
+        notificationContainer.appendChild(notification);
+        
+        // 淡入效果
+        setTimeout(() => {
+            notification.style.opacity = '1';
+        }, 10);
+        
+        // 关闭按钮
+        const closeBtn = notification.querySelector('.notification-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                closeNotification(notification);
+            });
+        }
+        
+        // 几秒后自动关闭
+        setTimeout(() => {
+            closeNotification(notification);
+        }, 4000);
+    }
+    
+    // 关闭通知
+    function closeNotification(notification) {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }
+
+    // 公开接口
+    return {
+        init: init
+    };
+})();
+
+// 当标签管理标签被点击时调用初始化函数
+document.addEventListener('DOMContentLoaded', function() {
+    const tagTabTrigger = document.querySelector('[data-tab="tags"]');
+    if (tagTabTrigger) {
+        tagTabTrigger.addEventListener('click', function() {
+            // 给初始化函数一点时间，确保DOM已完全渲染
+            setTimeout(TagManager.init, 100);
         });
     }
 });

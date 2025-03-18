@@ -26,8 +26,8 @@
             <li data-tab="comments">💬 评论管理</li>
             <li data-tab="users">👥 用户管理</li>
             <li data-tab="categories">📁 分类管理</li>
-            <!-- <li data-tab="tags">🏷️ 标签管理</li> -->
-            <li data-tab="settings">⚙️ 系统管理</li>
+            <li data-tab="tags">🏷️ 标签管理</li>
+            <!-- <li data-tab="settings">⚙️ 系统管理</li> -->
         </ul>
     </div>
 
@@ -450,10 +450,89 @@
                 </div>
             </section>
 
-            <!-- 系统管理标签页内容 -->
-            <section id="settings" class="tab-content">
-                <div class="settings-header">
-                    <h2>系统管理</h2>
+            <!-- 标签管理标签页内容 -->
+            <section id="tags" class="tab-content">
+                <div class="tags-header">
+                    <h2>标签管理</h2>
+                    <div class="tags-actions">
+                        <button id="createTagBtn" class="primary-btn">🏷️ 添加标签</button>
+                        <div class="search-container">
+                            <input type="text" id="tagSearch" placeholder="搜索标签...">
+                            <button id="tagSearchBtn">🔍</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 筛选选项 -->
+                <div class="filter-options">
+                    <div class="filter-group">
+                        <label for="tagSortBy">排序:</label>
+                        <select id="tagSortBy">
+                            <option value="name_asc">标签名称 (A-Z)</option>
+                            <option value="name_desc">标签名称 (Z-A)</option>
+                            <option value="created_at_desc">创建时间 ↓</option>
+                            <option value="created_at_asc">创建时间 ↑</option>
+                            <option value="article_count_desc">文章数量 ↓</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 标签列表表格 -->
+                <div class="table-container">
+                    <table id="tagsTable">
+                        <thead>
+                            <tr>
+                                <th width="30%">标签名称</th>
+                                <th width="30%">描述</th>
+                                <th width="15%">创建时间</th>
+                                <th width="10%">文章数</th>
+                                <th width="15%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tagsTableBody">
+                            <!-- 标签数据将通过JS动态添加 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控制 -->
+                <div class="tag-pagination">
+                    <button id="tagPrevPage" disabled>上一页</button>
+                    <span id="tagPageInfo">第 <span id="tagCurrentPage">1</span> 页，共 <span id="tagTotalPages">1</span> 页</span>
+                    <button id="tagNextPage">下一页</button>
+                </div>
+
+                <!-- 标签表单模态框 -->
+                <div id="tagModal" class="tag-modal">
+                    <div class="tag-modal-content">
+                        <span class="tag-close">&times;</span>
+                        <h2 id="tagModalTitle">添加标签</h2>
+                        <form id="tagForm">
+                            <div class="form-group">
+                                <label for="tagName">标签名称</label>
+                                <input type="text" id="tagName" name="tagName" required maxlength="50">
+                            </div>
+                            <div class="form-group">
+                                <label for="tagDescription">标签描述</label>
+                                <textarea id="tagDescription" name="description" rows="3" maxlength="200"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="primary-btn">保存</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 删除确认模态框 -->
+                <div id="tagDeleteModal" class="tag-modal">
+                    <div class="tag-modal-content tag-delete-modal">
+                        <h3>确认删除</h3>
+                        <p>您确定要删除此标签吗？此操作将会从所有文章中移除该标签。</p>
+                        <div class="modal-actions">
+                            <button id="tagCancelDelete" class="secondary-btn">取消</button>
+                            <button id="tagConfirmDelete" class="danger-btn">删除</button>
+                        </div>
+                    </div>
                 </div>
             </section>
                 

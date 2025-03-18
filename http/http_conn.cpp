@@ -3194,8 +3194,167 @@ http_conn::HTTP_CODE http_conn::do_request()
             return BAD_REQUEST;
         }
     }
-    else
+    // 管理员-标签管理-获取标签列表（分页、搜索、筛选）
+    else if(m_method == GET && strstr(m_url, "/admins/tags?")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            int page = 1, size = 10;
+            string sortField = "created_at"; // 默认排序字段(关键词) 按创建时间、名称、文章数
+            string sortOrder = "desc"; // 默认排序方式 升序or降序
+            string searchKeyword = ""; // 默认无搜索 搜索用户名、邮箱
+
+            // 解析url参数
+            char* pageParam = strstr(m_url, "page=");
+            char* sizeParam = strstr(m_url, "pageSize=");
+            char* sortParam = strstr(m_url, "sort=");
+            char* searchParam = strstr(m_url, "search=");
+
+            if(pageParam){
+                page = std::atoi(pageParam + 5);
+                if(page <= 0) page = 1;
+            }
+            if(sizeParam){
+                size = std::atoi(sizeParam + 9);
+                if(size <= 0 || size > 100) size = 20;
+            }
+            if(sortParam){
+                string sortStr = string(sortParam + 5);
+                size_t pos = sortStr.rfind("_");
+                if(pos != string::npos){
+                    sortField = sortStr.substr(0, pos);
+                    sortOrder = sortStr.substr(pos + 1);
+
+                    size_t ampPos = sortOrder.find("&");
+                    if(ampPos != string::npos){
+                        sortOrder = sortOrder.substr(0, ampPos);
+                    }
+                }
+            }
+            if(searchParam){
+                searchKeyword = string(searchParam + 7);
+                size_t ampPos = searchKeyword.find("&");
+                if(ampPos != string::npos){
+                    searchKeyword = searchKeyword.substr(0, ampPos);
+                }
+                searchKeyword = url_decode(searchKeyword);
+            }
+
+            // 查询数据库
+            sql_blog_tool tool;
+            vector<Tags> tags;
+            int totalCount = 0;
+
+            if(sortField == "article_count"){
+                if(searchKeyword.empty()){
+                    tags = tool.get_tags_by_blog_count(page, size, sortOrder);
+                    totalCount = tool.get_tag_count();
+                }else{
+                    tags = tool.get_tags_by_blog_count_and_search(page, size, sortOrder, searchKeyword);
+                    totalCount = tool.get_total_tags_count_by_search(searchKeyword);
+                }
+            }else if(searchKeyword.empty()){
+                tags = tool.get_tags_by_page_and_sort(page, size, sortField, sortOrder);
+                totalCount = tool.get_tag_count();
+            }else{
+                tags = tool.get_tags_by_page_and_sort_and_search(page, size, sortField, sortOrder, searchKeyword);
+                totalCount = tool.get_total_tags_count_by_search(searchKeyword);
+            }
+
+            // 构造JSON响应
+            jsonData = "{";
+            jsonData += "\"tags\": [";
+            for(int i = 0; i < tags.size(); i++){
+                Tags tag = tags[i];
+                int searchId = tag.get_id();
+                int blogCount = tool.get_total_blog_count_by_tag(searchId);
+
+                jsonData += "{";
+                jsonData += "\"id\": \"" + to_string(tag.get_id()) + "\",";
+                jsonData += "\"name\": \"" + tag.get_name() + "\",";
+                jsonData += "\"description\": \"" + tag.get_description() + "\",";
+                jsonData += "\"createdAt\": \"" + tag.get_created_at() + "\",";
+                jsonData += "\"blogCount\": \"" + to_string(blogCount) + "\"";
+                jsonData += "}";
+                if(i < tags.size() - 1) jsonData += ",";
+            }
+            jsonData += "],";
+            int totalPages = (totalCount / 10) + 1;
+            jsonData += "\"totalPages\": " + to_string(totalPages) + ",";
+            jsonData += "\"totalCount\": " + to_string(totalCount);
+            jsonData += "}";
+
+            return BLOG_DATA;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-标签管理-添加新标签
+    else if(m_method == POST && strstr(m_url, "/admins/tags")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            auto post_data = parse_post_data(m_string);
+            string name = post_data["name"];
+            string description = post_data["description"];
+
+            if(name.empty()) return BAD_REQUEST;
+
+            sql_blog_tool tool;
+            Tags tag;
+            tag.set_name(name);
+            tag.set_description(description);
+
+            if(tool.add_tag(tag)){
+                Tags newtag = tool.get_tag_by_tagname(name);
+                jsonData = "{";
+                        jsonData += "\"id\":\"" + to_string(newtag.get_id()) + "\",";
+                        jsonData += "\"name\":\"" + newtag.get_name() + "\",";
+                        jsonData += "\"description\":\"" + newtag.get_description() + "\",";
+                        jsonData += "\"createdAt\":\"" + newtag.get_created_at() + "\"";
+                        jsonData += "}";
+                return BLOG_DATA;
+            }
+            return BAD_REQUEST;
+        }
+        else{
+            return BAD_REQUEST;
+        }
+    }
+    // 管理员-标签管理-删除指定标签
+    else if(m_method == DELETE && strstr(m_url, "/admins/tags/")){
+        string username = cookie_admin.getCookie("username");
+        string session_id = cookie_admin.getCookie("session_id");
+
+        if(cookie_admin.validateSession(username, session_id)){
+            // 提取标签ID
+            char* tagIdParam = strstr(m_url, "/admins/tags/") + 13;
+            if(tagIdParam){
+                int tagId = std::atoi(tagIdParam);
+                if(tagId > 0){
+                    sql_blog_tool tool;
+                    bool result = tool.delete_tag_by_tagid(tagId);
+                    if(result){
+                        jsonData = "{";
+                        jsonData += "\"message\": \"" + string("标签删除成功") + "\"";
+                        jsonData += "}";
+                        return BLOG_DATA;
+                    }
+                    return BAD_REQUEST;
+                }else{
+                    return BAD_REQUEST;
+                }
+            }
+            return BAD_REQUEST;
+        }else{
+            return BAD_REQUEST;
+        }
+    }
+    else{
         strncpy(m_real_file + len, m_url, FILENAME_LEN - len - 1);
+    }
 
     // 文件检查与映射
     if (stat(m_real_file, &m_file_stat) < 0)
