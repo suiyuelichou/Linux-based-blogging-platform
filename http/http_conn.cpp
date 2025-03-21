@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include <stdexcept>
 #include <nlohmann/json.hpp>
+
+using namespace std;
 using json = nlohmann::json;
 
 //定义http响应的一些状态信息
@@ -417,12 +419,6 @@ http_conn::HTTP_CODE http_conn::parse_content(char *text)
 }
 
 // 解析http请求体内容并存储 这是表单类型的数据的（经过部分修改，也能解析简单的json）
-#include <string>
-#include <unordered_map>
-#include <stdexcept>
-
-using namespace std;
-
 unordered_map<string, string> http_conn::parse_post_data(const string& body) {
     unordered_map<string, string> post_data;
     
@@ -892,6 +888,26 @@ http_conn::HTTP_CODE http_conn::do_request()
                         islogin = true;
                         strcpy(m_url, "/blog_user_home.html");
                         strcpy(m_url_real, "/blog_user_home.html");
+
+                        // 测试
+                        // // 查看所有普通登录用户
+                        // vector<string> logged_users = Cookie::getActiveUsers();
+                        // cout << "Logged Users: ";
+                        // for (const auto& user : logged_users) {
+                        //     cout << user << " ";
+                        // }
+
+                        // 查看详细会话信息（含session_id和最后活跃时间）
+                        auto all_sessions = Cookie::getAllSessions();
+                        for (const auto& entry : all_sessions) {
+                            const string& user = entry.first;
+                            const pair<string, time_t>& session = entry.second;
+                            cout << "User: " << user 
+                                << " | Session ID: " << session.first
+                                << " | Last Active: " << session.second << endl;
+                        }
+
+
                     } catch(const runtime_error& e){    // 若当前用户已登录，再登录会返回错误页面(用户已登录)
                         strcpy(m_url, "/blog_loginErrorExit.html");
                         strcpy(m_url_real, "/blog_loginErrorExit.html");
@@ -1423,8 +1439,9 @@ http_conn::HTTP_CODE http_conn::do_request()
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
 
-        if(!cookie.validateSession(username, session_id))
+        if(!cookie.validateSession(username, session_id)){
             return BAD_REQUEST;
+        }
 
         // 解析 blogId
         const char* blogIdStart = strstr(m_url, "blogId=");
@@ -1613,11 +1630,17 @@ http_conn::HTTP_CODE http_conn::do_request()
         string session_id = cookie.getCookie("session_id");
 
         if(cookie.validateSession(username, session_id)){
-            char *m_url_real = (char*)malloc(sizeof(char) * 200);
-            strcpy(m_url_real, "/blog_user_home.html");
-            strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
-            free(m_url_real);
-        }else{
+            const char* blog_path = "/blog_user_home.html";
+            size_t path_len = strlen(blog_path);
+            
+            // 确保 m_real_file 有足够空间
+            if(len + path_len < 200) {  // 假设 m_real_file 总大小为200
+                strcpy(m_real_file + len, blog_path);
+            } else {
+                // 处理路径过长的情况
+                return BAD_REQUEST;
+            }
+        } else {
             cookie.removeSession(username);
             return REDIRECT_HOME;
         }
@@ -1947,8 +1970,8 @@ http_conn::HTTP_CODE http_conn::do_request()
     // 管理员-登录逻辑
     else if(strstr(m_url, "/admins/admins_login")){
         // 避免重复登录
-        string user = cookie_admin.getCookie("username");
-        string session_id = cookie_admin.getCookie("session_id");
+        string user = cookie_admin.getCookie("admin_username");
+        string session_id = cookie_admin.getCookie("admin_session_id");
         // 若已登录则直接返回主页
         if(cookie_admin.validateSession(user, session_id)){
             char *m_url_real = (char *)malloc(sizeof(char) * 200);

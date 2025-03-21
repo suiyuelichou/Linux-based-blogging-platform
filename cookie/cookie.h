@@ -65,6 +65,11 @@ public:
     void removeSession(const string& username);
     static void cleanupSessions();
 
+    // 用于测试
+    // 新增：获取当前所有活跃用户
+    static std::vector<std::string> getActiveUsers();
+    static std::unordered_map<std::string, std::pair<std::string, time_t>> getAllSessions(); // 可选详细版
+
 private:
     // 辅助方法
     string trim(const string& str);
@@ -99,6 +104,7 @@ public:
 private:
     map<string, string> request_cookies;  // 存储请求中的cookies
     vector<CookieInfo> response_cookies;  // 存储要发送的cookies
+    const string COOKIE_PREFIX = "admin_";
 
     // 会话管理
     static unordered_map<string, pair<string, time_t>> active_sessions;  // username -> (session_id, timestamp) 

@@ -21,8 +21,10 @@ void Cookie::parseCookieHeader(const string& header) {
         size_t pos = pair.find('=');
         if (pos != string::npos) {
             string key = trim(pair.substr(0, pos));      // 提取 Cookie 名称
-            string value = trim(pair.substr(pos + 1));   // 提取 Cookie 值
-            request_cookies[key] = value;                 // 存储到 request_cookies 映射中
+            if (key.find("admin_") != 0) {
+                string value = trim(pair.substr(pos + 1));   // 提取 Cookie 值
+                request_cookies[key] = value;                 // 存储到 request_cookies 映射中
+            }
         }
     }
 }
@@ -207,9 +209,57 @@ string Cookie::formatTime(time_t t) {
     return string(buf);
 }
 
+// 获取当前所有活跃用户
+vector<string> Cookie::getActiveUsers() {
+    vector<string> users;
+    session_lock.lock();
+    for (const auto& entry : active_sessions) {
+        users.push_back(entry.first);
+    }
+    session_lock.unlock();
+    return users;
+}
+
+unordered_map<string, pair<string, time_t>> Cookie::getAllSessions() {
+    session_lock.lock();
+    auto copy_sessions = active_sessions; // 创建副本保证线程安全
+    session_lock.unlock();
+    return copy_sessions;
+}
+
 // 静态成员初始化
 unordered_map<string, pair<string, time_t>> Cookie::active_sessions;  // 存储所有活动会话
 locker Cookie::session_lock;  // 用于保护会话管理的线程锁
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -234,8 +284,12 @@ void Cookie_admin::parseCookieHeader(const string& header) {
         size_t pos = pair.find('=');
         if (pos != string::npos) {
             string key = trim(pair.substr(0, pos));      // 提取 Cookie 名称
-            string value = trim(pair.substr(pos + 1));   // 提取 Cookie 值
-            request_cookies[key] = value;                 // 存储到 request_cookies 映射中
+            if (key.find(COOKIE_PREFIX) == 0) {
+                string real_key = key.substr(COOKIE_PREFIX.length());
+                string value = trim(pair.substr(pos + 1));   // 提取 Cookie 值
+                request_cookies[real_key] = value;                 // 存储到 request_cookies 映射中
+                // cout << real_key << ":" << value << endl;
+            }
         }
     }
 }
@@ -261,7 +315,7 @@ string Cookie_admin::generateCookieHeaders(){
     // 遍历所有要发送的 cookies
     for (const auto& cookie : response_cookies) {
         stringstream ss;
-        ss << "Set-Cookie: " << cookie.name << "=" << cookie.value;
+        ss << "Set-Cookie: " << COOKIE_PREFIX << cookie.name << "=" << cookie.value;
 
         // 根据 CookieOptions，添加各个属性到 Set-Cookie 字符串
         if (!cookie.options.path.empty()) {
@@ -370,6 +424,7 @@ void Cookie_admin::removeSession(const string& username) {
 
     // 设置 Cookie 使其过期（通过设置过期时间为过去的时间）
     CookieOptions options;
+    // options.path = "/";
     options.expires = time(nullptr) - 3600;  // 设置为过去的时间，强制过期
     setCookie("session_id", "", options);
     setCookie("username", "", options);
@@ -380,7 +435,7 @@ void Cookie_admin::removeSession(const string& username) {
 void Cookie_admin::forceClearClientCookies()
 {
     CookieOptions options;
-    options.path = "/";
+    // options.path = "/";
     options.expires = time(nullptr) - 3600;  // 设置为过去的时间，强制过期
     setCookie("session_id", "", options);
     setCookie("username", "", options);
