@@ -1,48 +1,237 @@
-/* 博客编辑页的样式 */
-.blog-edit-container {
-    width: 1000px;
-    height: calc(100% - 50px);
-    margin: 0 auto;
+/* 博客编辑器特有样式 */
+.editor-section {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    padding: 20px;
+    margin-bottom: 30px;
 }
- 
-/* 注意使用后代选择器，防止和导航栏中的title冲突 */
-.blog-edit-container .title {
-    height: 50px;
+
+.editor-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
 }
-/* 标题的输入框 */
-#title-input {
-    height: 40px;
-    width: 896px;
-    border-radius: 10px;
-    border: none;
-    font-size: 20px;
-    text-indent: 10px;
+
+.editor-title {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary);
 }
- 
-/* 提交按钮 */
-#submit {
-    height: 40px;
-    width: 100px;
-    border-radius: 10px;
+
+.editor-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-group input, 
+.form-group select, 
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.form-group input:focus, 
+.form-group select:focus, 
+.form-group textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}
+
+.form-hint {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+/* 文章编辑器 */
+.editor-wrapper {
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--card-bg);
+    min-height: 400px;
+}
+
+.ql-toolbar.ql-snow {
+    border-color: var(--border-color) !important;
+    background-color: var(--bg-secondary);
+}
+
+.ql-container.ql-snow {
+    border-color: var(--border-color) !important;
+    min-height: 350px;
+    background-color: var(--input-bg);
+}
+
+.ql-editor {
+    min-height: 350px;
+    font-family: var(--body-font);
+    color: var(--text-primary);
+}
+
+/* 标签输入 */
+.tags-input {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--input-bg);
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+
+.tag .remove-tag {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.tags-input input {
+    flex: 1;
     border: none;
+    outline: none;
+    padding: 5px 0;
+    background-color: transparent;
+    color: var(--text-primary);
+}
+
+/* 缩略图预览 */
+.thumbnail-preview {
+    width: 100%;
+    height: 200px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.thumbnail-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.thumbnail-preview.no-image {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* 发布按钮区域 */
+.publish-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+}
+
+.publish-options {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.publish-btn {
+    padding: 12px 25px;
+    background-color: var(--primary-color);
     color: white;
-    background-color: thistle;
-    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
 }
- 
-#submit:hover {
-    background-color: rgb(158,130,140);
+
+.publish-btn:hover {
+    background-color: var(--primary-dark);
 }
- 
-.blog-edit-container form {
-    height: 100%;
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .publish-options {
+        width: 100%;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .publish-btn {
+        width: 100%;
+        text-align: center;
+    }
 }
- 
-#editor {
-    border-radius: 10px;
-    /* 设置半透明度，只不够他会让子元素也会跟着一起透明 */
-    opacity: 80%;
+
+/* 侧边栏样式 */
+.sidebar-card.writing-tips {
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.sidebar-card.writing-tips .tip-item {
+    margin-bottom: 12px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.sidebar-card.writing-tips .tip-item i {
+    color: var(--primary-color);
+    margin-top: 2px;
+}
+
+/* 暗色模式适配 */
+body.dark-theme .ql-snow .ql-stroke {
+    stroke: #aaa;
+}
+
+body.dark-theme .ql-snow .ql-fill {
+    fill: #aaa;
+}
+
+body.dark-theme .ql-snow .ql-picker {
+    color: #aaa;
+}
+
+body.dark-theme .ql-snow .ql-picker-options {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+body.dark-theme .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label,
+body.dark-theme .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
+    border-color: var(--border-color);
 }

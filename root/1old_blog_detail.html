@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客详情页</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/detail.css">
+    <link rel="stylesheet" href="css/floating_dropdown.css">
+
+    <script src = "js/floating_dropdown.js" defer></script>
+
+    <!-- 引入 jquery -->
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <!-- 引入 editor.md 依赖 -->
+    <link rel="stylesheet" href="editor.md/css/editormd.min.css" />
+    <script src="editor.md/lib/marked.min.js"></script>
+    <script src="editor.md/lib/prettify.min.js"></script>
+    <script src="editor.md/editormd.js"></script>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="nav">
+        <!-- 图片的引入 -->
+        <img src="img/logo.png">
+        <!-- 标题 -->
+        <div class="title">云中杉木博客平台</div>
+        <!-- 导航链接 -->
+        <div class="nav-links">
+            <a href="message_board.html">留言板</a>
+            <a href="blog_home.html">主页</a>
+            <a href="blog_editor.html">写博客</a>
+            <a href="blog_login.html">登录</a>
+        </div>
+    </div>
+
+    <!-- 悬浮下拉框 -->
+    <div class="floating-dropdown">
+        <div class="floating-dropdown-header">
+            <span>功能选择</span>
+            <span class="toggle-btn">▼</span>
+        </div>
+        <div class="floating-dropdown-content">
+            <a href="#center">个人中心 🔒</a>
+            <a href="#author">作者信息</a>
+            <a href="#games">小游戏</a>
+            <a href="#settings">系统设置</a>
+        </div>
+    </div>
+ 
+    <!-- 版心的实现 -->
+    <div class="container">
+        <!-- 左侧信息 -->
+        <div class="container-left">
+            <!-- 这个div表示整个用户信息的区域 -->
+            <div class="card">
+                <!-- 用户的头像 -->
+                <img id="avatar" src="img/default_touxiang.jpg" alt="用户头像">
+ 
+                <!-- 用户名 -->
+                <h3 id="username">加载中...</h3>
+ 
+                <!-- GitHub地址 -->
+                <a href="https://github.com/yaugaolele/Project.git">GitHub 地址</a>
+ 
+                <!-- 统计信息 -->
+                <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span id="article_count">2</span>
+                    <span>1</span>
+                </div>
+            </div>
+        </div>
+        <!-- 右侧信息 -->
+        <div class="container-right">
+            <!-- 博客标题 -->
+            <h3>我的第一篇博客</h3>
+            <!-- 时间 -->
+            <div class="date">2023-08-16 20:00:00</div>          
+        </div>
+
+        <script>
+            // 从服务端获取博客详情
+            function getBlog() {
+                $.ajax({
+                    type: 'get',
+                    url: 'blog' + location.search,
+                    success: function(body) {
+                    // body 现在是单个博客对象，不需要数组访问
+                    let h3 = document.querySelector('.container-right h3');
+                    h3.innerHTML = body.title;
+                    
+                    let dateDiv = document.querySelector('.container-right .date');
+                    dateDiv.innerHTML = body.postTime;
+                    
+                    // 创建一个div用于展示内容
+                    let contentDiv = document.createElement('div');
+                    contentDiv.id = 'content';
+                    document.querySelector('.container-right').appendChild(contentDiv);
+                    
+                    // 渲染markdown内容
+                    editormd.markdownToHTML('content', {
+                        markdown: body.content
+                    });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('获取博客详情失败:', status, error);
+                        alert('获取博客详情失败，请稍后重试');
+                    }
+                });
+            }
+
+            // 从服务端获取用户信息
+            // 定义一个名为getUser的函数
+            function getUser(){
+                // 使用jQuery提供的$.ajax方法
+                $.ajax({
+                    type:'GET',
+                    url:'user' + location.search,   // user + 当前页面URL中的查询字符串部分(包括？和后面的参数)
+                    // 当请求成功就会调用success回调函数，data是数据库返回的数据对象，通常是JSON格式
+                    success:function(data){
+                        // 更新用户头像和用户名
+                        document.getElementById('avatar').src = data.avatar || 'img/touxiang.jpg';
+                        document.getElementById('username').innerText = data.username || '未知用户';
+                        document.getElementById('article_count').innerText = data.article_count || 0;
+                    },
+                    error:function(xhr, status, error){
+                        console.error('获取用户信息失败:', status, error);
+                        alert('获取用户信息失败，请稍后重试');
+                    }
+                });
+            }
+
+            getUser();
+            getBlog();
+        </script>
+
+    <!-- 下面是评论区的代码 -->
+
+    <!-- 在页面底部添加评论切换按钮 -->
+    <div class="comment-container">
+        <span class="comment-count">0</span>
+        <button class="comment-toggle-btn">💬 评论</button>
+    </div>
+
+    <!-- 评论区 -->
+    <div class="comment-section">
+        <!-- 评论输入区域 -->
+        <div class="comment-input-container">
+            <textarea class="comment-input" rows="4" placeholder="登录后可发表评论..." readonly></textarea>
+            <button class="submit-comment-btn">去登录</button>
+        </div>
+
+        <!-- 评论列表 -->
+        <div class="comment-list">
+            <!-- 这里将动态加载评论 -->
+        </div>
+    </div>
+
+    <script>
+        // 评论区交互脚本
+        document.addEventListener('DOMContentLoaded', function() {
+            const commentToggleBtn = document.querySelector('.comment-toggle-btn');
+            const commentSection = document.querySelector('.comment-section');
+            const submitCommentBtn = document.querySelector('.submit-comment-btn');
+            const commentInput = document.querySelector('.comment-input');
+            const commentList = document.querySelector('.comment-list');
+            const commentCountElement = document.querySelector('.comment-count');
+
+            // 创建调整大小的手柄
+            const resizeHandle = document.createElement('div');
+            resizeHandle.classList.add('comment-resize-handle');
+            commentSection.appendChild(resizeHandle);
+
+            // 恢复之前保存的评论区宽度
+            const savedWidth = localStorage.getItem('commentSectionWidth');
+            if (savedWidth) {
+                commentSection.style.width = savedWidth;
+            }
+
+            // 调整大小的交互逻辑
+            let isResizing = false;
+            let startX, startWidth;
+
+            resizeHandle.addEventListener('mousedown', initResize);
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', stopResize);
+
+            function initResize(e) {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = parseInt(document.defaultView.getComputedStyle(commentSection).width, 10);
+                document.body.style.cursor = 'col-resize';
+                e.preventDefault(); // 防止文本选择
+                // 阻止事件冒泡，防止触发滚动条拖动
+                e.stopPropagation();
+            }
+
+            function resize(e) {
+                if (!isResizing) return;
+                
+                // 计算新的宽度（从右向左调整）
+                const newWidth = startWidth - (e.clientX - startX);
+                
+                // 设置宽度限制
+                const clampedWidth = Math.min(Math.max(newWidth, 250), 600);
+                
+                commentSection.style.width = `${clampedWidth}px`;
+                localStorage.setItem('commentSectionWidth', `${clampedWidth}px`);
+            }
+
+            function stopResize() {
+                isResizing = false;
+                document.body.style.cursor = '';
+            }
+
+
+            // 切换评论区显示/隐藏
+            // commentToggleBtn.addEventListener('click', function() {
+            //     commentSection.classList.toggle('open');
+            // });
+            commentToggleBtn.addEventListener('click', function() {
+                // 如果评论区是打开状态，则关闭
+                if (commentSection.classList.contains('open')) {
+                    commentSection.classList.remove('open');
+                    commentSection.style.right = `-${commentSection.offsetWidth}px`;
+                } 
+                // 如果评论区是关闭状态，则打开
+                else {
+                    commentSection.classList.add('open');
+                    commentSection.style.right = '0';
+                }
+            });
+
+            // 跳转到登录界面
+            submitCommentBtn.addEventListener('click', function() {
+                window.location.href = 'blog_login.html';
+            });
+
+            // 获取评论列表
+            function fetchComments() {
+                $.ajax({
+                    type: 'GET',
+                    url: 'get_blog_comments' + location.search, // 获取当前博客的评论
+                    success: function(response){
+                        commentList.innerHTML = ''; // 清空现有评论
+                        const comments = response.comments || [];
+                        comments.forEach(addCommentToList);
+
+                        updateCommentCount(comments.length);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('获取评论失败:', error);
+                    }
+                });
+            }
+
+            function updateCommentCount(count){
+                commentCountElement.textContent = count;
+            }
+
+            // 添加评论到列表
+            function addCommentToList(comment) {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('single-comment');
+                commentElement.innerHTML = `
+                    <div class="comment-author">${comment.username || '匿名用户'}</div>
+                    <div class="comment-content">${comment.content}</div>
+                    <div class="comment-date">${comment.comment_time || new Date().toLocaleString()}</div>
+                `;
+                commentList.prepend(commentElement);
+            }
+
+            // 获取博客ID的辅助函数
+            function getBlogId() {
+                const urlParams = new URLSearchParams(location.search);
+                return urlParams.get('blogId');
+            }
+
+            // 页面加载时获取评论
+            fetchComments();
+        });
+    </script>
+
+    <!-- 点赞区 -->
+    <div class="like-container">
+        <span class="like-count">0</span>
+        <button class="like-toggle-btn">❤️ 点赞</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        const likeToggleBtn = document.querySelector('.like-toggle-btn');
+        const likeCountDisplay = document.querySelector('.like-count');
+        
+        let likeCount = parseInt(likeCountDisplay.textContent) || 0;
+
+        function getBlogId() {
+            const urlParams = new URLSearchParams(location.search);
+            return urlParams.get('blogId');
+        }
+
+        // 获取总点赞数
+        function checkLikeCount() {
+            $.ajax({
+                type: 'GET',
+                url: 'get_blog_likes_count',
+                data: {
+                    blogId: getBlogId()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        likeCount = response.likeCount;  // 获取总点赞数
+                        likeCountDisplay.textContent = likeCount;  // 更新显示的点赞数
+                    } else {
+                        alert('获取点赞状态失败，请稍后重试');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('获取点赞状态失败，请稍后重试');
+                }
+            });
+        }
+
+        // 点赞按钮点击事件（提示游客登录）
+        likeToggleBtn.addEventListener('click', function() {
+            alert('请登录后点赞');
+        });
+
+        // 初始化页面时获取总点赞数
+        checkLikeCount();
+    });
+    </script>
+</body>
+</html>

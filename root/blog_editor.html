@@ -1,62 +1,750 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博客编辑页</title>
-    <link rel="stylesheet" href="css/common.css">
+    <title>写博客 - 云中杉木博客</title>
+    <link rel="stylesheet" href="css/home.css">
     <link rel="stylesheet" href="css/blog_editor.css">
-    <!-- <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script> -->
-    <script src = "js/jquery.min.js"></script>
-    <!-- 引入editor.md的依赖 -->
-    <link rel="stylesheet" href="editor.md/css/editormd.min.css" />
-    <script src="editor.md/lib/marked.min.js"></script>
-    <script src="editor.md/lib/prettify.min.js"></script>
-    <script src="editor.md/editormd.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="img/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- 引入编辑器依赖 -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.min.js"></script>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <div class="nav">
-        <!-- 图片的引入 -->
-        <img src="img/logo.png">
-        <!-- 标题 -->
-        <div class="title">云中杉木博客平台</div>
-        <!-- 导航链接 -->
-        <div class="nav-links">
-            <a href="message_board.html">留言板</a>
-            <a href="blog_user_home.html">主页</a>
-            <a href="blog_editor.html">写博客</a>
-            <a href="logout_user">注销</a>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="img/logo.png" alt="云中杉木">
+                <h1>云中杉木</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="blog_home.html"><i class="fas fa-home"></i> 首页</a></li>
+                    <li><a href="new_blog_categories.html"><i class="fas fa-layer-group"></i> 分类</a></li>
+                    <li><a href="new_message_board.html"><i class="fas fa-comments"></i> 留言板</a></li>
+                    <li><a href="new_blog_editor.html" class="active"><i class="fas fa-edit"></i> 写博客</a></li>
+                </ul>
+            </nav>
+            <div class="user-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="搜索文章...">
+                    <button><i class="fas fa-search"></i></button>
+                </div>
+                <div class="user-menu">
+                    <img src="img/default_touxiang.jpg" alt="用户头像" id="userAvatar">
+                    <div class="user-dropdown">
+                        <a href="blog_login.html"><i class="fas fa-sign-in-alt"></i> 登录</a>
+                        <a href="blog_register.html"><i class="fas fa-user-plus"></i> 注册</a>
+                        <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
+                        <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                    </div>
+                </div>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            <button class="mobile-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="main-content">
+        <div class="container">
+            <!-- 编辑器主区域 -->
+            <section class="editor-section">
+                <div class="editor-header">
+                    <h2 class="editor-title">创建新博客</h2>
+                </div>
+                <div class="editor-container">
+                    <form id="blogForm">
+                        <div class="form-group">
+                            <label for="blogTitle">文章标题</label>
+                            <input type="text" id="blogTitle" name="title" placeholder="输入引人注目的标题" required>
+                            <small class="form-hint">一个好的标题能够吸引更多读者</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="blogCategory">分类</label>
+                            <select id="blogCategory" name="category" required>
+                                <option value="">选择分类</option>
+                                <option value="技术">技术</option>
+                                <option value="生活">生活</option>
+                                <option value="旅行">旅行</option>
+                                <option value="美食">美食</option>
+                                <option value="编程">编程</option>
+                                <option value="前端">前端</option>
+                                <option value="后端">后端</option>
+                                <option value="设计">设计</option>
+                                <option value="数据库">数据库</option>
+                                <option value="算法">算法</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="blogExcerpt">文章摘要</label>
+                            <textarea id="blogExcerpt" name="excerpt" rows="3" placeholder="简短概括文章内容，会显示在首页"></textarea>
+                            <small class="form-hint">100-200字左右的摘要能让读者了解文章的主要内容</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editor">文章内容</label>
+                            <div id="editor" class="editor-wrapper"></div>
+                            <small class="form-hint">支持富文本、图片上传、Markdown语法</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tagsInput">标签</label>
+                            <div class="tags-input" id="tagsContainer">
+                                <input type="text" id="tagsInput" placeholder="输入标签后按回车添加" />
+                            </div>
+                            <small class="form-hint">最多添加5个标签，每个标签不超过10个字符</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="thumbnailUpload">封面图片</label>
+                            <input type="file" id="thumbnailUpload" name="thumbnail" accept="image/*">
+                            <small class="form-hint">建议尺寸: 1200 x 628 像素</small>
+                            <div class="thumbnail-preview no-image" id="thumbnailPreview">
+                                <span>尚未上传封面图片</span>
+                            </div>
+                        </div>
+                        
+                        <div class="publish-actions">
+                            <div class="publish-options">
+                                <div class="form-check">
+                                    <input type="checkbox" id="allowComments" name="allowComments" checked>
+                                    <label for="allowComments">允许评论</label>
+                                </div>
+                                
+                                <button type="button" class="publish-btn" id="publishBtn">
+                                    <i class="fas fa-paper-plane"></i> 发布文章
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            
+            <!-- 侧边栏 -->
+            <aside class="sidebar">
+                <!-- 写作状态 -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title"><i class="fas fa-info-circle"></i> 文章状态</h3>
+                    <div class="status-info">
+                        <p><i class="fas fa-pencil-alt"></i> 字数统计: <span id="wordCount">0</span> 字</p>
+                        <p><i class="fas fa-clock"></i> 预计阅读时间: <span id="readTime">0</span> 分钟</p>
+                    </div>
+                </div>
+                
+                <!-- 写作提示 -->
+                <div class="sidebar-card writing-tips">
+                    <h3 class="sidebar-title"><i class="fas fa-lightbulb"></i> 写作小技巧</h3>
+                    <div class="tips-content">
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <p>使用清晰的标题和小标题，帮助读者更好理解文章结构</p>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <p>添加相关图片和代码示例，增强文章可读性</p>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <p>使用简洁明了的语言，避免长句和复杂词汇</p>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <p>在文章末尾添加总结或号召性用语，增强阅读体验</p>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <p>发布前检查拼写和语法错误，确保文章质量</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>云中杉木博客</h3>
+                    <p>分享知识，连接世界</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-weibo"></i></a>
+                        <a href="#"><i class="fab fa-zhihu"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>快速链接</h3>
+                    <ul>
+                        <li><a href="blog_home.html">首页</a></li>
+                        <li><a href="new_blog_categories.html">分类</a></li>
+                        <li><a href="new_message_board.html">留言板</a></li>
+                        <li><a href="new_blog_editor.html">写博客</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>联系我们</h3>
+                    <p><i class="fas fa-envelope"></i> contact@yunzhongshanmu.com</p>
+                    <p><i class="fas fa-map-marker-alt"></i> 中国，北京</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 云中杉木博客平台. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到顶部按钮 -->
+    <button id="backToTop" class="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- 通知组件 -->
+    <div id="notification" class="notification">
+        <i class="notification-icon"></i>
+        <div class="notification-message"></div>
+        <div class="notification-close"><i class="fas fa-times"></i></div>
+    </div>
+    
+    <!-- 确认弹窗 -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">确认发布</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <p>确定要发布这篇文章吗？发布后可以在个人中心编辑。</p>
+            </div>
+            <div class="modal-footer">
+                <button id="modalCancelBtn" class="btn btn-secondary">取消</button>
+                <button id="modalConfirmBtn" class="btn btn-primary">确认</button>
+            </div>
         </div>
     </div>
- 
-    <!-- 博客编辑页的版心 -->
-    <div class="blog-edit-container">
-        <form action="blog" method="post">
-            <!-- 标题编辑区 -->
-            <div class="title">
-                <input type="text" id="title-input" name="title" placeholder="在这里输入标题">
-                <input type="submit" id="submit">
-            </div>
-            <!-- 博客编辑器 -->
-            <!-- 把md编辑器放到这个div中 -->
-            <div id="editor">
-                <textarea name="content" style="display: none;"></textarea>
-            </div>
-        </form>
-    </div>
- 
+
     <script>
-        var editor = editormd("editor", {
-            //这里的尺寸必须在这里设置，设置样式会被editormd自动覆盖掉
-            windth:"100%",
-            // 设定编辑器的高度
-            height:"calc(100% - 50px)",
-            // 编辑器中的初始内容
-            markdown:"# 在这里写下第一篇博客",
-            // 指定 editor.md依赖的插件路径
-            path:"editor.md/lib/",
-            // saveHTMLToTextarea: true
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化编辑器
+            const quill = new Quill('#editor', {
+                theme: 'snow',
+                placeholder: '开始撰写你的博客内容...',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'align': [] }],
+                        ['blockquote', 'code-block'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['link', 'image'],
+                        ['clean']
+                    ]
+                }
+            });
+            
+            // 设置暗黑模式
+            setupDarkMode();
+            
+            // 移动端菜单切换
+            const mobileToggle = document.querySelector('.mobile-toggle');
+            const mainNav = document.querySelector('.main-nav');
+            
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function() {
+                    mainNav.classList.toggle('active');
+                    this.classList.toggle('active');
+                });
+            }
+            
+            // 标签添加功能
+            const tagsInput = document.getElementById('tagsInput');
+            const tagsContainer = document.getElementById('tagsContainer');
+            let tags = [];
+            
+            tagsInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const tagValue = this.value.trim();
+                    if (tagValue && tags.length < 5 && !tags.includes(tagValue)) {
+                        addTag(tagValue);
+                        this.value = '';
+                    } else if (tags.length >= 5) {
+                        showNotification('最多添加5个标签', 'error');
+                    } else if (tags.includes(tagValue)) {
+                        showNotification('标签已存在', 'error');
+                    }
+                }
+            });
+            
+            function addTag(tagValue) {
+                tags.push(tagValue);
+                
+                const tagElement = document.createElement('span');
+                tagElement.className = 'tag';
+                tagElement.innerHTML = `${tagValue} <span class="remove-tag">&times;</span>`;
+                
+                const removeBtn = tagElement.querySelector('.remove-tag');
+                removeBtn.addEventListener('click', function() {
+                    tags = tags.filter(tag => tag !== tagValue);
+                    tagElement.remove();
+                });
+                
+                tagsContainer.insertBefore(tagElement, tagsInput);
+            }
+            
+            // 封面图片预览
+            const thumbnailUpload = document.getElementById('thumbnailUpload');
+            const thumbnailPreview = document.getElementById('thumbnailPreview');
+            
+            thumbnailUpload.addEventListener('change', function(e) {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        thumbnailPreview.innerHTML = `<img src="${e.target.result}" alt="封面预览">`;
+                        thumbnailPreview.classList.remove('no-image');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // 字数统计和阅读时间
+            const wordCountEl = document.getElementById('wordCount');
+            const readTimeEl = document.getElementById('readTime');
+            
+            quill.on('text-change', function() {
+                const text = quill.getText();
+                const wordCount = text.trim().length;
+                const readTime = Math.ceil(wordCount / 400); // 假设每分钟阅读400字
+                
+                wordCountEl.textContent = wordCount;
+                readTimeEl.textContent = readTime;
+            });
+            
+            // 发布文章按钮
+            const publishBtn = document.getElementById('publishBtn');
+            const confirmModal = document.getElementById('confirmModal');
+            const modalCancelBtn = document.getElementById('modalCancelBtn');
+            const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+            const closeModal = document.querySelector('.close-modal');
+            
+            publishBtn.addEventListener('click', function() {
+                // 表单验证
+                const title = document.getElementById('blogTitle').value;
+                const category = document.getElementById('blogCategory').value;
+                const content = quill.root.innerHTML;
+                const excerpt = document.getElementById('blogExcerpt').value;
+                
+                if (!title) {
+                    showNotification('请输入文章标题', 'error');
+                    return;
+                }
+                
+                if (!category) {
+                    showNotification('请选择文章分类', 'error');
+                    return;
+                }
+                
+                if (quill.getText().trim().length < 50) {
+                    showNotification('文章内容太短，请至少输入50个字', 'error');
+                    return;
+                }
+                
+                if (!excerpt) {
+                    showNotification('请输入文章摘要', 'error');
+                    return;
+                }
+                
+                // 显示确认对话框
+                confirmModal.style.display = 'block';
+            });
+            
+            // 关闭模态窗口
+            closeModal.onclick = function() {
+                confirmModal.style.display = 'none';
+            };
+            
+            modalCancelBtn.onclick = function() {
+                confirmModal.style.display = 'none';
+            };
+            
+            // 点击模态窗口外部关闭
+            window.onclick = function(event) {
+                if (event.target == confirmModal) {
+                    confirmModal.style.display = 'none';
+                }
+            };
+            
+            // 确认发布文章
+            modalConfirmBtn.onclick = function() {
+                publishArticle();
+            };
+            
+            // 发布文章函数
+            function publishArticle() {
+                const title = document.getElementById('blogTitle').value;
+                const category = document.getElementById('blogCategory').value;
+                const content = quill.root.innerHTML;
+                const excerpt = document.getElementById('blogExcerpt').value;
+                const allowComments = document.getElementById('allowComments').checked;
+                
+                // 显示发布中状态
+                modalConfirmBtn.disabled = true;
+                modalConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发布中...';
+                
+                // 准备文章数据
+                const formData = new FormData();
+                formData.append('title', title);
+                formData.append('category', category);
+                formData.append('content', content);
+                formData.append('excerpt', excerpt);
+                formData.append('tags', JSON.stringify(tags));
+                formData.append('allowComments', allowComments);
+                
+                // 添加封面图片（如果有）
+                const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
+                if (thumbnailFile) {
+                    formData.append('thumbnail', thumbnailFile);
+                }
+                
+                // 发送到后端API
+                fetch('/api/articles', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            throw new Error('请先登录');
+                        }
+                        throw new Error('发布失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 关闭模态窗口
+                    confirmModal.style.display = 'none';
+                    
+                    if (data.success) {
+                        showNotification('文章发布成功！', 'success');
+                        
+                        // 跳转到文章页面
+                        setTimeout(() => {
+                            window.location.href = `blog_detail.html?id=${data.articleId}`;
+                        }, 1500);
+                    } else {
+                        throw new Error(data.message || '发布失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('发布文章失败:', error);
+                    
+                    // 恢复按钮状态
+                    modalConfirmBtn.disabled = false;
+                    modalConfirmBtn.innerHTML = '确认';
+                    
+                    // 显示错误
+                    let errorMessage = error.message;
+                    if (error.message === '请先登录') {
+                        errorMessage = '请先登录后再发布文章';
+                        // 可以选择跳转到登录页面
+                        setTimeout(() => {
+                            window.location.href = 'blog_login.html';
+                        }, 1500);
+                    }
+                    
+                    showNotification(errorMessage, 'error');
+                });
+            }
+            
+            // 回到顶部按钮
+            const backToTopBtn = document.getElementById('backToTop');
+            if (backToTopBtn) {
+                window.addEventListener('scroll', function() {
+                    if (window.pageYOffset > 300) {
+                        backToTopBtn.classList.add('visible');
+                    } else {
+                        backToTopBtn.classList.remove('visible');
+                    }
+                });
+                
+                backToTopBtn.addEventListener('click', function() {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+            
+            // 主题切换
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    toggleDarkMode();
+                });
+            }
+            
+            // 检查登录状态
+            checkAuthStatus();
+            
+            // 设置暗黑模式
+            function setupDarkMode() {
+                const isDarkMode = localStorage.getItem('darkMode') === 'true';
+                if (isDarkMode) {
+                    document.body.classList.add('dark-theme');
+                    updateDarkModeIcon(true);
+                }
+            }
+            
+            // 切换暗黑模式
+            function toggleDarkMode() {
+                const isDarkMode = document.body.classList.toggle('dark-theme');
+                localStorage.setItem('darkMode', isDarkMode);
+                updateDarkModeIcon(isDarkMode);
+                showNotification(`已切换到${isDarkMode ? '暗色' : '亮色'}模式`, 'success');
+            }
+            
+            // 更新暗黑模式图标
+            function updateDarkModeIcon(isDarkMode) {
+                const themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                    themeToggle.innerHTML = isDarkMode ? 
+                        '<i class="fas fa-sun"></i>' : 
+                        '<i class="fas fa-moon"></i>';
+                }
+            }
+            
+            // 检查用户登录状态
+            function checkAuthStatus() {
+                fetch('/api/user/info')
+                    .then(response => {
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                // 用户未登录，显示登录提示
+                                showLoginRequiredMessage();
+                                updateUIForAuthStatus(false);
+                                return null;
+                            }
+                            throw new Error('网络响应异常');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data) {
+                            // 用户已登录，更新UI
+                            updateUIForAuthStatus(true, data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('检查登录状态失败:', error);
+                        updateUIForAuthStatus(false);
+                    });
+            }
+            
+            // 显示登录提示
+            function showLoginRequiredMessage() {
+                const editorContainer = document.querySelector('.editor-container');
+                
+                const loginMessage = document.createElement('div');
+                loginMessage.className = 'login-required-message';
+                loginMessage.innerHTML = `
+                    <div class="message-content">
+                        <i class="fas fa-lock"></i>
+                        <h3>请先登录</h3>
+                        <p>登录后才能发布博客文章</p>
+                        <a href="blog_login.html" class="login-btn">立即登录</a>
+                        <a href="blog_register.html" class="register-link">没有账号？立即注册</a>
+                    </div>
+                `;
+                
+                // 添加样式
+                const style = document.createElement('style');
+                style.textContent = `
+                    .login-required-message {
+                        background-color: var(--card-bg);
+                        border-radius: 8px;
+                        padding: 30px;
+                        text-align: center;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                        margin: 20px auto;
+                        max-width: 400px;
+                    }
+                    
+                    .message-content i {
+                        font-size: 3rem;
+                        color: var(--primary-color);
+                        margin-bottom: 15px;
+                    }
+                    
+                    .message-content h3 {
+                        font-size: 1.5rem;
+                        margin-bottom: 10px;
+                        color: var(--text-primary);
+                    }
+                    
+                    .message-content p {
+                        color: var(--text-secondary);
+                        margin-bottom: 20px;
+                    }
+                    
+                    .login-btn {
+                        display: inline-block;
+                        padding: 10px 20px;
+                        background-color: var(--primary-color);
+                        color: white;
+                        border-radius: 5px;
+                        text-decoration: none;
+                        font-weight: 500;
+                        margin-bottom: 15px;
+                        transition: var(--transition);
+                    }
+                    
+                    .login-btn:hover {
+                        background-color: var(--primary-dark);
+                    }
+                    
+                    .register-link {
+                        display: block;
+                        color: var(--primary-color);
+                        text-decoration: none;
+                    }
+                    
+                    .register-link:hover {
+                        text-decoration: underline;
+                    }
+                `;
+                
+                document.head.appendChild(style);
+                
+                // 隐藏编辑器并显示登录消息
+                editorContainer.innerHTML = '';
+                editorContainer.appendChild(loginMessage);
+                
+                // 禁用发布按钮
+                document.getElementById('publishBtn').disabled = true;
+            }
+            
+            // 根据登录状态更新UI
+            function updateUIForAuthStatus(isLoggedIn, userData) {
+                const userName = document.getElementById('userName');
+                const userAvatar = document.getElementById('userAvatar');
+                const userDropdown = document.querySelector('.user-dropdown');
+                
+                if (isLoggedIn && userData) {
+                    // 用户已登录，显示用户信息
+                    if (userAvatar) userAvatar.src = userData.avatar || 'img/default_touxiang.jpg';
+                    
+                    // 更新下拉菜单
+                    if (userDropdown) {
+                        userDropdown.innerHTML = `
+                        <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
+                        <a href="new_blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
+                        <a href="new_user_settings.html"><i class="fas fa-cog"></i> 设置</a>
+                        <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                        `;
+                        
+                        // 重新绑定退出登录事件
+                        const logoutBtn = document.getElementById('logout');
+                        if (logoutBtn) {
+                            logoutBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                logout();
+                            });
+                        }
+                    }
+                } else {
+                    // 用户未登录，显示游客信息
+                    if (userAvatar) userAvatar.src = 'img/default_touxiang.jpg';
+                    
+                    // 更新下拉菜单
+                    if (userDropdown) {
+                        userDropdown.innerHTML = `
+                        <a href="blog_login.html"><i class="fas fa-sign-in-alt"></i> 登录</a>
+                        <a href="blog_register.html"><i class="fas fa-user-plus"></i> 注册</a>
+                        `;
+                    }
+                }
+            }
+            
+            // 退出登录
+            function logout() {
+                fetch('/api/user/logout', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('退出登录失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    showNotification(data.message || '已成功退出登录', 'success');
+                    // 更新UI为未登录状态
+                    updateUIForAuthStatus(false);
+                    // 跳转到首页
+                    setTimeout(() => {
+                        window.location.href = 'blog_home.html';
+                    }, 1500);
+                })
+                .catch(error => {
+                    console.error('退出登录失败:', error);
+                    showNotification('退出登录请求失败，请重试', 'error');
+                });
+            }
+            
+            // 显示通知消息
+            function showNotification(message, type = 'info') {
+                const notification = document.getElementById('notification');
+                const notificationIcon = notification.querySelector('.notification-icon');
+                const notificationMessage = notification.querySelector('.notification-message');
+                
+                // 设置图标
+                switch (type) {
+                    case 'success':
+                        notificationIcon.className = 'notification-icon fas fa-check-circle';
+                        break;
+                    case 'error':
+                        notificationIcon.className = 'notification-icon fas fa-exclamation-circle';
+                        break;
+                    default:
+                        notificationIcon.className = 'notification-icon fas fa-info-circle';
+                }
+                
+                // 设置通知类型和消息
+                notification.className = `notification ${type}`;
+                notificationMessage.textContent = message;
+                
+                // 显示通知
+                notification.classList.add('show');
+                
+                // 添加关闭事件
+                const closeBtn = notification.querySelector('.notification-close');
+                closeBtn.addEventListener('click', () => {
+                    notification.classList.remove('show');
+                });
+                
+                // 自动关闭
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 5000);
+            }
         });
     </script>
 </body>

@@ -1,184 +1,521 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>博客注册页</title>
-    <link rel="stylesheet" href="css/common.css">
-    <link rel="stylesheet" href="css/register.css">
+    <title>注册 - 云中杉木博客</title>
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="img/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* 注册页面特有样式 */
+        .password-strength {
+            margin-top: 5px;
+            height: 5px;
+            border-radius: 3px;
+            background-color: #eee;
+            overflow: hidden;
+        }
+        
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            background-color: #e74c3c;
+            transition: all 0.3s ease;
+        }
+        
+        .password-strength-bar.weak { width: 30%; background-color: #e74c3c; }
+        .password-strength-bar.medium { width: 60%; background-color: #f39c12; }
+        .password-strength-bar.strong { width: 100%; background-color: #2ecc71; }
+        
+        .password-hint {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .password-hint span {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+        
+        .password-hint span.valid {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+        
+        .avatar-selection {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .avatar-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: var(--transition);
+            object-fit: cover;
+        }
+        
+        .avatar-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .avatar-option.selected {
+            border-color: var(--primary-color);
+            transform: scale(1.1);
+        }
+        
+        .register-card {
+            max-width: 500px;
+        }
+    </style>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <div class="nav">
-        <!-- 图片的引入 -->
-        <img src="img/logo.png">
-        <!-- 标题 -->
-        <div class="title">云中杉木博客平台</div>
-        <!-- 导航链接 -->
-        <div class="nav-links">
-            <a href="message_board.html">留言板</a>
-            <a href="blog_home.html">主页</a>
-            <a href="blog_editor.html">写博客</a>
-            <a href="blog_login.html">登录</a>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="img/logo.png" alt="云中杉木">
+                <h1>云中杉木</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="blog_home.html"><i class="fas fa-home"></i> 首页</a></li>
+                    <li><a href="new_blog_categories.html"><i class="fas fa-layer-group"></i> 分类</a></li>
+                    <li><a href="new_message_board.html"><i class="fas fa-comments"></i> 留言板</a></li>
+                    <li><a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a></li>
+                </ul>
+            </nav>
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            <button class="mobile-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
-    </div>
-    <!-- 注册页面版心 -->
-    <div class="login-container">
-        <!-- 注册对话框 -->
-        <div class="login-dialog">
-            <h3>注&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;册</h3>
-            <!-- 使用form包裹一下下列内容，便于给后续服务器提交数据 -->
-            <form action="3CGISQL.cgi" method="post" onsubmit="return validatePassword();">
-                <div class="row">
-                    <span>用户名</span>
-                    <div class="input-group">
-                        <input type="text" name="user" id="username" pattern="[a-zA-Z0-9]{6,20}" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" placeholder="请输入用户名" required="required" onblur="checkUsername();">
-                        <!-- 添加问号，并用 data-hint 存储提示信息 -->
-                        <span class="tooltip" data-hint="用户名只能包含字母、数字, 长度6-20位">�</span>
-                        <!-- 用于显示用户名验证提示信息 -->
-                        <div id="username-hint" class="hint-text"></div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="main-content">
+        <div class="login-container">
+            <div class="login-card register-card">
+                <h2>创建账号</h2>
+                <div class="login-form">
+                    <div class="form-group">
+                        <label for="username"><i class="fas fa-user"></i> 用户名</label>
+                        <input type="text" id="username" name="username" placeholder="请输入用户名" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
+                        <small class="form-hint">用户名只能包含字母、数字, 长度6-20位</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email"><i class="fas fa-envelope"></i> 电子邮箱</label>
+                        <input type="email" id="email" name="email" placeholder="请输入电子邮箱" required>
+                        <small class="form-hint">请输入有效的电子邮箱地址</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password"><i class="fas fa-lock"></i> 密码</label>
+                        <input type="password" id="password" name="password" placeholder="请输入密码" required>
+                        <div class="password-strength">
+                            <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                        </div>
+                        <div class="password-hint" id="passwordHint">
+                            <span id="lengthHint">长度8-20位</span>
+                            <span id="letterHint">包含字母</span>
+                            <span id="numberHint">包含数字</span>
+                            <span id="specialHint">包含特殊字符</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword"><i class="fas fa-lock"></i> 确认密码</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="请再次输入密码" required>
+                        <small class="form-hint" id="passwordMatchHint">两次输入的密码必须一致</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-image"></i> 选择头像</label>
+                        <div class="avatar-selection" id="avatarSelection">
+                            <img src="img/default_touxiang.jpg" alt="头像1" class="avatar-option selected" data-avatar="img/default_touxiang.jpg">
+                            <img src="img/avatar1.jpg" alt="头像2" class="avatar-option" data-avatar="img/avatar1.jpg">
+                            <img src="img/avatar2.jpg" alt="头像3" class="avatar-option" data-avatar="img/avatar2.jpg">
+                            <img src="img/avatar3.jpg" alt="头像4" class="avatar-option" data-avatar="img/avatar3.jpg">
+                        </div>
+                    </div>
+                    
+                    <button id="registerBtn" class="login-btn">注册</button>
+                    <div class="register-link">
+                        已有账号? <a href="blog_login.html">立即登录</a>
                     </div>
                 </div>
-                <!-- 修改密码输入部分的HTML结构 -->
-                <div class="row">
-                    <span>密&nbsp;&nbsp;&nbsp;&nbsp;码</span>
-                    <div class="input-group">
-                        <input type="password" name="password" id="password" placeholder="请输入密码" required="required" onblur="checkPassword()">
-                        <div id="password-hint" class="hint-text">密码8-16位,并包含字母和（数字或符号）</div>
-                    </div>
-                </div>    
-                <div class="row">
-                    <span>确认密码</span>
-                    <div class="input-group">
-                        <input type="password" id="confirm-password" placeholder="请再次输入密码" required="required" onblur="checkConfirmPassword()">
-                        <div id="confirm-password-hint" class="hint-text">两次输入的密码不一致</div>
-                    </div>
-                </div>                        
-                <div class="row">
-                    <input type="submit" value="注    册" id="submit">
+                <div class="login-footer">
+                    <p>注册即表示您同意我们的<a href="#">服务条款</a>和<a href="#">隐私政策</a></p>
                 </div>
-            </form>
+            </div>
         </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>云中杉木博客</h3>
+                    <p>分享知识，连接世界</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-weibo"></i></a>
+                        <a href="#"><i class="fab fa-zhihu"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>快速链接</h3>
+                    <ul>
+                        <li><a href="blog_home.html">首页</a></li>
+                        <li><a href="new_blog_categories.html">分类</a></li>
+                        <li><a href="new_message_board.html">留言板</a></li>
+                        <li><a href="blog_editor.html">写博客</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>联系我们</h3>
+                    <p><i class="fas fa-envelope"></i> contact@yunzhongshanmu.com</p>
+                    <p><i class="fas fa-map-marker-alt"></i> 中国，北京</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 云中杉木博客平台. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到顶部按钮 -->
+    <button id="backToTop" class="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- 通知组件 -->
+    <div id="notification" class="notification">
+        <i class="notification-icon"></i>
+        <div class="notification-message"></div>
+        <div class="notification-close"><i class="fas fa-times"></i></div>
     </div>
 
     <script>
-        let isUsernameAvailable = false; // 记录用户名是否可用
-    
-        function updateSubmitButtonState() {
-            let username = document.getElementById("username").value.trim();
-            let password = document.getElementById("password").value;
-            let confirmPassword = document.getElementById("confirm-password").value;
-            let submitButton = document.getElementById("submit");
-    
-            let usernameRegex = /^[a-zA-Z0-9]{6,20}$/;
-            let passwordRegex = /^(?=.*[A-Za-z])(?=.*\d|.*[^A-Za-z\d]).{8,}$/;
-    
-            let isUsernameValid = usernameRegex.test(username);
-            let isPasswordValid = passwordRegex.test(password);
-            let isPasswordConfirmed = password === confirmPassword && password !== "";
-    
-            // 只有当用户名可用、用户名格式正确、密码格式正确、确认密码一致时，才启用注册按钮
-            if (isUsernameValid && isUsernameAvailable && isPasswordValid && isPasswordConfirmed) {
-                submitButton.disabled = false;
-            } else {
-                submitButton.disabled = true;
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置暗黑模式
+            setupDarkMode();
+            
+            // 移动端菜单切换
+            const mobileToggle = document.querySelector('.mobile-toggle');
+            const mainNav = document.querySelector('.main-nav');
+            
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function() {
+                    mainNav.classList.toggle('active');
+                    this.classList.toggle('active');
+                });
             }
-        }
-    
-        function checkUsername() {
-            let username = document.getElementById("username").value.trim();
-            let hint = document.getElementById("username-hint");
-    
-            let regex = /^[a-zA-Z0-9]{6,20}$/;
-            if (!regex.test(username)) {
-                hint.textContent = "用户名只能包含字母、数字，长度 6-20 位";
-                hint.style.display = "block";
-                isUsernameAvailable = false;
-                updateSubmitButtonState();
-                return;
-            } else {
-                hint.style.display = "none";
-            }
-    
-            if (username === "") {
-                isUsernameAvailable = false;
-                updateSubmitButtonState();
-                return;
-            }
-    
-            // 发起 Ajax 请求检查用户名是否存在
-            fetch(`check_username_is_exist?username=${encodeURIComponent(username)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.exists) {
-                        hint.textContent = "该用户名已被注册";
-                        hint.style.display = "block";
-                        isUsernameAvailable = false;
+            
+            // 回到顶部按钮
+            const backToTopBtn = document.getElementById('backToTop');
+            if (backToTopBtn) {
+                window.addEventListener('scroll', function() {
+                    if (window.pageYOffset > 300) {
+                        backToTopBtn.classList.add('visible');
                     } else {
-                        hint.style.display = "none";
-                        isUsernameAvailable = true;
+                        backToTopBtn.classList.remove('visible');
                     }
-                    updateSubmitButtonState();
+                });
+                
+                backToTopBtn.addEventListener('click', function() {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+            
+            // 主题切换
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    toggleDarkMode();
+                });
+            }
+            
+            // 注册表单相关事件
+            setupRegisterForm();
+            
+            // 设置暗黑模式
+            function setupDarkMode() {
+                // 检查本地存储中的主题偏好
+                const isDarkMode = localStorage.getItem('darkMode') === 'true';
+                if (isDarkMode) {
+                    document.body.classList.add('dark-theme');
+                    updateDarkModeIcon(true);
+                }
+            }
+            
+            // 切换暗黑模式
+            function toggleDarkMode() {
+                const isDarkMode = document.body.classList.toggle('dark-theme');
+                localStorage.setItem('darkMode', isDarkMode);
+                updateDarkModeIcon(isDarkMode);
+                showNotification(`已切换到${isDarkMode ? '暗色' : '亮色'}模式`, 'success');
+            }
+            
+            // 更新暗黑模式图标
+            function updateDarkModeIcon(isDarkMode) {
+                const themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                    themeToggle.innerHTML = isDarkMode ? 
+                        '<i class="fas fa-sun"></i>' : 
+                        '<i class="fas fa-moon"></i>';
+                }
+            }
+            
+            // 注册表单设置
+            function setupRegisterForm() {
+                const passwordInput = document.getElementById('password');
+                const confirmPasswordInput = document.getElementById('confirmPassword');
+                const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+                const lengthHint = document.getElementById('lengthHint');
+                const letterHint = document.getElementById('letterHint');
+                const numberHint = document.getElementById('numberHint');
+                const specialHint = document.getElementById('specialHint');
+                const passwordMatchHint = document.getElementById('passwordMatchHint');
+                const registerBtn = document.getElementById('registerBtn');
+                const avatarOptions = document.querySelectorAll('.avatar-option');
+                
+                // 密码强度检查
+                passwordInput.addEventListener('input', function() {
+                    const password = this.value;
+                    
+                    // 检查各项条件
+                    const hasValidLength = password.length >= 8 && password.length <= 20;
+                    const hasLetter = /[a-zA-Z]/.test(password);
+                    const hasNumber = /[0-9]/.test(password);
+                    const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+                    
+                    // 更新提示
+                    lengthHint.className = hasValidLength ? 'valid' : '';
+                    letterHint.className = hasLetter ? 'valid' : '';
+                    numberHint.className = hasNumber ? 'valid' : '';
+                    specialHint.className = hasSpecial ? 'valid' : '';
+                    
+                    // 计算强度
+                    let strength = 0;
+                    if (hasValidLength) strength += 1;
+                    if (hasLetter) strength += 1;
+                    if (hasNumber) strength += 1;
+                    if (hasSpecial) strength += 1;
+                    
+                    // 更新强度条
+                    passwordStrengthBar.className = 'password-strength-bar';
+                    if (strength >= 4) {
+                        passwordStrengthBar.classList.add('strong');
+                    } else if (strength >= 2) {
+                        passwordStrengthBar.classList.add('medium');
+                    } else if (strength >= 1) {
+                        passwordStrengthBar.classList.add('weak');
+                    }
+                    
+                    // 检查两次密码是否一致
+                    checkPasswordMatch();
+                });
+                
+                // 确认密码匹配检查
+                confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+                
+                function checkPasswordMatch() {
+                    const password = passwordInput.value;
+                    const confirmPassword = confirmPasswordInput.value;
+                    
+                    if (!confirmPassword) {
+                        passwordMatchHint.style.color = '';
+                        return;
+                    }
+                    
+                    if (password === confirmPassword) {
+                        passwordMatchHint.style.color = '#2ecc71';
+                        passwordMatchHint.textContent = '密码匹配';
+                    } else {
+                        passwordMatchHint.style.color = '#e74c3c';
+                        passwordMatchHint.textContent = '两次输入的密码不一致';
+                    }
+                }
+                
+                // 头像选择
+                avatarOptions.forEach(option => {
+                    option.addEventListener('click', function() {
+                        avatarOptions.forEach(opt => opt.classList.remove('selected'));
+                        this.classList.add('selected');
+                    });
+                });
+                
+                // 注册按钮点击事件
+                registerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    register();
+                });
+            }
+            
+            // 注册函数
+            function register() {
+                const username = document.getElementById('username').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const selectedAvatar = document.querySelector('.avatar-option.selected').getAttribute('data-avatar');
+                const registerBtn = document.getElementById('registerBtn');
+                
+                // 表单验证
+                if (!username) {
+                    showNotification('请输入用户名', 'error');
+                    return;
+                }
+                
+                if (username.length < 6 || username.length > 20) {
+                    showNotification('用户名长度应为6-20位', 'error');
+                    return;
+                }
+                
+                if (!email) {
+                    showNotification('请输入电子邮箱', 'error');
+                    return;
+                }
+                
+                if (!validateEmail(email)) {
+                    showNotification('请输入有效的电子邮箱地址', 'error');
+                    return;
+                }
+                
+                if (!password) {
+                    showNotification('请输入密码', 'error');
+                    return;
+                }
+                
+                if (password.length < 8 || password.length > 20) {
+                    showNotification('密码长度应为8-20位', 'error');
+                    return;
+                }
+                
+                if (!(/[a-zA-Z]/.test(password) && /[0-9]/.test(password))) {
+                    showNotification('密码应同时包含字母和数字', 'error');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    showNotification('两次输入的密码不一致', 'error');
+                    return;
+                }
+                
+                // 显示加载状态
+                registerBtn.disabled = true;
+                registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 注册中...';
+                
+                // 发送注册请求
+                fetch('/api/user/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        password: password,
+                        avatar: selectedAvatar
+                    }),
+                    credentials: 'include'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('注册失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message || '注册成功，正在跳转...', 'success');
+                        
+                        // 注册成功后跳转到登录页
+                        setTimeout(() => {
+                            window.location.href = 'blog_login.html';
+                        }, 1500);
+                    } else {
+                        throw new Error(data.message || '注册失败');
+                    }
                 })
                 .catch(error => {
-                    console.error("Error checking username:", error);
-                    isUsernameAvailable = false;
-                    updateSubmitButtonState();
+                    console.error('注册失败:', error);
+                    showNotification(error.message || '注册失败，请重试', 'error');
+                    
+                    // 恢复按钮状态
+                    registerBtn.disabled = false;
+                    registerBtn.innerHTML = '注册';
                 });
-        }
-    
-        function checkPassword() {
-            let password = document.getElementById("password").value;
-            let hint = document.getElementById("password-hint");
-            let regex = /^(?=.*[A-Za-z])(?=.*\d|.*[^A-Za-z\d]).{8,}$/;
-    
-            if (!regex.test(password)) {
-                hint.style.display = "block";
-            } else {
-                hint.style.display = "none";
             }
-    
-            updateSubmitButtonState();
-        }
-    
-        function checkConfirmPassword() {
-            let password = document.getElementById("password").value;
-            let confirmPassword = document.getElementById("confirm-password").value;
-            let hint = document.getElementById("confirm-password-hint");
-    
-            if (confirmPassword && password !== confirmPassword) {
-                hint.style.display = "block";
-            } else {
-                hint.style.display = "none";
+            
+            // 邮箱验证函数
+            function validateEmail(email) {
+                const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                return re.test(String(email).toLowerCase());
             }
-    
-            updateSubmitButtonState();
-        }
-    
-        function validatePassword() {
-            let password = document.getElementById("password").value;
-            let confirmPassword = document.getElementById("confirm-password").value;
-            let regex = /^(?=.*[A-Za-z])(?=.*\d|.*[^A-Za-z\d]).{8,}$/;
-    
-            if (!regex.test(password)) {
-                alert("密码至少8位, 并包含字母和（数字或符号）");
-                return false;
+            
+            // 显示通知消息
+            function showNotification(message, type = 'info') {
+                const notification = document.getElementById('notification');
+                const notificationIcon = notification.querySelector('.notification-icon');
+                const notificationMessage = notification.querySelector('.notification-message');
+                
+                // 设置图标
+                switch (type) {
+                    case 'success':
+                        notificationIcon.className = 'notification-icon fas fa-check-circle';
+                        break;
+                    case 'error':
+                        notificationIcon.className = 'notification-icon fas fa-exclamation-circle';
+                        break;
+                    default:
+                        notificationIcon.className = 'notification-icon fas fa-info-circle';
+                }
+                
+                // 设置通知类型和消息
+                notification.className = `notification ${type}`;
+                notificationMessage.textContent = message;
+                
+                // 显示通知
+                notification.classList.add('show');
+                
+                // 添加关闭事件
+                const closeBtn = notification.querySelector('.notification-close');
+                closeBtn.addEventListener('click', () => {
+                    notification.classList.remove('show');
+                });
+                
+                // 自动关闭
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 5000);
             }
-    
-            if (password !== confirmPassword) {
-                alert("两次输入的密码不一致！");
-                return false;
-            }
-            return true;
-        }
-    
-        // 页面加载时禁用注册按钮
-        document.addEventListener("DOMContentLoaded", function () {
-            document.getElementById("submit").disabled = true;
         });
-    
     </script>
-    
-    
 </body>
 </html>

@@ -22,6 +22,7 @@ const char *ok_200_title = "OK";
 const char *ok_302_title = "Found";
 const char *error_400_title = "Bad Request";
 const char *error_400_form = "Your request has bad syntax or is inherently impossible to staisfy.\n";
+const char *error_401_title = "Unauthorized";
 const char *error_403_title = "Forbidden";
 const char *error_403_form = "You do not have permission to get file form this server.\n";
 const char *error_404_title = "Not Found";
@@ -886,8 +887,8 @@ http_conn::HTTP_CODE http_conn::do_request()
 
                         current_username = name;
                         islogin = true;
-                        strcpy(m_url, "/blog_user_home.html");
-                        strcpy(m_url_real, "/blog_user_home.html");
+                        strcpy(m_url, "/blog_home.html");
+                        strcpy(m_url_real, "/blog_home.html");
 
                         // 测试
                         // // 查看所有普通登录用户
@@ -948,6 +949,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
 
     }
+
     // 检查当前用户名是否已经被注册
     else if(strstr(m_url, "/check_username_is_exist?username=") != nullptr){
         // 解析 username
@@ -1141,32 +1143,6 @@ http_conn::HTTP_CODE http_conn::do_request()
         vector<Blog> blogs = tool.get_blogs_by_page(page, size);
         int totalCount = tool.get_total_blog_count();
 
-        // 添加转义字符处理函数
-        auto escapeJsonString = [](const string& input) {
-            string output;
-            for (char c : input) {
-                switch (c) {
-                    case '"': output += "\\\""; break;   // 双引号转义
-                    case '\\': output += "\\\\"; break;  // 反斜杠转义
-                    case '\b': output += "\\b"; break;   // 退格符
-                    case '\f': output += "\\f"; break;   // 换页符
-                    case '\n': output += "\\n"; break;   // 换行符
-                    case '\r': output += "\\r"; break;   // 回车符
-                    case '\t': output += "\\t"; break;   // 制表符
-                    default:
-                        // 处理其他不可打印字符
-                        if (iscntrl(c)) {
-                            char buf[8];
-                            snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
-                            output += buf;
-                        } else {
-                            output += c;
-                        }
-                }
-            }
-            return output;
-        };
-
         // 构造 JSON 响应
         jsonData = "{";
         jsonData += "\"blogs\": [";
@@ -1187,6 +1163,584 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData += "\"totalCount\": " + std::to_string(totalCount);
         jsonData += "}";
 
+        return BLOG_DATA;
+    }
+    // 登录
+    else if (strstr(m_url, "/api/user/login")) {
+        json requestJson = json::parse(m_string);
+        string username = requestJson["username"];
+        string password = requestJson["password"];
+
+        if(users.find(username) != users.end()){
+            string stored_hash = users[username];
+            if(BCrypt::validatePassword(password, stored_hash) || password == stored_hash){
+                // 创建新会话
+                try{
+                    cookie.createSession(username);
+                    sql_blog_tool tool;
+                    int userid = tool.get_userid(username);
+                    tool.update_last_login_time(userid);
+                    int view_count = tool.get_view_count_by_userid(userid);
+                    int like_count = tool.get_blog_liked_count_by_userid(userid);
+                    User user = tool.get_userdata_by_userid(userid);
+
+                    json response = {
+                        {"success", true},
+                        {"message", "登录成功"},
+                        {"user", {
+                            {"username", username},
+                            {"avatar", user.get_avatar()},
+                            {"articleCount", user.get_article_count()},
+                            {"viewCount", view_count},
+                            {"likeCount", like_count}
+                        }}
+                    };
+
+                    jsonData = response.dump();
+
+                    return LOGIN;
+                }catch(const runtime_error& e){
+                    return BAD_REQUEST;
+                }
+            }else{
+                json response = {
+                    {"success", false},
+                    {"message", "用户名或密码错误"}
+                };
+                jsonData = response.dump();
+                return LOGIN;
+            }
+        }else{
+            json response = {
+                {"success", false},
+                {"message", "用户名或密码错误"}
+            };
+            jsonData = response.dump();
+            return LOGIN;
+        }
+    }
+    // 注销
+    else if (strstr(m_url, "/api/user/logout")) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(cookie.validateSession(username, session_id)){
+            cookie.removeSession(username);
+            json response = {
+                {"success", true},
+                {"message", "已成功退出登录"}
+            };
+            jsonData = response.dump();
+            return LOGOUT;
+        }else{
+            json response = {
+                {"success", false},
+                {"message", "退出失败"}
+            };
+            jsonData = response.dump();
+            return LOGOUT;
+        }
+    }
+    // 注册
+    else if (strstr(m_url, "/api/user/register")) {
+        json requestJson = json::parse(m_string);
+        string username = requestJson["username"];
+        string password = requestJson["password"];
+        string avatar = requestJson["avatar"];
+        string email = requestJson["email"];
+
+        if(!is_valid_username(username.c_str())){
+            json response = {
+                {"success", false},
+                {"message", "用户名格式不正确"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+        if(!is_valid_password(password.c_str())){
+            json response = {
+                {"success", false},
+                {"message", "密码格式不正确"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+
+        // 生成 bcrypt 哈希
+        std::string hashed_password = BCrypt::generateHash(password);
+
+        if (users.find(username) == users.end()) // 哈希表中不存在相同的用户名
+        {
+            m_lock.lock();
+            sql_blog_tool tool;
+            if(tool.user_register(username, hashed_password, email, avatar)){
+                users.insert(pair<string, string>(username, hashed_password));
+                m_lock.unlock();
+                json response = {
+                    {"success", true},
+                    {"message", "注册成功"},
+                    {"user", {
+                        {"username", username},
+                        {"avatar", avatar},
+                        {"email", email}
+                    }}
+                };
+                jsonData = response.dump();
+                return BLOG_DATA;
+            }else{
+                json response = {
+                    {"success", false},
+                    {"message", "注册失败"}
+                };
+                jsonData = response.dump();
+                return BLOG_DATA;
+            }
+        }else{
+            json response = {
+                {"success", false},
+                {"message", "用户名已存在"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+    }
+    // 获取所有博客
+    else if (strstr(m_url, "/api/articles")) {
+        int page = 1, size = 20;
+        char* pageParam = strstr(m_url, "page=");
+        char* sizeParam = strstr(m_url, "size=");
+        if (pageParam) {
+            page = std::atoi(pageParam + 5);
+            if (page <= 0) page = 1;
+        }
+        if (sizeParam) {
+            size = std::atoi(sizeParam + 5);
+            if (size <= 0 || size > 100) size = 20;
+        }
+        
+        // 查询数据库
+        sql_blog_tool tool;
+        vector<Blog> blogs = tool.get_blogs_by_page(page, size);
+        int totalCount = tool.get_total_blog_count();
+
+        // 构造 JSON 响应
+        jsonData = "{";
+        jsonData += "\"articles\": [";
+        for (int i = 0; i < blogs.size(); i++) {
+            Blog blog = blogs[i];
+            string escapedTitle = escapeJsonString(blog.get_blog_title());
+            string escapedContent = escapeJsonString(blog.get_blog_content());
+            User user = tool.get_userdata_by_userid(blog.get_user_id());
+            string category = tool.get_cotegoriename_by_cotegorieid(blog.get_category_id());
+            int likes = tool.get_blog_likes_count(blog.get_blog_id());
+            int comments = tool.get_blog_comments_count(blog.get_blog_id());
+            jsonData += "{";
+            jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
+            jsonData += "\"title\": \"" + escapedTitle + "\",";
+            jsonData += "\"excerpt\": \"" + escapedContent + "\",";
+            jsonData += "\"thumbnail\": \"" + user.get_avatar() + "\",";
+            jsonData += "\"author\": \"" + user.get_username() + "\",";
+            jsonData += "\"authorAvatar\": \"" + user.get_avatar() + "\",";
+            jsonData += "\"date\": \"" + blog.get_blog_postTime() + "\",";
+            jsonData += "\"category\": \"" + category + "\",";
+            jsonData += "\"views\": " + std::to_string(blog.get_views()) + ",";
+            jsonData += "\"likes\": " + std::to_string(likes) + ",";
+            jsonData += "\"comments\": " + std::to_string(comments);
+            jsonData += "}";
+            if (i < blogs.size() - 1) jsonData += ",";
+        }
+        jsonData += "],";
+        int totalPages = totalCount / size;
+        int currentPage = page;
+        jsonData += "\"totalPages\": " + std::to_string(totalPages) + ",";
+        jsonData += "\"currentPage\": " + std::to_string(currentPage);
+        jsonData += "}";
+
+        return BLOG_DATA;
+    }
+    // 获取热门博客
+    else if (strstr(m_url, "/api/popular")) {
+        int size = 5;
+        char* sizeParam = strstr(m_url, "size=");
+        if (sizeParam) {
+            size = std::atoi(sizeParam + 5);
+            if (size <= 0 || size > 100) size = 5;
+        }
+        
+        // 查询数据库
+        sql_blog_tool tool;
+        vector<Blog> blogs = tool.get_blogs_by_page_by_views(1, size);
+
+        // 构造 JSON 响应
+        jsonData = "{";
+        jsonData += "\"articles\": [";
+        for (int i = 0; i < blogs.size(); i++) {
+            Blog blog = blogs[i];
+            string escapedTitle = escapeJsonString(blog.get_blog_title());
+            User user = tool.get_userdata_by_userid(blog.get_user_id());
+            int likes = tool.get_blog_likes_count(blog.get_blog_id());
+            jsonData += "{";
+            jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
+            jsonData += "\"title\": \"" + escapedTitle + "\",";
+            jsonData += "\"thumbnail\": \"" + user.get_avatar() + "\",";
+            jsonData += "\"views\": " + std::to_string(blog.get_views()) + ",";
+            jsonData += "\"likes\": " + std::to_string(likes);
+            jsonData += "}";
+            if (i < blogs.size() - 1) jsonData += ",";
+        }
+        jsonData += "]";
+        jsonData += "}";
+
+        return BLOG_DATA;
+    }
+    // 获取所有分类
+    else if (strstr(m_url, "/api/categories")) {
+        // 查询数据库
+        sql_blog_tool tool;
+        vector<Categories> categories = tool.get_categories();
+
+        // 构造 JSON 响应
+        jsonData = "{";
+        jsonData += "\"categories\": [";
+        for (int i = 0; i < categories.size(); i++) {
+            Categories category = categories[i];
+            string escapedName = escapeJsonString(category.get_name());
+            int count = tool.get_total_blog_count_by_category(category.get_id());
+            jsonData += "{";
+            jsonData += "\"name\": \"" + escapedName + "\",";
+            jsonData += "\"count\": \"" + to_string(count) + "\"";
+            jsonData += "}";
+            if (i < categories.size() - 1) jsonData += ",";
+        }
+        jsonData += "]";
+        jsonData += "}";
+
+        return BLOG_DATA;
+    }
+    // 获取用户信息
+    else if (strstr(m_url, "/api/user/info")) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(cookie.validateSession(username, session_id)){
+            sql_blog_tool tool;
+            int userid = tool.get_userid(username);
+            User user = tool.get_userdata_by_userid(userid);
+            int view_count = tool.get_view_count_by_userid(userid);
+            int like_count = tool.get_blog_liked_count_by_userid(userid);
+
+            jsonData = "{";
+            jsonData += "\"username\": \"" + user.get_username() + "\",";
+            jsonData += "\"avatar\": \"" + user.get_avatar() + "\",";
+            jsonData += "\"articleCount\": \"" + to_string(user.get_article_count()) + "\",";
+            jsonData += "\"viewCount\": \"" + to_string(view_count) + "\",";
+            jsonData += "\"likeCount\": \"" + to_string(like_count) + "\"";
+            jsonData += "}";
+
+            return BLOG_DATA;
+        }else{
+            jsonData = "{\"message\": \"未登录或会话已过期\"}";
+            return AUTHENTICATION;
+        }
+    }
+    // 获取文章信息
+    else if (strncmp(m_url, "/api/article/", 13) == 0 && isdigit(m_url[13])) {
+        char* articleIdParam = strstr(m_url, "/api/article/") + 13;
+        if(articleIdParam == nullptr){
+            return BAD_REQUEST;
+        }
+        int articleId = atoi(articleIdParam);
+        if(articleId <= 0){
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        Blog blog = tool.select_blog_by_id(articleId);
+        string escapedTitle = escapeJsonString(blog.get_blog_title());
+        string escapedContent = escapeJsonString(blog.get_blog_content());
+        User user = tool.get_userdata_by_userid(blog.get_user_id());
+        string category = tool.get_cotegoriename_by_cotegorieid(blog.get_category_id());
+        vector<string> tags = tool.get_tags_by_blogid(articleId);
+        int likes = tool.get_blog_likes_count(articleId);
+        int comments = tool.get_blog_comments_count(articleId);
+        Blog prevPost = tool.get_prev_blog_by_id(articleId);
+        Blog nextPost = tool.get_next_blog_by_id(articleId);
+
+        // 先创建文章对象
+        json article = {
+            {"id", blog.get_blog_id()},
+            {"title", escapedTitle},
+            {"content", escapedContent},
+            {"date", blog.get_blog_postTime()},
+            {"thumbnail", user.get_avatar()},
+            {"category", category},
+            {"tags", json::array()}, // 创建一个空数组，然后添加标签
+            {"author", user.get_username()},
+            {"authorAvatar", user.get_avatar()},
+            {"authorBio", user.get_description()},
+            {"views", blog.get_views()},
+            {"likes", likes},
+            {"comments", comments},
+            {"prevPost", {
+                {"id", prevPost.get_blog_id()},
+                {"title", prevPost.get_blog_title()}
+            }},
+            {"nextPost", {
+                {"id", nextPost.get_blog_id()},
+                {"title", nextPost.get_blog_title()}
+            }}
+        };
+
+        // 将标签添加到数组
+        for (const auto& tag : tags) {
+            article["tags"].push_back(tag);
+        }
+
+        // 然后创建最终的响应对象
+        json response = {
+            {"article", article}
+        };
+
+        jsonData = response.dump();
+        return BLOG_DATA;
+    }
+    // 获取评论列表
+    else if (strstr(m_url, "/api/comments?articleId=")) {
+        char* articleIdParam = strstr(m_url, "articleId=");
+        if(articleIdParam == nullptr){
+            return BAD_REQUEST;
+        }
+        int articleId = atoi(articleIdParam + 10);
+        if(articleId <= 0){
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+
+        // 获取评论列表
+        vector<Comments> comments = tool.get_comments_by_blogid(articleId);
+        
+        // 创建评论数组
+        json commentsArray = json::array();
+        
+        // 遍历评论列表构建json
+        for(auto& comment : comments) {
+            // 获取评论用户信息
+            int userid = tool.get_userid(comment.get_username());
+            User user = tool.get_userdata_by_userid(userid);
+
+            
+            json commentObj = {
+                {"id", comment.get_comment_id()},
+                {"username", user.get_username()},
+                {"avatar", user.get_avatar()}, 
+                {"content", comment.get_content()},
+                {"date", comment.get_comment_time()},
+                {"likes", 0} // 暂时写死为0
+            };
+            commentsArray.push_back(commentObj);
+        }
+        
+        // 构建响应json
+        json response = {
+            {"comments", commentsArray}
+        };
+
+        jsonData = response.dump();
+        return BLOG_DATA;
+    }
+    // 获取相关文章
+    else if (strstr(m_url, "/api/article/related")) {
+        string category = "";
+        int excludeId = -1;
+        int size = 6;
+
+        // 解析请求参数
+        char* categoryParam = strstr(m_url, "category=");
+        char* excludeIdParam = strstr(m_url, "excludeId=");
+        char* sizeParam = strstr(m_url, "size=");
+
+        if(categoryParam) {
+            category = string(categoryParam + 9);
+            size_t ampPos = category.find("&");
+            if (ampPos != string::npos) {
+                category = category.substr(0, ampPos);
+            }
+            category = url_decode(category);
+        }
+
+        if(excludeIdParam) {
+            excludeId = std::atoi(excludeIdParam + 10);
+            if(excludeId <= 0) excludeId = -1;
+        }
+
+        if(sizeParam) {
+            size = std::atoi(sizeParam + 5);
+            if(size <= 0 || size > 100) size = 6;
+        }
+        
+        sql_blog_tool tool;
+        int categoryId = tool.get_category_id_by_name(category);
+        if(categoryId == -1){
+            return BAD_REQUEST;
+        }
+        vector<Blog> relatedBlogs = tool.get_related_blogs(categoryId, excludeId, size);
+        
+        // 构建响应json
+        json response = {
+            {"articles", json::array()}
+        };
+        
+        // 遍历相关文章构建json
+        for(auto& blog : relatedBlogs) {
+            User user = tool.get_userdata_by_userid(blog.get_user_id());
+            int likes = tool.get_blog_likes_count(blog.get_blog_id());
+            json blogObj = {
+                {"id", blog.get_blog_id()},
+                {"title", blog.get_blog_title()},
+                {"thumbnail", user.get_avatar()},
+                {"views", blog.get_views()},
+                {"likes", likes}
+            };
+            response["articles"].push_back(blogObj);
+        }
+        
+        jsonData = response.dump();
+        return BLOG_DATA;
+    }
+    // 点赞(取消点赞)博客
+    else if (strncmp(m_url, "/api/article/like/", 18) == 0 && isdigit(m_url[18])) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+        // 解析 blogId
+        const char* blogIdStart = strstr(m_url, "/api/article/like/") + 18;
+        if (blogIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+        int blogId = atoi(blogIdStart);
+        if (blogId <= 0) {
+            return BAD_REQUEST;
+        }
+
+        json request = json::parse(m_string);
+        bool isLiked = request["liked"];
+
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+        
+        if(isLiked){
+            if(tool.is_user_liked_blog(userid, blogId)){
+                json response = {
+                    {"success", false},
+                    {"message", "您已点赞过该文章"},
+                    {"likeCount", tool.get_blog_likes_count(blogId)}
+                };
+                jsonData = response.dump();
+            }else{
+                tool.insert_new_blog_like(userid, blogId);
+                json response = {
+                    {"success", true},
+                    {"message", "点赞成功"},
+                    {"likeCount", tool.get_blog_likes_count(blogId)}
+                };
+                jsonData = response.dump();
+            }
+        }else{
+            if(tool.is_user_liked_blog(userid, blogId)){
+                tool.remove_blog_like(userid, blogId);
+                json response = {
+                    {"success", true},
+                    {"message", "取消点赞成功"},
+                    {"likeCount", tool.get_blog_likes_count(blogId)}
+                };
+                jsonData = response.dump();
+            }else{
+                json response = {
+                    {"success", false},
+                    {"message", "您未点赞过该文章"},
+                    {"likeCount", tool.get_blog_likes_count(blogId)}
+                };
+                jsonData = response.dump();
+            }
+        }
+        return BLOG_DATA;
+    }
+    // 获取用户与文章的互动状态
+    else if (strncmp(m_url, "/api/article/interactions/", 26) == 0 && isdigit(m_url[26])) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析 blogId
+        const char* blogIdStart = strstr(m_url, "/api/article/interactions/");
+        if (blogIdStart == nullptr) {
+            return BAD_REQUEST;
+        }
+
+        int blogId = atoi(blogIdStart + 26);
+        if (blogId <= 0) {
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+        bool isLiked = tool.is_user_liked_blog(userid, blogId);
+
+        json response = {
+            {"liked", isLiked},
+            {"bookmarked", false}
+        };
+
+        jsonData = response.dump();
+        return BLOG_DATA;
+    }
+    // 发表评论
+    else if (m_method == POST && strstr(m_url, "/api/comments") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        json request = json::parse(m_string);
+        string content = request["content"];
+        string articleId = request["articleId"];
+
+        if(articleId.empty()){
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        int commentId = tool.add_comment_to_article(username, stoi(articleId), content);
+        if(commentId != -1){
+            // 获取系统时间
+            time_t now = time(nullptr);
+            tm* local_time = localtime(&now);
+            char buffer[100];
+            strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", local_time);
+            string postTime = string(buffer);
+            json response = {
+                {"success", true},
+                {"message", "评论发表成功"},
+                {"commentId", commentId},
+                {"date", postTime}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+
+        jsonData = "{\"success\": false, \"message\": \"评论失败\"}";
         return BLOG_DATA;
     }
     // 处理访问 blog_detail.html 的情况
@@ -1374,32 +1928,6 @@ http_conn::HTTP_CODE http_conn::do_request()
         string blog_id = post_data["blogId"];
         string content = post_data["content"];
 
-        // 添加转义字符处理函数
-        auto escapeJsonString = [](const string& input) {
-            string output;
-            for (char c : input) {
-                switch (c) {
-                    case '"': output += "\\\""; break;   // 双引号转义
-                    case '\\': output += "\\\\"; break;  // 反斜杠转义
-                    case '\b': output += "\\b"; break;   // 退格符
-                    case '\f': output += "\\f"; break;   // 换页符
-                    case '\n': output += "\\n"; break;   // 换行符
-                    case '\r': output += "\\r"; break;   // 回车符
-                    case '\t': output += "\\t"; break;   // 制表符
-                    default:
-                        // 处理其他不可打印字符
-                        if (iscntrl(c)) {
-                            char buf[8];
-                            snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)c);
-                            output += buf;
-                        } else {
-                            output += c;
-                        }
-                }
-            }
-            return output;
-        };
-
         string m_content = escapeJsonString(content);
         // 获取系统时间
         time_t now = time(nullptr);
@@ -1490,11 +2018,7 @@ http_conn::HTTP_CODE http_conn::do_request()
 
             if (!already_liked) {
                 // 用户未点赞，进行点赞操作
-                Blog_like like;
-                like.set_user_id(userid);
-                like.set_blog_id(stoi(blog_id));
-
-                success = tool.insert_new_blog_like(like);
+                success = tool.insert_new_blog_like(userid, stoi(blog_id));
             } else {
                 // 用户已经点赞过，返回错误
                 jsonData = "{\"status\": \"error\", \"message\": \"你已经点赞过此博客\"}";
@@ -1610,20 +2134,10 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
     }
     else if(strstr(m_url, "blog_home.html")){   
-        string username = cookie.getCookie("username");
-        string session_id = cookie.getCookie("session_id");
-
-        if(!cookie.validateSession(username, session_id)){
-            char *m_url_real = (char *)malloc(sizeof(char) * 200);
-            strcpy(m_url_real, "/blog_home.html");
-            strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
-            free(m_url_real);
-	    }else{
-            char *m_url_real = (char *)malloc(sizeof(char) * 200);
-            strcpy(m_url_real, "/blog_user_home.html");
-            strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
-            free(m_url_real);
-        }
+        char *m_url_real = (char *)malloc(sizeof(char) * 200);
+        strcpy(m_url_real, "/blog_home.html");
+        strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+        free(m_url_real);
     }
     else if(strstr(m_url, "blog_user_home.html")){
         string username = cookie.getCookie("username");
@@ -3386,8 +3900,10 @@ http_conn::HTTP_CODE http_conn::do_request()
     if (!(m_file_stat.st_mode & S_IROTH))
         return FORBIDDEN_REQUEST;
 
-    if (S_ISDIR(m_file_stat.st_mode))
+    if (S_ISDIR(m_file_stat.st_mode)){
         return BAD_REQUEST;     // 插眼
+    }
+        
 
     int fd = open(m_real_file, O_RDONLY);   // 以只读模式打开文件，返回文件描述符fd
     m_file_address = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);   //通过mmap将文件的内容映射到进程的地址空间中
@@ -3556,6 +4072,19 @@ bool http_conn::process_write(HTTP_CODE ret)
             return false;
         break;
     }
+    case AUTHENTICATION:
+    {
+        add_status_line(401, error_401_title);
+        add_response("Content-Type: application/json\r\n");
+        add_headers(jsonData.length());
+        m_iv[0].iov_base = m_write_buf;
+        m_iv[0].iov_len = m_write_idx;
+        m_iv[1].iov_base = (void*)jsonData.c_str();
+        m_iv[1].iov_len = jsonData.size();
+        m_iv_count = 2; 
+        bytes_to_send = m_write_idx + jsonData.length();
+        return true;
+    }
     case FORBIDDEN_REQUEST:
     {
         add_status_line(403, error_403_title);
@@ -3620,6 +4149,41 @@ bool http_conn::process_write(HTTP_CODE ret)
             if (!add_content(ok_string))
                 return false;
         }
+    }
+    case LOGIN:
+    {
+        add_status_line(200, ok_200_title);
+        add_response("Content-Type: application/json\r\n");
+        string cookie_headers = cookie.generateCookieHeaders();
+        if(!cookie_headers.empty()){
+            add_response(cookie_headers.c_str());
+        }
+        add_headers(jsonData.length());
+        m_iv[0].iov_base = m_write_buf;
+        m_iv[0].iov_len = m_write_idx;
+        m_iv[1].iov_base = (void*)jsonData.c_str();
+        m_iv[1].iov_len = jsonData.size();
+        m_iv_count = 2;
+        bytes_to_send = m_write_idx + jsonData.length();
+        return true;
+    }
+    case LOGOUT:
+    {
+        add_status_line(200, ok_200_title);
+        add_response("Content-Type: application/json\r\n");
+        string cookie_headers = cookie.generateCookieHeaders();
+        if(!cookie_headers.empty()){
+            add_response(cookie_headers.c_str());
+        }
+        add_headers(jsonData.length());
+        m_iv[0].iov_base = m_write_buf;
+        m_iv[0].iov_len = m_write_idx;
+        m_iv[1].iov_base = (void*)jsonData.c_str();
+        m_iv[1].iov_len = jsonData.size();
+        m_iv_count = 2;
+        bytes_to_send = m_write_idx + jsonData.length();
+        return true;
+
     }
     case LOGIN_REQUEST:
     {

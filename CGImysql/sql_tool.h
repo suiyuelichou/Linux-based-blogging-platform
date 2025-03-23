@@ -216,6 +216,7 @@ class sql_blog_tool{
 public:
 	vector<Blog> select_all_blog();						// 查询所有博客
 	vector<Blog> get_blogs_by_page(int page, int size);	// 分页查询博客
+	vector<Blog> get_blogs_by_page_by_views(int page, int size);	// 分页查询博客，按浏览量排序	
 	vector<Blog> get_blogs_by_page_and_sort(int page, int size, const string& sortField, const string& sortOrder);								// 也是分页查询，但是多了查询参数
 	vector<Blog> get_blogs_by_category_and_page(int categoryId, int page, int size, const string& sortField, const string& sortOrder);				// 也是分页查询，但是多了参数
 	vector<Blog> get_blogs_by_search(int page, int size, const string& sortField, const string& sortOrder, const string& keyword);	// 按关键词搜索博客
@@ -228,6 +229,7 @@ public:
 	vector<User> get_users_by_page_and_sort_and_status(int page, int size, const string& sortField, const string& sortOrder, const string& status);// 分页+筛选排序
 	vector<User> get_users_by_page_and_sort_and_search(int page, int size, const string& sortField, const string& sortOrder, const string& search);// 分页+筛选排序
 	vector<User> get_users_by_page_and_sort_and_status_search(int page, int size, const string& sortField, const string& sortOrder,const string& status, const string& search);// 分页+筛选排序
+	vector<Categories> get_categories();	// 获取所有分类
 	vector<Categories> get_categories_by_page_and_sort(int page, int size, const string& sortField, const string& sortOrder);// 分页+排序
 	vector<Categories> get_categories_by_page_and_sort_and_search(int page, int size, const string& sortField, const string& sortOrder, const string& search);// 分页+排序+搜索
 	vector<Categories> get_categories_by_articles_count(int page, int size, const string& sortOrder);
@@ -253,6 +255,9 @@ public:
 	int get_total_tags_count_by_search(const string& keyword);				// 获取符合搜索条件的标签总数
 	int get_total_blog_count_by_tag(int tagid);		// 获取指定标签的博客总数
 	Blog select_blog_by_id(int blogid);					// 通过博客id查询博客内容
+	Blog get_prev_blog_by_id(int blogid);				// 通过博客id获取上一篇博客
+	Blog get_next_blog_by_id(int blogid);				// 通过博客id获取下一篇博客
+	vector<Blog> get_related_blogs(int category, int excludeId, int size);	// 获取相关文章
 	int get_userid_by_blogid(int blogid);				// 通过博客id获取对应的用户id
 	void modify_blog_by_blogid(Blog blog);				// 通过博客id修改博客的标题和内容
 	bool delete_blog_by_blogid(int blogid);				// 通过博客id删除指定博客
@@ -278,17 +283,20 @@ public:
 	bool insert_new_message(Messages message);			// 插入新消息
 
 	// 博客点赞相关
-	bool insert_new_blog_like(Blog_like blog_like);		// 插入新的博客点赞
+	
+	bool insert_new_blog_like(int userid, int blogid);		// 插入新的博客点赞
 	bool remove_blog_like(int userid, int blogid);		// 删除博客点赞
 	int get_blog_likes_count(int blogid);				// 获取当前博客的点赞总数
 	bool is_user_liked_blog(int userid, int blog_id);	// 检测用户是否已经对该博客点赞
-
+	int get_view_count_by_userid(int userid);			// 获取用户浏览量
+	int get_blog_liked_count_by_userid(int userid);		// 获取用户获赞总数
 	// 博客评论相关
 	int get_blog_comments_count(int blogid);			// 获取当前博客的评论总数
 	bool delete_comment_by_commentid(int commentid);	// 删除指定id的评论
 	bool batch_delete_comments(const vector<int> &commentIds);// 批量删除评论
 	Comments get_comment_by_commentId(int commentId);	// 通过评论id获取评论详情
 	bool update_comment_by_commentid(int commentid, Comments comment);
+	int add_comment_to_article(string username, int articleid, string content);	// 添加评论到文章
 
 	bool increase_blog_view_count(int blogid);		// 增加博客的浏览量（+1）
 	bool increase_article_count(int user_id);		// 增加文章总数（+1）
@@ -296,6 +304,7 @@ public:
 
 
 	// 管理员操作
+	bool user_register(string username, string password, string email, string avatar);		// 用户注册
 	bool add_user_from_admin(User user);		// 管理员添加用户
 	bool delete_user_by_userid(int userid);		// 删除用户
 	bool update_user_by_userid(int userid, User user);	// 更新用户信息
@@ -304,6 +313,7 @@ public:
 	vector<Categories> get_cotegories_all();			// 获取所有的分类
 	string get_cotegoriename_by_cotegorieid(int cotegorieid);	// 根据分类id获取分类名称
 	Categories get_categorie_by_categorieid(int categorieId);	// 根据分类id获取分类信息
+	int get_category_id_by_name(const string& categorieName);	// 根据分类名称获取分类id
 	Categories get_categorie_by_name(const string& categorieName);	// 根据分类名称获取分类信息
 	bool add_categorie(Categories categorie);	// 添加分类
 	bool add_tag(Tags tag);					// 添加标签

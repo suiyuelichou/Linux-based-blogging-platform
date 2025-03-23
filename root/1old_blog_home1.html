@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客列表页</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/floating_dropdown.css">
+    <link rel="icon" href="img/favicon.ico">
+
+    <!--引入jquery-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- 引入自定js -->
+    <script src = "js/blog_home.js" defer></script>
+    <script src = "js/floating_dropdown.js" defer></script>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="nav">
+        <img src="img/logo.png" alt="头像">
+        <div class="title">云中杉木博客平台</div>
+
+        <!-- 导航链接 -->
+        <div class="nav-links">
+            <a href="message_board.html">留言板</a>
+            <a href="blog_home.html">主页</a>
+            <a href="blog_editor.html">写博客</a>
+            <a href="blog_login.html">登录</a>
+        </div>
+    </div>
+
+    <!-- 悬浮下拉框 -->
+    <div class="floating-dropdown">
+        <div class="floating-dropdown-header">
+            <span>功能选择</span>
+            <span class="toggle-btn">▼</span>
+        </div>
+        <div class="floating-dropdown-content">
+            <a href="#center">个人中心 🔒</a>
+            <a href="#author">作者信息</a>
+            <a href="#games">小游戏</a>
+            <a href="#settings">系统设置</a>
+        </div>
+    </div>
+ 
+    <!-- 版心的实现 -->
+    <div class="container">
+        <!-- 左侧信息 -->
+        <div class="container-left">
+            <!-- 这个div表示整个用户信息的区域 -->
+            <div class="card">
+                <!-- 游客默认头像 -->
+                <img src="img/default_touxiang.jpg" title="游客默认头像">
+ 
+                <!-- 用户名 -->
+                <h3>游客</h3>
+ 
+                <!-- GitHub地址 -->
+                <a href="https://github.com/suiyuelichou/Linux-based-blogging-platform.git" title="">作者的GitHub地址</a>
+ 
+                <!-- 统计信息 -->
+                <div class="counter">
+                    <span>文章</span>
+                    <span>分类</span>
+                </div>
+                <div class="counter">
+                    <span>0</span>
+                    <span>0</span>
+                </div>
+            </div>
+        </div>
+        <!-- 右侧信息 -->
+        <div class="container-right">
+            <!-- 博客内容将通过JavaScript动态加载 -->
+        </div>
+
+        <!-- 分页按钮 -->
+        <div class="pagination-wrapper">
+            <div class="pagination">
+                <button id="prevPage" onclick="loadPage(currentPage - 1)">上一页</button>
+                <span id="currentPage">第 1 页</span>
+                <button id="nextPage" onclick="loadPage(currentPage + 1)">下一页</button>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,347 @@
+2025-03-23 00:05:13.204153 [info]: timer tick
+2025-03-23 00:05:18.083457 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.083525 [info]: adjust timer once
+2025-03-23 00:05:18.083561 [info]: GET / HTTP/1.1
+2025-03-23 00:05:18.083613 [info]: tml
+2025-03-23 00:05:18.083619 [info]: Connection: keep-alive
+2025-03-23 00:05:18.083621 [info]: Upgrade-Insecure-Requests: 1
+2025-03-23 00:05:18.083623 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.083626 [info]: Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+2025-03-23 00:05:18.083628 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.083630 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.083632 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.083695 [info]: 
+2025-03-23 00:05:18.083764 [info]: request:HTTP/1.1 200 OK
+
+2025-03-23 00:05:18.083777 [info]: request:HTTP/1.1 200 OK
+Content-Length:8446
+
+2025-03-23 00:05:18.083780 [info]: request:HTTP/1.1 200 OK
+Content-Length:8446
+Connection:keep-alive
+
+2025-03-23 00:05:18.083782 [info]: request:HTTP/1.1 200 OK
+Content-Length:8446
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.084131 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.084166 [info]: adjust timer once
+2025-03-23 00:05:18.123982 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.124128 [info]: adjust timer once
+2025-03-23 00:05:18.124138 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.124152 [info]: adjust timer once
+2025-03-23 00:05:18.124324 [info]: GET /css/home.css HTTP/1.1
+2025-03-23 00:05:18.124385 [info]: Host: 192.168.164.128:9006
+2025-03-23 00:05:18.124388 [info]: Connection: keep-alive
+2025-03-23 00:05:18.124390 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.124394 [info]: Accept: text/css,*/*;q=0.1
+2025-03-23 00:05:18.124396 [info]: Referer: http://192.168.164.128:9006/
+2025-03-23 00:05:18.124398 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.124400 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.124402 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.124426 [info]: 
+2025-03-23 00:05:18.124335 [info]: GET /img/logo.png HTTP/1.1
+2025-03-23 00:05:18.124588 [info]: Host: 192.168.164.128:9006
+2025-03-23 00:05:18.124594 [info]: Connection: keep-alive
+2025-03-23 00:05:18.124597 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.124601 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-03-23 00:05:18.124603 [info]: Referer: http://192.168.164.128:9006/
+2025-03-23 00:05:18.124606 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.124608 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.124611 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.124622 [info]: request:HTTP/1.1 200 OK
+
+2025-03-23 00:05:18.124638 [info]: request:HTTP/1.1 200 OK
+Content-Length:19087
+
+2025-03-23 00:05:18.124642 [info]: request:HTTP/1.1 200 OK
+Content-Length:19087
+Connection:keep-alive
+
+2025-03-23 00:05:18.124646 [info]: request:HTTP/1.1 200 OK
+Content-Length:19087
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.124626 [info]: 
+2025-03-23 00:05:18.124815 [info]: request:HTTP/1.1 200 OK
+
+2025-03-23 00:05:18.124880 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+
+2025-03-23 00:05:18.124890 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+2025-03-23 00:05:18.124893 [info]: request:HTTP/1.1 200 OK
+Content-Length:18041
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.125599 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.125644 [info]: adjust timer once
+2025-03-23 00:05:18.126616 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.126658 [info]: adjust timer once
+2025-03-23 00:05:18.126683 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.126700 [info]: adjust timer once
+2025-03-23 00:05:18.126743 [info]: GET /img/default_touxiang.jpg HTTP/1.1
+2025-03-23 00:05:18.126784 [info]: Host: 192.168.164.128:9006
+2025-03-23 00:05:18.126787 [info]: Connection: keep-alive
+2025-03-23 00:05:18.126790 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.126792 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-03-23 00:05:18.126794 [info]: Referer: http://192.168.164.128:9006/
+2025-03-23 00:05:18.126796 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.126798 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.126800 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.126829 [info]: 
+2025-03-23 00:05:18.126934 [info]: request:HTTP/1.1 200 OK
+
+2025-03-23 00:05:18.126985 [info]: request:HTTP/1.1 200 OK
+Content-Length:7215
+
+2025-03-23 00:05:18.126989 [info]: request:HTTP/1.1 200 OK
+Content-Length:7215
+Connection:keep-alive
+
+2025-03-23 00:05:18.126992 [info]: request:HTTP/1.1 200 OK
+Content-Length:7215
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.127339 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.127368 [info]: adjust timer once
+2025-03-23 00:05:18.135431 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.135513 [info]: adjust timer once
+2025-03-23 00:05:18.135529 [info]: GET /js/blog_home.js HTTP/1.1
+2025-03-23 00:05:18.135568 [info]: Host: 192.168.164.128:9006
+2025-03-23 00:05:18.135571 [info]: Connection: keep-alive
+2025-03-23 00:05:18.135574 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.135576 [info]: Accept: */*
+2025-03-23 00:05:18.135578 [info]: Referer: http://192.168.164.128:9006/
+2025-03-23 00:05:18.135580 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.135582 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.135584 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.135609 [info]: 
+2025-03-23 00:05:18.135647 [info]: request:HTTP/1.1 200 OK
+
+2025-03-23 00:05:18.135649 [info]: request:HTTP/1.1 200 OK
+Content-Length:25417
+
+2025-03-23 00:05:18.135651 [info]: request:HTTP/1.1 200 OK
+Content-Length:25417
+Connection:keep-alive
+
+2025-03-23 00:05:18.135653 [info]: request:HTTP/1.1 200 OK
+Content-Length:25417
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.136225 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.136250 [info]: adjust timer once
+2025-03-23 00:05:18.176715 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.176824 [info]: adjust timer once
+2025-03-23 00:05:18.176833 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.176846 [info]: adjust timer once
+2025-03-23 00:05:18.176851 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.176856 [info]: adjust timer once
+2025-03-23 00:05:18.176875 [info]: GET /api/articles?page=1&size=6 HTTP/1.1
+2025-03-23 00:05:18.176975 [info]: Host: 192.168.164.128:9006
+2025-03-23 00:05:18.176981 [info]: Connection: keep-alive
+2025-03-23 00:05:18.176985 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.177001 [info]: Accept: */*
+2025-03-23 00:05:18.177006 [info]: Referer: http://192.168.164.128:9006/
+2025-03-23 00:05:18.177008 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.177018 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.177022 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.177052 [info]: 
+2025-03-23 00:05:18.176888 [info]: GET /api/popular?size=5 HTTP/1.1
+2025-03-23 00:05:18.177090 [info]: Host: 192.168.164.128:9006
+2025-03-23 00:05:18.177094 [info]: Connection: keep-alive
+2025-03-23 00:05:18.177099 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.177107 [info]: Accept: */*
+2025-03-23 00:05:18.177110 [info]: Referer: http://192.168.164.128:9006/
+2025-03-23 00:05:18.177113 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.176878 [info]: GET /api/user/info HTTP/1.1
+2025-03-23 00:05:18.177135 [info]: Host: 192.168.164.128:9006
+2025-03-23 00:05:18.177138 [info]: Connection: keep-alive
+2025-03-23 00:05:18.177140 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.177142 [info]: Accept: */*
+2025-03-23 00:05:18.177144 [info]: Referer: http://192.168.164.128:9006/
+2025-03-23 00:05:18.177146 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.177148 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.177150 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.177115 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.177160 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.177157 [info]: 
+2025-03-23 00:05:18.177173 [info]: 
+2025-03-23 00:05:18.177186 [info]: request:HTTP/1.1 401 Unauthorized
+
+2025-03-23 00:05:18.177189 [info]: request:HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+
+2025-03-23 00:05:18.177191 [info]: request:HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+Content-Length:42
+
+2025-03-23 00:05:18.177193 [info]: request:HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+Content-Length:42
+Connection:keep-alive
+
+2025-03-23 00:05:18.177195 [info]: request:HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+Content-Length:42
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.178321 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.178353 [info]: adjust timer once
+2025-03-23 00:05:18.178800 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.178817 [info]: adjust timer once
+2025-03-23 00:05:18.178826 [info]: GET /api/categories HTTP/1.1
+2025-03-23 00:05:18.178830 [info]: Host: 192.168.164.128:9006
+2025-03-23 00:05:18.178832 [info]: Connection: keep-alive
+2025-03-23 00:05:18.178834 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.178837 [info]: Accept: */*
+2025-03-23 00:05:18.178839 [info]: Referer: http://192.168.164.128:9006/
+2025-03-23 00:05:18.178841 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.178842 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.178844 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.178859 [info]: 
+2025-03-23 00:05:18.204612 [info]: timer tick
+2025-03-23 00:05:18.213890 [info]: request:HTTP/1.1 200 OK
+
+2025-03-23 00:05:18.213946 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+
+2025-03-23 00:05:18.213951 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length:217
+
+2025-03-23 00:05:18.213954 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length:217
+Connection:keep-alive
+
+2025-03-23 00:05:18.213957 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length:217
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.214295 [info]: request:HTTP/1.1 200 OK
+
+2025-03-23 00:05:18.214322 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+
+2025-03-23 00:05:18.214327 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length:379
+
+2025-03-23 00:05:18.214337 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length:379
+Connection:keep-alive
+
+2025-03-23 00:05:18.214340 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length:379
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.214505 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.214531 [info]: adjust timer once
+2025-03-23 00:05:18.214642 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.214662 [info]: adjust timer once
+2025-03-23 00:05:18.225746 [info]: deal with the client(192.168.164.1)
+2025-03-23 00:05:18.225803 [info]: adjust timer once
+2025-03-23 00:05:18.225881 [info]: GET /img/touxiang.jpg HTTP/1.1
+2025-03-23 00:05:18.225891 [info]: Host: 192.168.164.128:9006
+2025-03-23 00:05:18.225894 [info]: Connection: keep-alive
+2025-03-23 00:05:18.225898 [info]: User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0
+2025-03-23 00:05:18.225901 [info]: Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+2025-03-23 00:05:18.225904 [info]: Referer: http://192.168.164.128:9006/
+2025-03-23 00:05:18.225907 [info]: Accept-Encoding: gzip, deflate
+2025-03-23 00:05:18.225910 [info]: Accept-Language: zh-CN,zh;q=0.9
+2025-03-23 00:05:18.225912 [info]: Cookie: username=username; isLogin=true; session_id=78e3bfc78bd862c4f0641103bfebd2d5
+2025-03-23 00:05:18.225948 [info]: 
+2025-03-23 00:05:18.225988 [info]: request:HTTP/1.1 200 OK
+
+2025-03-23 00:05:18.225991 [info]: request:HTTP/1.1 200 OK
+Content-Length:15096
+
+2025-03-23 00:05:18.225993 [info]: request:HTTP/1.1 200 OK
+Content-Length:15096
+Connection:keep-alive
+
+2025-03-23 00:05:18.225997 [info]: request:HTTP/1.1 200 OK
+Content-Length:15096
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.226989 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.227029 [info]: adjust timer once
+2025-03-23 00:05:18.229721 [info]: request:HTTP/1.1 200 OK
+
+2025-03-23 00:05:18.229770 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+
+2025-03-23 00:05:18.229782 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length:1660
+
+2025-03-23 00:05:18.229785 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length:1660
+Connection:keep-alive
+
+2025-03-23 00:05:18.229805 [info]: request:HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length:1660
+Connection:keep-alive
+
+
+2025-03-23 00:05:18.230032 [info]: send data to the client(192.168.164.1)
+2025-03-23 00:05:18.230061 [info]: adjust timer once
+2025-03-23 00:05:23.204854 [info]: timer tick
+2025-03-23 00:05:28.205259 [info]: timer tick
+2025-03-23 00:05:33.205963 [info]: timer tick
+2025-03-23 00:05:38.206417 [info]: timer tick
+2025-03-23 00:05:43.206989 [info]: timer tick
+2025-03-23 00:05:48.207149 [info]: timer tick
+2025-03-23 00:05:53.207484 [info]: timer tick
+2025-03-23 00:05:58.207619 [info]: timer tick
+2025-03-23 00:06:03.207844 [info]: timer tick
+2025-03-23 00:06:08.207939 [info]: timer tick
+2025-03-23 00:06:13.208047 [info]: timer tick
+2025-03-23 00:06:18.208343 [info]: timer tick
+2025-03-23 00:06:23.208779 [info]: timer tick
+2025-03-23 00:06:28.209021 [info]: timer tick
+2025-03-23 00:06:33.209193 [info]: timer tick
+2025-03-23 00:06:38.209722 [info]: timer tick
+2025-03-23 00:06:43.210153 [info]: timer tick
+2025-03-23 00:06:48.210617 [info]: timer tick
+2025-03-23 00:06:53.210956 [info]: timer tick
+2025-03-23 00:06:58.211201 [info]: timer tick
+2025-03-23 00:07:03.211312 [info]: timer tick
+2025-03-23 00:07:08.211904 [info]: timer tick
+2025-03-23 00:07:13.212247 [info]: timer tick
+2025-03-23 00:07:18.212506 [info]: timer tick
+2025-03-23 00:07:23.212718 [info]: timer tick
+2025-03-23 00:07:28.212869 [info]: timer tick
+2025-03-23 00:07:33.213161 [info]: timer tick
+2025-03-23 00:07:38.213724 [info]: timer tick
+2025-03-23 00:07:43.213973 [info]: timer tick
+2025-03-23 00:07:48.214439 [info]: timer tick
+2025-03-23 00:07:53.214689 [info]: timer tick
+2025-03-23 00:07:58.215031 [info]: timer tick
+2025-03-23 00:08:03.215231 [info]: timer tick
+2025-03-23 00:08:08.215577 [info]: timer tick
+2025-03-23 00:08:13.215852 [info]: timer tick
+2025-03-23 00:08:18.215966 [info]: timer tick
+2025-03-23 00:08:23.216306 [info]: timer tick
+2025-03-23 00:08:28.216649 [info]: timer tick
+2025-03-23 00:08:33.217245 [info]: timer tick
+2025-03-23 00:08:38.217556 [info]: timer tick
+2025-03-23 00:08:43.217781 [info]: timer tick

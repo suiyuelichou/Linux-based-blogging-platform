@@ -70,12 +70,15 @@ public:
         BAD_REQUEST,         // 请求格式错误
         NO_RESOURCE,         // 请求的资源不存在
         FORBIDDEN_REQUEST,   // 请求被拒绝（例如，权限问题）
+        AUTHENTICATION,         // 需要身份验证
         FILE_REQUEST,        // 请求成功，文件准备好返回
         INTERNAL_ERROR,      // 服务器内部错误
         CLOSED_CONNECTION,   // 连接已关闭
         BLOG_DATA,          // 博客数据请求成功，准备返回
         BLOG_DETAIL,       // 返回博客详情
         BLOG_USER_HOME,
+        LOGIN,      // 登录请求（使用这个新的）
+        LOGOUT,     // 退出登录（新的）
         LOGIN_REQUEST,       // 登录请求
         ADMIN_LOGIN_REQUEST, // 管理员登录请求
         REDIRECT_ADMIN,     // 重定向到管理员登录界面
