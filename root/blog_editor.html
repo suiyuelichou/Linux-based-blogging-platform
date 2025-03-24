@@ -26,7 +26,7 @@
                     <li><a href="blog_home.html"><i class="fas fa-home"></i> 首页</a></li>
                     <li><a href="new_blog_categories.html"><i class="fas fa-layer-group"></i> 分类</a></li>
                     <li><a href="new_message_board.html"><i class="fas fa-comments"></i> 留言板</a></li>
-                    <li><a href="new_blog_editor.html" class="active"><i class="fas fa-edit"></i> 写博客</a></li>
+                    <li><a href="blog_editor.html" class="active"><i class="fas fa-edit"></i> 写博客</a></li>
                 </ul>
             </nav>
             <div class="user-actions">
@@ -72,62 +72,47 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="blogCategory">分类</label>
-                            <select id="blogCategory" name="category" required>
-                                <option value="">选择分类</option>
-                                <option value="技术">技术</option>
-                                <option value="生活">生活</option>
-                                <option value="旅行">旅行</option>
-                                <option value="美食">美食</option>
-                                <option value="编程">编程</option>
-                                <option value="前端">前端</option>
-                                <option value="后端">后端</option>
-                                <option value="设计">设计</option>
-                                <option value="数据库">数据库</option>
-                                <option value="算法">算法</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="blogExcerpt">文章摘要</label>
-                            <textarea id="blogExcerpt" name="excerpt" rows="3" placeholder="简短概括文章内容，会显示在首页"></textarea>
-                            <small class="form-hint">100-200字左右的摘要能让读者了解文章的主要内容</small>
-                        </div>
-                        
-                        <div class="form-group">
                             <label for="editor">文章内容</label>
                             <div id="editor" class="editor-wrapper"></div>
                             <small class="form-hint">支持富文本、图片上传、Markdown语法</small>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="tagsInput">标签</label>
-                            <div class="tags-input" id="tagsContainer">
-                                <input type="text" id="tagsInput" placeholder="输入标签后按回车添加" />
-                            </div>
-                            <small class="form-hint">最多添加5个标签，每个标签不超过10个字符</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="thumbnailUpload">封面图片</label>
-                            <input type="file" id="thumbnailUpload" name="thumbnail" accept="image/*">
-                            <small class="form-hint">建议尺寸: 1200 x 628 像素</small>
-                            <div class="thumbnail-preview no-image" id="thumbnailPreview">
-                                <span>尚未上传封面图片</span>
+                        <div class="advanced-options">
+                            <button type="button" id="advancedOptionsBtn" class="advanced-toggle">
+                                <i class="fas fa-cog"></i> 添加更多设置
+                            </button>
+                            
+                            <div id="advancedOptionsPanel" class="advanced-panel hidden">
+                                <div class="form-group">
+                                    <label for="blogCategory">分类</label>
+                                    <select id="blogCategory" name="category">
+                                        <option value="">选择分类</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="tagsInput">标签</label>
+                                    <div class="tags-input" id="tagsContainer">
+                                        <input type="text" id="tagsInput" placeholder="输入标签后按回车添加" />
+                                    </div>
+                                    <small class="form-hint">最多添加5个标签，每个标签不超过10个字符</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="thumbnailUpload">封面图片</label>
+                                    <input type="file" id="thumbnailUpload" name="thumbnail" accept="image/*">
+                                    <small class="form-hint">建议尺寸: 1200 x 628 像素</small>
+                                    <div class="thumbnail-preview no-image" id="thumbnailPreview">
+                                        <span>尚未上传封面图片</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
                         <div class="publish-actions">
-                            <div class="publish-options">
-                                <div class="form-check">
-                                    <input type="checkbox" id="allowComments" name="allowComments" checked>
-                                    <label for="allowComments">允许评论</label>
-                                </div>
-                                
-                                <button type="button" class="publish-btn" id="publishBtn">
-                                    <i class="fas fa-paper-plane"></i> 发布文章
-                                </button>
-                            </div>
+                            <button type="button" class="publish-btn" id="publishBtn">
+                                <i class="fas fa-paper-plane"></i> 发布文章
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -193,17 +178,18 @@
                         <li><a href="blog_home.html">首页</a></li>
                         <li><a href="new_blog_categories.html">分类</a></li>
                         <li><a href="new_message_board.html">留言板</a></li>
-                        <li><a href="new_blog_editor.html">写博客</a></li>
+                        <li><a href="blog_editor.html">写博客</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h3>联系我们</h3>
-                    <p><i class="fas fa-envelope"></i> contact@yunzhongshanmu.com</p>
-                    <p><i class="fas fa-map-marker-alt"></i> 中国，北京</p>
+                    <p><i class="fas fa-envelope"></i> 1959503231@qq.com </p>
+                    <p><i class="fas fa-map-marker-alt"></i> 中国，广东</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2023 云中杉木博客平台. 保留所有权利.</p>
+                <p>&copy; 2025 云中杉木博客平台. 保留所有权利. <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2024355354号</a></p>
+
             </div>
         </div>
     </footer>
@@ -311,17 +297,104 @@
             const thumbnailUpload = document.getElementById('thumbnailUpload');
             const thumbnailPreview = document.getElementById('thumbnailPreview');
             
-            thumbnailUpload.addEventListener('change', function(e) {
+            thumbnailUpload.addEventListener('change', async function(e) {
                 const file = this.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        thumbnailPreview.innerHTML = `<img src="${e.target.result}" alt="封面预览">`;
-                        thumbnailPreview.classList.remove('no-image');
-                    };
-                    reader.readAsDataURL(file);
+                    // 检查文件大小
+                    if (file.size > 14 * 1024) { // 大于14kb
+                        try {
+                            // 压缩图片
+                            const compressedFile = await compressImage(file);
+                            
+                            // 检查压缩后的大小
+                            if (compressedFile.size > 14 * 1024) {
+                                showNotification('图片大小超过14KB，即使压缩后仍然过大，请选择更小的图片', 'error');
+                                this.value = ''; // 清空输入
+                                thumbnailPreview.innerHTML = `<span>尚未上传封面图片</span>`;
+                                thumbnailPreview.classList.add('no-image');
+                                return;
+                            }
+                            
+                            // 显示压缩后的预览
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                thumbnailPreview.innerHTML = `<img src="${e.target.result}" alt="封面预览">`;
+                                thumbnailPreview.classList.remove('no-image');
+                            };
+                            reader.readAsDataURL(compressedFile);
+                        } catch (error) {
+                            console.error('图片压缩失败:', error);
+                            showNotification('图片压缩失败，请重试', 'error');
+                            this.value = '';
+                        }
+                    } else {
+                        // 文件小于14kb，直接显示预览
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            thumbnailPreview.innerHTML = `<img src="${e.target.result}" alt="封面预览">`;
+                            thumbnailPreview.classList.remove('no-image');
+                        };
+                        reader.readAsDataURL(file);
+                    }
                 }
             });
+            
+            // 图片压缩函数
+            function compressImage(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            // 计算压缩后的尺寸，保持宽高比
+                            let width = img.width;
+                            let height = img.height;
+                            const maxSize = 800; // 最大尺寸
+                            
+                            if (width > height && width > maxSize) {
+                                height = Math.round((height * maxSize) / width);
+                                width = maxSize;
+                            } else if (height > maxSize) {
+                                width = Math.round((width * maxSize) / height);
+                                height = maxSize;
+                            }
+                            
+                            canvas.width = width;
+                            canvas.height = height;
+                            
+                            // 绘制压缩后的图片
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // 转换为Blob
+                            canvas.toBlob(
+                                (blob) => {
+                                    resolve(new File([blob], file.name, {
+                                        type: 'image/jpeg',
+                                        lastModified: Date.now()
+                                    }));
+                                },
+                                'image/jpeg',
+                                0.7 // 压缩质量，0.7通常是一个好的平衡点
+                            );
+                        };
+                        
+                        img.onerror = function() {
+                            reject(new Error('图片加载失败'));
+                        };
+                    };
+                    
+                    reader.onerror = function() {
+                        reject(new Error('文件读取失败'));
+                    };
+                });
+            }
             
             // 字数统计和阅读时间
             const wordCountEl = document.getElementById('wordCount');
@@ -346,32 +419,35 @@
             publishBtn.addEventListener('click', function() {
                 // 表单验证
                 const title = document.getElementById('blogTitle').value;
-                const category = document.getElementById('blogCategory').value;
                 const content = quill.root.innerHTML;
-                const excerpt = document.getElementById('blogExcerpt').value;
+                
+                // 添加控制台日志帮助调试
+                console.log('发布按钮被点击');
+                console.log('标题:', title);
+                console.log('内容长度:', content.length);
                 
                 if (!title) {
                     showNotification('请输入文章标题', 'error');
                     return;
                 }
                 
-                if (!category) {
-                    showNotification('请选择文章分类', 'error');
+                if (quill.getText().trim().length < 10) {
+                    showNotification('文章内容太短，请至少输入10个字', 'error');
                     return;
                 }
                 
-                if (quill.getText().trim().length < 50) {
-                    showNotification('文章内容太短，请至少输入50个字', 'error');
-                    return;
-                }
-                
-                if (!excerpt) {
-                    showNotification('请输入文章摘要', 'error');
-                    return;
+                // 高级选项验证
+                if (!advancedOptionsPanel.classList.contains('hidden')) {
+                    const category = document.getElementById('blogCategory').value;
+                    if (!category) {
+                        showNotification('请选择文章分类', 'warning');
+                        // 不阻止发布，只是提示
+                    }
                 }
                 
                 // 显示确认对话框
                 confirmModal.style.display = 'block';
+                console.log('确认对话框应该已显示');
             });
             
             // 关闭模态窗口
@@ -398,10 +474,10 @@
             // 发布文章函数
             function publishArticle() {
                 const title = document.getElementById('blogTitle').value;
-                const category = document.getElementById('blogCategory').value;
                 const content = quill.root.innerHTML;
-                const excerpt = document.getElementById('blogExcerpt').value;
-                const allowComments = document.getElementById('allowComments').checked;
+                
+                // 添加日志，方便调试
+                console.log('准备发布文章:', { title, contentLength: content.length });
                 
                 // 显示发布中状态
                 modalConfirmBtn.disabled = true;
@@ -410,67 +486,111 @@
                 // 准备文章数据
                 const formData = new FormData();
                 formData.append('title', title);
-                formData.append('category', category);
                 formData.append('content', content);
-                formData.append('excerpt', excerpt);
-                formData.append('tags', JSON.stringify(tags));
-                formData.append('allowComments', allowComments);
                 
-                // 添加封面图片（如果有）
-                const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
-                if (thumbnailFile) {
-                    formData.append('thumbnail', thumbnailFile);
+                // 检查高级设置是否已填写
+                if (!advancedOptionsPanel.classList.contains('hidden')) {
+                    const category = document.getElementById('blogCategory').value;
+                    if (category) {
+                        formData.append('category', category);
+                        console.log('添加分类:', category);
+                    }
+                    
+                    if (tags.length > 0) {
+                        formData.append('tags', JSON.stringify(tags));
+                        console.log('添加标签:', tags);
+                    }
+                    
+                    // 添加封面图片（如果有）
+                    const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
+                    if (thumbnailFile) {
+                        formData.append('thumbnail', thumbnailFile);
+                        console.log('添加封面图片:', thumbnailFile.name);
+                    }
                 }
                 
-                // 发送到后端API
-                fetch('/api/articles', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include'
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        if (response.status === 401) {
-                            throw new Error('请先登录');
-                        }
-                        throw new Error('发布失败');
+                // 输出FormData内容以便调试
+                for (let pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + (pair[0] === 'content' ? '(内容太长，不显示)' : pair[1]));
+                }
+                
+                // 使用原生XHR发送请求，更容易调试
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/articles', true);
+                xhr.withCredentials = true;
+                
+                xhr.onload = function() {
+                    console.log('响应状态:', xhr.status);
+                    console.log('响应内容:', xhr.responseText);
+                    
+                    let response;
+                    try {
+                        response = JSON.parse(xhr.responseText);
+                    } catch (e) {
+                        console.error('解析响应失败:', e);
+                        response = { success: false, message: '服务器响应格式错误' };
                     }
-                    return response.json();
-                })
-                .then(data => {
+                    
                     // 关闭模态窗口
                     confirmModal.style.display = 'none';
                     
-                    if (data.success) {
+                    if (xhr.status === 200 && response.success) {
                         showNotification('文章发布成功！', 'success');
                         
                         // 跳转到文章页面
                         setTimeout(() => {
-                            window.location.href = `blog_detail.html?id=${data.articleId}`;
+                            window.location.href = `blog_detail.html?id=${response.articleId}`;
+                        }, 1500);
+                    } else if (xhr.status === 401) {
+                        let errorMessage = '请先登录后再发布文章';
+                        showNotification(errorMessage, 'error');
+                        
+                        // 可以选择跳转到登录页面
+                        setTimeout(() => {
+                            window.location.href = 'blog_login.html';
                         }, 1500);
                     } else {
-                        throw new Error(data.message || '发布失败');
+                        // 恢复按钮状态
+                        modalConfirmBtn.disabled = false;
+                        modalConfirmBtn.innerHTML = '确认';
+                        
+                        // 显示错误
+                        let errorMessage = response.message || '发布失败，请稍后重试';
+                        showNotification(errorMessage, 'error');
                     }
-                })
-                .catch(error => {
-                    console.error('发布文章失败:', error);
+                };
+                
+                xhr.onerror = function() {
+                    console.error('请求错误');
                     
                     // 恢复按钮状态
                     modalConfirmBtn.disabled = false;
                     modalConfirmBtn.innerHTML = '确认';
                     
-                    // 显示错误
-                    let errorMessage = error.message;
-                    if (error.message === '请先登录') {
-                        errorMessage = '请先登录后再发布文章';
-                        // 可以选择跳转到登录页面
-                        setTimeout(() => {
-                            window.location.href = 'blog_login.html';
-                        }, 1500);
+                    showNotification('网络错误，请检查网络连接', 'error');
+                };
+                
+                // 监听上传进度
+                xhr.upload.onprogress = function(event) {
+                    if (event.lengthComputable) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        console.log(`上传进度: ${percentComplete.toFixed(2)}%`);
                     }
+                };
+                
+                // 发送请求
+                console.log('正在发送请求...');
+                try {
+                    xhr.send(formData);
+                } catch (e) {
+                    console.error('发送请求出错:', e);
                     
-                    showNotification(errorMessage, 'error');
-                });
+                    // 恢复按钮状态
+                    modalConfirmBtn.disabled = false;
+                    modalConfirmBtn.innerHTML = '确认';
+                    
+                    showNotification('发送请求失败: ' + e.message, 'error');
+                }
             }
             
             // 回到顶部按钮
@@ -501,7 +621,12 @@
             }
             
             // 检查登录状态
-            checkAuthStatus();
+            checkAuthStatus().then(isLoggedIn => {
+                if (isLoggedIn) {
+                    // 如果用户已登录，预加载分类
+                    loadCategories();
+                }
+            });
             
             // 设置暗黑模式
             function setupDarkMode() {
@@ -532,29 +657,36 @@
             
             // 检查用户登录状态
             function checkAuthStatus() {
-                fetch('/api/user/info')
-                    .then(response => {
-                        if (!response.ok) {
-                            if (response.status === 401) {
-                                // 用户未登录，显示登录提示
-                                showLoginRequiredMessage();
-                                updateUIForAuthStatus(false);
-                                return null;
+                return new Promise((resolve) => {
+                    fetch('/api/user/info')
+                        .then(response => {
+                            if (!response.ok) {
+                                if (response.status === 401) {
+                                    // 用户未登录
+                                    showLoginRequiredMessage();
+                                    updateUIForAuthStatus(false);
+                                    resolve(false);
+                                    return null;
+                                }
+                                throw new Error('网络响应异常');
                             }
-                            throw new Error('网络响应异常');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data) {
-                            // 用户已登录，更新UI
-                            updateUIForAuthStatus(true, data);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('检查登录状态失败:', error);
-                        updateUIForAuthStatus(false);
-                    });
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data) {
+                                // 用户已登录
+                                updateUIForAuthStatus(true, data);
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('检查登录状态失败:', error);
+                            updateUIForAuthStatus(false);
+                            resolve(false);
+                        });
+                });
             }
             
             // 显示登录提示
@@ -654,7 +786,7 @@
                     if (userDropdown) {
                         userDropdown.innerHTML = `
                         <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
-                        <a href="new_blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
+                        <a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
                         <a href="new_user_settings.html"><i class="fas fa-cog"></i> 设置</a>
                         <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
                         `;
@@ -744,6 +876,127 @@
                 setTimeout(() => {
                     notification.classList.remove('show');
                 }, 5000);
+            }
+
+            // 高级选项展开/折叠
+            const advancedOptionsBtn = document.getElementById('advancedOptionsBtn');
+            const advancedOptionsPanel = document.getElementById('advancedOptionsPanel');
+
+            advancedOptionsBtn.addEventListener('click', function() {
+                advancedOptionsPanel.classList.toggle('hidden');
+                
+                if (advancedOptionsPanel.classList.contains('hidden')) {
+                    advancedOptionsBtn.innerHTML = '<i class="fas fa-cog"></i> 添加更多设置';
+                } else {
+                    advancedOptionsBtn.innerHTML = '<i class="fas fa-times"></i> 收起设置面板';
+                    
+                    // 当展开高级设置面板时，加载分类数据（如果尚未加载）
+                    loadCategories();
+                }
+            });
+
+            // 加载分类数据的函数
+            function loadCategories() {
+                const categorySelect = document.getElementById('blogCategory');
+                
+                // 如果已经加载了分类（除了默认选项外还有其他选项），则不重复加载
+                if (categorySelect.options.length > 1) {
+                    return;
+                }
+                
+                // 显示加载状态
+                categorySelect.innerHTML = '<option value="">正在加载分类...</option>';
+                
+                // 发送请求获取分类数据
+                fetch('/api/categories')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('获取分类失败');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 清空下拉框并添加默认选项
+                        categorySelect.innerHTML = '<option value="">选择分类</option>';
+                        
+                        // 检查响应格式并处理分类数据
+                        if (data && data.categories && Array.isArray(data.categories)) {
+                            // 添加从服务器获取的分类选项
+                            data.categories.forEach(category => {
+                                const option = document.createElement('option');
+                                option.value = category.name; // 使用分类名称作为值
+                                
+                                // 显示分类名称及文章数量
+                                const count = parseInt(category.count) || 0;
+                                option.textContent = `${category.name} (${count})`;
+                                
+                                categorySelect.appendChild(option);
+                            });
+                            console.log('成功加载分类数据:', data.categories.length, '个分类');
+                        } else {
+                            console.error('服务器返回的分类数据格式不正确:', data);
+                            showNotification('分类数据格式不正确', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取分类失败:', error);
+                        categorySelect.innerHTML = '<option value="">选择分类</option>';
+                        showNotification('获取分类失败，请重试', 'warning');
+                        
+                        // 添加重试按钮
+                        const retryOption = document.createElement('option');
+                        retryOption.value = "_retry_";
+                        retryOption.textContent = "点击重新加载分类";
+                        categorySelect.appendChild(retryOption);
+                        
+                        // 监听重试选择
+                        categorySelect.addEventListener('change', function() {
+                            if (this.value === "_retry_") {
+                                this.value = ""; // 重置为默认选项
+                                loadCategories(); // 重新加载
+                            }
+                        });
+                    });
+            }
+
+            // 用户头像点击事件
+            const userAvatar = document.getElementById('userAvatar');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            if (userAvatar && userDropdown) {
+                let timeoutId;
+                
+                // 点击头像显示下拉菜单
+                userAvatar.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userDropdown.classList.toggle('show');
+                });
+                
+                // 鼠标离开头像时不立即隐藏，而是设置延时
+                userAvatar.addEventListener('mouseout', function() {
+                    timeoutId = setTimeout(() => {
+                        userDropdown.classList.remove('show');
+                    }, 300); // 300毫秒延迟
+                });
+                
+                // 鼠标进入下拉菜单时，取消隐藏计时器
+                userDropdown.addEventListener('mouseover', function() {
+                    clearTimeout(timeoutId);
+                });
+                
+                // 鼠标离开下拉菜单时，设置延时隐藏
+                userDropdown.addEventListener('mouseout', function() {
+                    timeoutId = setTimeout(() => {
+                        userDropdown.classList.remove('show');
+                    }, 300); // 300毫秒延迟
+                });
+                
+                // 点击页面其他区域关闭菜单
+                document.addEventListener('click', function() {
+                    if (userDropdown.classList.contains('show')) {
+                        userDropdown.classList.remove('show');
+                    }
+                });
             }
         });
     </script>

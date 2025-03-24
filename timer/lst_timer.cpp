@@ -178,6 +178,7 @@ int Utils::setnonblocking(int fd)
 void Utils::addfd(int epollfd, int fd, bool one_shot, int TRIGMode)
 {
     epoll_event event;
+    memset(&event, 0, sizeof(event));   // 新增初始化
     event.data.fd = fd;
 
     if (1 == TRIGMode)

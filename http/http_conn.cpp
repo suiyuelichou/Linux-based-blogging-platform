@@ -79,6 +79,7 @@ int setnonblocking(int fd)
 void addfd(int epollfd, int fd, bool one_shot, int TRIGMode)
 {
     epoll_event event;
+    memset(&event, 0, sizeof(event));
     event.data.fd = fd;
 
     if (1 == TRIGMode)
@@ -103,6 +104,7 @@ void removefd(int epollfd, int fd)
 void modfd(int epollfd, int fd, int ev, int TRIGMode)
 {
     epoll_event event;  //新的事件配置
+    memset(&event, 0, sizeof(event)); // 新增初始化
     event.data.fd = fd;     //data.fd：保存fd（需要监听的对象） events：指定需要监听的事件类型及触发模式
 
     if (1 == TRIGMode)  //若TRIGMode为1，设置为边缘触发(EPOLLET)
@@ -381,13 +383,30 @@ http_conn::HTTP_CODE http_conn::parse_headers(char *text)
         char* boundary_pos = strstr(text, boundary_key);
         if (boundary_pos != nullptr)
         {
-            boundary_pos += strlen(boundary_key); // 跳过 "boundary="
-            char* end = strpbrk(boundary_pos, " ;\r\n"); // 查找 boundary 的结束位置
+            boundary_pos += strlen(boundary_key);
+            
+            // 移除可能的引号
+            if (*boundary_pos == '"')
+            {
+                boundary_pos++;
+                char* quote_end = strchr(boundary_pos, '"');
+                if (quote_end != nullptr)
+                {
+                    m_boundary = string(boundary_pos, quote_end - boundary_pos);
+                    // return NO_REQUEST;
+                }
+            }
+            
+            // 处理无引号情况
+            char* end = strpbrk(boundary_pos, " ;\r\n");
             if (end != nullptr)
             {
-                *end = '\0'; // 截断到空格、分号或换行符
+                m_boundary = string(boundary_pos, end - boundary_pos);
             }
-            m_boundary = boundary_pos; // 保存 boundary 的值
+            else
+            {
+                m_boundary = boundary_pos; // 使用整个剩余字符串
+            }
         }
     }
     else if(strncasecmp(text, "Cookie:", 7) == 0){
@@ -610,6 +629,158 @@ string http_conn::handle_file_upload(const string& boundary, const string& body,
     return file_path;
 }
 
+// 解析multipart/form-data格式的请求体
+bool http_conn::parse_multipart_form_data(const std::string &boundary, 
+                                        std::map<std::string, std::string> &form_data,
+                                        std::map<std::string, file_data_t> &files)
+{
+    // 清理之前可能存在的数据
+    form_data.clear();
+    for (auto& file : files) {
+        free(file.second.data);
+    }
+    files.clear();
+
+    // 构造完整的boundary字符串（确保格式正确）
+    std::string delimiter = "--" + boundary;
+    std::string end_boundary = delimiter + "--";
+    
+    // 将读取缓冲区转换为string以使用更高效的string操作
+    std::string body(m_read_buf + m_content_start, m_read_idx - m_content_start);
+    
+    // 验证内容是否为空
+    if (body.empty()) {
+        return false;
+    }
+    
+    size_t pos = 0;
+    while (pos < body.length()) {
+        // 查找boundary
+        size_t part_start = body.find(delimiter, pos);
+        if (part_start == std::string::npos) break;
+        
+        // 检查是否是结束标记
+        if (body.substr(part_start, end_boundary.length()) == end_boundary) {
+            break;
+        }
+        
+        // 跳过boundary
+        part_start += delimiter.length();
+        
+        // 确保在有效范围内
+        if (part_start >= body.length()) break;
+        
+        // 跳过可能的换行
+        if (body[part_start] == '\r' && part_start + 1 < body.length() && body[part_start + 1] == '\n') {
+            part_start += 2;
+        }
+        
+        // 查找头部结束位置
+        size_t header_end = body.find("\r\n\r\n", part_start);
+        if (header_end == std::string::npos) break;
+        
+        // 解析头部字段
+        std::string headers = body.substr(part_start, header_end - part_start);
+        std::string name;
+        std::string filename;
+        bool is_file = false;
+        
+        // 查找 Content-Disposition 行
+        size_t content_disp_pos = headers.find("Content-Disposition:");
+        if (content_disp_pos != std::string::npos) {
+            // 解析 name 参数 - 直接使用string的查找函数
+            size_t name_pos = headers.find("name=\"", content_disp_pos);
+            if (name_pos != std::string::npos) {
+                name_pos += 6; // 跳过 name="
+                size_t name_end = headers.find("\"", name_pos);
+                if (name_end != std::string::npos) {
+                    name = headers.substr(name_pos, name_end - name_pos);
+                    LOG_INFO("找到字段名: %s", name.c_str());
+                }
+            }
+
+            // 解析 filename 参数
+            size_t filename_pos = headers.find("filename=\"");
+            if (filename_pos != std::string::npos) {
+                filename_pos += 10; // 跳过 filename="
+                size_t filename_end = headers.find("\"", filename_pos);
+                if (filename_end != std::string::npos) {
+                    filename = headers.substr(filename_pos, filename_end - filename_pos);
+                    is_file = true;
+                    LOG_INFO("找到文件字段: %s, 文件名: %s", name.c_str(), filename.c_str());
+                }
+            }
+        }
+
+        // 如果没有找到有效的name，跳过这部分
+        if (name.empty()) {
+            pos = header_end + 4;
+            continue;
+        }
+        
+        // 移动到内容开始位置
+        size_t content_start = header_end + 4;
+        
+        // 查找下一个boundary或结束boundary
+        size_t next_part = body.find(delimiter, content_start);
+        if (next_part == std::string::npos) break;
+        
+        // 计算内容长度（减去尾部的\r\n）
+        size_t content_length = next_part - content_start;
+        if (content_length >= 2 && body[next_part - 2] == '\r' && body[next_part - 1] == '\n') {
+            content_length -= 2;
+        }
+        
+        // 处理文件或表单数据
+        if (is_file && !filename.empty()) {
+            file_data_t file_data;
+            file_data.filename = filename;
+            file_data.size = content_length;
+            
+            // 分配内存并复制数据
+            file_data.data = (char *)malloc(content_length);
+            if (!file_data.data) {
+                // 内存分配失败，清理已分配的资源
+                for (auto& file : files) {
+                    free(file.second.data);
+                }
+                files.clear();
+                return false;
+            }
+            
+            memcpy(file_data.data, &body[content_start], content_length);
+            files[name] = file_data;
+            
+            LOG_INFO("处理文件字段: %s, 文件名: %s, 大小: %zu 字节", 
+                     name.c_str(), filename.c_str(), content_length);
+        } else {
+            // 处理普通表单字段 - 直接使用string子串
+            form_data[name] = body.substr(content_start, content_length);
+            LOG_INFO("处理表单字段: %s = %s", 
+                     name.c_str(), form_data[name].c_str());
+        }
+        
+        // 移动到下一个boundary位置
+        pos = next_part;
+    }
+    
+    LOG_INFO("解析完成: %zu 个表单字段, %zu 个文件", 
+             form_data.size(), files.size());
+    
+    return !form_data.empty() || !files.empty();
+}
+
+
+// 获取文件扩展名
+string http_conn::get_file_extension(const std::string &filename)
+{
+    size_t dot_pos = filename.find_last_of('.');
+    if (dot_pos != std::string::npos) {
+        return filename.substr(dot_pos + 1);
+    }
+    return "";
+}
+
 // 移除文件名中的潜在危险字符
 string http_conn::sanitize_filename(const std::string &filename)
 {
@@ -661,15 +832,59 @@ bool http_conn::is_valid_username(const char *name)
 bool http_conn::is_valid_password(const char *password)
 {
     int len = strlen(password);
-    if (len < 8 || len > 16) return false;
+    if (len < 8 || len > 20) return false; // 修正长度限制
 
-    bool has_letter = false, has_digit_or_symbol = false;
+    bool has_letter = false, has_digit = false, has_symbol = false;
     for (int i = 0; i < len; ++i) {
         if (isalpha(password[i])) has_letter = true;
-        if (isdigit(password[i]) || ispunct(password[i])) has_digit_or_symbol = true;
+        else if (isdigit(password[i])) has_digit = true;
+        else if (ispunct(password[i])) has_symbol = true; // 仅检测符号
     }
 
-    return has_letter && has_digit_or_symbol;
+    return has_letter && has_digit && has_symbol; // 需包含三种类型
+}
+
+// 检测邮箱格式是否合法
+bool http_conn::is_valid_email(const char *email)
+{
+    if (!email) return false;
+    size_t len = strlen(email);
+    if (len < 5) return false; // 最短邮箱格式 "a@b.c"
+
+    string email_str(email);
+    size_t at_pos = email_str.find('@');
+    size_t dot_pos = email_str.find('.', at_pos);
+
+    // 确保 '@' 和 '.' 存在，并且位置合法
+    if (at_pos == string::npos || dot_pos == string::npos) return false;
+    if (at_pos == 0 || at_pos == len - 1) return false; // 不能是 "@" 开头或结尾
+    if (dot_pos == at_pos + 1) return false; // 不能是 "user@.com"
+    if (dot_pos == len - 1) return false; // 不能是 "user@example."
+
+    return true;
+}
+
+// 检测头像格式是否合法
+bool http_conn::is_valid_avatar(const char *avatar)
+{
+    if (!avatar) return false;
+
+    // 检查是否是默认头像路径之一
+    string avatar_path(avatar);
+    vector<string> valid_paths = {
+        "img/default_touxiang.jpg",
+        "img/avatar1.jpg",
+        "img/avatar2.jpg", 
+        "img/avatar3.jpg"
+    };
+
+    for (const auto& path : valid_paths) {
+        if (avatar_path == path) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // 辅助函数：解析单个ID
@@ -788,7 +1003,7 @@ http_conn::HTTP_CODE http_conn::process_read()
             }
             default:
                 return INTERNAL_ERROR;
-            }
+        }
     }
     return NO_REQUEST;
 }
@@ -802,156 +1017,156 @@ http_conn::HTTP_CODE http_conn::do_request()
     char name[100], password[100];
 
     //处理cgi
-    if (cgi == 1 && (*(p + 1) == '2' || *(p + 1) == '3'))
-    {
+    // if (cgi == 1 && (*(p + 1) == '2' || *(p + 1) == '3'))
+    // {
 
-        //根据标志判断是登录检测还是注册检测
-        char flag = m_url[1];
+    //     //根据标志判断是登录检测还是注册检测
+    //     char flag = m_url[1];
 
-        char *m_url_real = (char *)malloc(sizeof(char) * 200);
-        strcpy(m_url_real, "/");
-        strcat(m_url_real, m_url + 2);
-        strncpy(m_real_file + len, m_url_real, FILENAME_LEN - len - 1);
-        free(m_url_real);
+    //     char *m_url_real = (char *)malloc(sizeof(char) * 200);
+    //     strcpy(m_url_real, "/");
+    //     strcat(m_url_real, m_url + 2);
+    //     strncpy(m_real_file + len, m_url_real, FILENAME_LEN - len - 1);
+    //     free(m_url_real);
 
-        //将用户名和密码提取出来
-        //user=123&passwd=123
-        int i;
-        for (i = 5; m_string[i] != '&'; ++i)    //？m_string存储的是请求头哪部分的数据
-            name[i - 5] = m_string[i];
-        name[i - 5] = '\0';
+    //     //将用户名和密码提取出来
+    //     //user=123&passwd=123
+    //     int i;
+    //     for (i = 5; m_string[i] != '&'; ++i)    //？m_string存储的是请求头哪部分的数据
+    //         name[i - 5] = m_string[i];
+    //     name[i - 5] = '\0';
 
-        int j = 0;
-        for (i = i + 10; m_string[i] != '\0'; ++i, ++j)
-            password[j] = m_string[i];
-        password[j] = '\0';
+    //     int j = 0;
+    //     for (i = i + 10; m_string[i] != '\0'; ++i, ++j)
+    //         password[j] = m_string[i];
+    //     password[j] = '\0';
 
-        // 如果是注册，先检测数据库中是否有重名的
-        // 修改：在这里进行用户名和密码的后端检测
-        if (*(p + 1) == '3')
-        {
-            // 校验用户名
-            if (!is_valid_username(name))
-            {
-                strcpy(m_url, "/blog_registerError.html"); // 用户名不符合要求
-            }
+    //     // 如果是注册，先检测数据库中是否有重名的
+    //     // 修改：在这里进行用户名和密码的后端检测
+    //     if (*(p + 1) == '3')
+    //     {
+    //         // 校验用户名
+    //         if (!is_valid_username(name))
+    //         {
+    //             strcpy(m_url, "/blog_registerError.html"); // 用户名不符合要求
+    //         }
 
-            // 校验密码
-            if (!is_valid_password(password))
-            {
-                strcpy(m_url, "/blog_registerError.html"); // 密码不符合要求
-            }
+    //         // 校验密码
+    //         if (!is_valid_password(password))
+    //         {
+    //             strcpy(m_url, "/blog_registerError.html"); // 密码不符合要求
+    //         }
 
-            // 生成 bcrypt 哈希
-            std::string hashed_password = BCrypt::generateHash(password);
+    //         // 生成 bcrypt 哈希
+    //         std::string hashed_password = BCrypt::generateHash(password);
 
-            // 没有重名的，进行增加数据
-            char *sql_insert = (char *)malloc(sizeof(char) * 200);
-            snprintf(sql_insert, 300, "INSERT INTO user(username, password) VALUES('%s', '%s')", name, hashed_password.c_str());
+    //         // 没有重名的，进行增加数据
+    //         char *sql_insert = (char *)malloc(sizeof(char) * 200);
+    //         snprintf(sql_insert, 300, "INSERT INTO user(username, password) VALUES('%s', '%s')", name, hashed_password.c_str());
 
-            if (users.find(name) == users.end()) // 哈希表中不存在相同的用户名
-            {
-                m_lock.lock();
-                int res = mysql_query(mysql, sql_insert); // 执行sql_insert中的语句
-                if (!res)
-                    users.insert(pair<string, string>(name, hashed_password)); // 数据插入成功后，存入users中
-                m_lock.unlock();
+    //         if (users.find(name) == users.end()) // 哈希表中不存在相同的用户名
+    //         {
+    //             m_lock.lock();
+    //             int res = mysql_query(mysql, sql_insert); // 执行sql_insert中的语句
+    //             if (!res)
+    //                 users.insert(pair<string, string>(name, hashed_password)); // 数据插入成功后，存入users中
+    //             m_lock.unlock();
 
-                if (!res)
-                    strcpy(m_url, "/blog_login.html");
-                else
-                    strcpy(m_url, "/blog_registerError.html");
-            }
-            else
-                strcpy(m_url, "/blog_registerError.html");
+    //             if (!res)
+    //                 strcpy(m_url, "/blog_login.html");
+    //             else
+    //                 strcpy(m_url, "/blog_registerError.html");
+    //         }
+    //         else
+    //             strcpy(m_url, "/blog_registerError.html");
 
-            free(sql_insert); // 释放分配的内存
-        }
-        else if (*(p + 1) == '2')   //如果是登录，直接判断
-        {
-            //若浏览器端输入的用户名存在
-            if (users.find(name) != users.end()){
-                // 数据库中存储的哈希密码
-                std::string stored_hash = users[name];
-                // 验证密码   这里后面要把users[name] == password（方便测试）删掉，只保留哈希的验证
-                if (BCrypt::validatePassword(password, stored_hash) || users[name] == password){
-                    // 创建新会话
-                    // cookie.createSession(name);
-                    char *m_url_real = (char *)malloc(sizeof(char) * 200);
-                    try{
-                        cookie.createSession(name);
+    //         free(sql_insert); // 释放分配的内存
+    //     }
+    //     else if (*(p + 1) == '2')   //如果是登录，直接判断
+    //     {
+    //         //若浏览器端输入的用户名存在
+    //         if (users.find(name) != users.end()){
+    //             // 数据库中存储的哈希密码
+    //             std::string stored_hash = users[name];
+    //             // 验证密码   这里后面要把users[name] == password（方便测试）删掉，只保留哈希的验证
+    //             if (BCrypt::validatePassword(password, stored_hash) || users[name] == password){
+    //                 // 创建新会话
+    //                 // cookie.createSession(name);
+    //                 char *m_url_real = (char *)malloc(sizeof(char) * 200);
+    //                 try{
+    //                     cookie.createSession(name);
 
-                        sql_blog_tool tool;
-                        int userid = tool.get_userid(name);
-                        tool.update_last_login_time(userid);
+    //                     sql_blog_tool tool;
+    //                     int userid = tool.get_userid(name);
+    //                     tool.update_last_login_time(userid);
 
-                        current_username = name;
-                        islogin = true;
-                        strcpy(m_url, "/blog_home.html");
-                        strcpy(m_url_real, "/blog_home.html");
+    //                     current_username = name;
+    //                     islogin = true;
+    //                     strcpy(m_url, "/blog_home.html");
+    //                     strcpy(m_url_real, "/blog_home.html");
 
-                        // 测试
-                        // // 查看所有普通登录用户
-                        // vector<string> logged_users = Cookie::getActiveUsers();
-                        // cout << "Logged Users: ";
-                        // for (const auto& user : logged_users) {
-                        //     cout << user << " ";
-                        // }
+    //                     // 测试
+    //                     // // 查看所有普通登录用户
+    //                     // vector<string> logged_users = Cookie::getActiveUsers();
+    //                     // cout << "Logged Users: ";
+    //                     // for (const auto& user : logged_users) {
+    //                     //     cout << user << " ";
+    //                     // }
 
-                        // 查看详细会话信息（含session_id和最后活跃时间）
-                        auto all_sessions = Cookie::getAllSessions();
-                        for (const auto& entry : all_sessions) {
-                            const string& user = entry.first;
-                            const pair<string, time_t>& session = entry.second;
-                            cout << "User: " << user 
-                                << " | Session ID: " << session.first
-                                << " | Last Active: " << session.second << endl;
-                        }
+    //                     // 查看详细会话信息（含session_id和最后活跃时间）
+    //                     auto all_sessions = Cookie::getAllSessions();
+    //                     for (const auto& entry : all_sessions) {
+    //                         const string& user = entry.first;
+    //                         const pair<string, time_t>& session = entry.second;
+    //                         cout << "User: " << user 
+    //                             << " | Session ID: " << session.first
+    //                             << " | Last Active: " << session.second << endl;
+    //                     }
 
 
-                    } catch(const runtime_error& e){    // 若当前用户已登录，再登录会返回错误页面(用户已登录)
-                        strcpy(m_url, "/blog_loginErrorExit.html");
-                        strcpy(m_url_real, "/blog_loginErrorExit.html");
-                    }
+    //                 } catch(const runtime_error& e){    // 若当前用户已登录，再登录会返回错误页面(用户已登录)
+    //                     strcpy(m_url, "/blog_loginErrorExit.html");
+    //                     strcpy(m_url_real, "/blog_loginErrorExit.html");
+    //                 }
 
-                    strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
-                    free(m_url_real);
-                }else{
-                    strcpy(m_url, "/blog_loginError.html");
-                    char *m_url_real = (char *)malloc(sizeof(char) * 200);
-                    strcpy(m_url_real, "/blog_loginError.html");
-                    strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
-                    free(m_url_real);
-                }
-            }
-            else{
-                strcpy(m_url, "/blog_loginError.html");
-                char *m_url_real = (char *)malloc(sizeof(char) * 200);
-                strcpy(m_url_real, "/blog_loginError.html");
-                strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
-                free(m_url_real);
-            }
+    //                 strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+    //                 free(m_url_real);
+    //             }else{
+    //                 strcpy(m_url, "/blog_loginError.html");
+    //                 char *m_url_real = (char *)malloc(sizeof(char) * 200);
+    //                 strcpy(m_url_real, "/blog_loginError.html");
+    //                 strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+    //                 free(m_url_real);
+    //             }
+    //         }
+    //         else{
+    //             strcpy(m_url, "/blog_loginError.html");
+    //             char *m_url_real = (char *)malloc(sizeof(char) * 200);
+    //             strcpy(m_url_real, "/blog_loginError.html");
+    //             strncpy(m_real_file + len, m_url_real, strlen(m_url_real));
+    //             free(m_url_real);
+    //         }
             
-            // 文件检查与映射
-            if (stat(m_real_file, &m_file_stat) < 0)
-                return NO_RESOURCE;
+    //         // 文件检查与映射
+    //         if (stat(m_real_file, &m_file_stat) < 0)
+    //             return NO_RESOURCE;
 
-            if (!(m_file_stat.st_mode & S_IROTH))
-                return FORBIDDEN_REQUEST;
+    //         if (!(m_file_stat.st_mode & S_IROTH))
+    //             return FORBIDDEN_REQUEST;
 
-            if (S_ISDIR(m_file_stat.st_mode))
-                return BAD_REQUEST;     // 插眼
+    //         if (S_ISDIR(m_file_stat.st_mode))
+    //             return BAD_REQUEST;     // 插眼
 
-            int fd = open(m_real_file, O_RDONLY);   // 以只读模式打开文件，返回文件描述符fd
-            m_file_address = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);   //通过mmap将文件的内容映射到进程的地址空间中
-            close(fd);
-            return LOGIN_REQUEST;
-        }
+    //         int fd = open(m_real_file, O_RDONLY);   // 以只读模式打开文件，返回文件描述符fd
+    //         m_file_address = (char *)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);   //通过mmap将文件的内容映射到进程的地址空间中
+    //         close(fd);
+    //         return LOGIN_REQUEST;
+    //     }
 
-    }
+    // }
 
     // 检查当前用户名是否已经被注册
-    else if(strstr(m_url, "/check_username_is_exist?username=") != nullptr){
+    if(strstr(m_url, "/check_username_is_exist?username=") != nullptr){
         // 解析 username
         const char* usernameStart = strstr(m_url, "username=");
         if (usernameStart == nullptr) {
@@ -1171,6 +1386,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         string username = requestJson["username"];
         string password = requestJson["password"];
 
+        // 检查用户名是否存在
         if(users.find(username) != users.end()){
             string stored_hash = users[username];
             if(BCrypt::validatePassword(password, stored_hash) || password == stored_hash){
@@ -1265,7 +1481,22 @@ http_conn::HTTP_CODE http_conn::do_request()
             jsonData = response.dump();
             return BLOG_DATA;
         }
-
+        if(!is_valid_email(email.c_str())){
+            json response = {
+                {"success", false},
+                {"message", "邮箱格式不正确"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+        if(!is_valid_avatar(avatar.c_str())){
+            json response = {
+                {"success", false},
+                {"message", "头像格式不正确"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
         // 生成 bcrypt 哈希
         std::string hashed_password = BCrypt::generateHash(password);
 
@@ -1305,8 +1536,8 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
     }
     // 获取所有博客
-    else if (strstr(m_url, "/api/articles")) {
-        int page = 1, size = 20;
+    else if (m_method == GET && strstr(m_url, "/api/articles")) {
+        int page = 1, size = 6;
         char* pageParam = strstr(m_url, "page=");
         char* sizeParam = strstr(m_url, "size=");
         if (pageParam) {
@@ -1315,47 +1546,49 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
         if (sizeParam) {
             size = std::atoi(sizeParam + 5);
-            if (size <= 0 || size > 100) size = 20;
+            if (size <= 0 || size > 100) size = 6;
         }
         
         // 查询数据库
         sql_blog_tool tool;
         vector<Blog> blogs = tool.get_blogs_by_page(page, size);
         int totalCount = tool.get_total_blog_count();
-
-        // 构造 JSON 响应
-        jsonData = "{";
-        jsonData += "\"articles\": [";
-        for (int i = 0; i < blogs.size(); i++) {
-            Blog blog = blogs[i];
-            string escapedTitle = escapeJsonString(blog.get_blog_title());
-            string escapedContent = escapeJsonString(blog.get_blog_content());
+        // 构建文章数组
+        json response = {
+            {"articles", nlohmann::json::array()}
+        };
+        for (auto& blog : blogs) {
+            nlohmann::json article;
+            
+            // 获取相关数据
             User user = tool.get_userdata_by_userid(blog.get_user_id());
-            string category = tool.get_cotegoriename_by_cotegorieid(blog.get_category_id());
+            std::string category = tool.get_cotegoriename_by_cotegorieid(blog.get_category_id());
             int likes = tool.get_blog_likes_count(blog.get_blog_id());
             int comments = tool.get_blog_comments_count(blog.get_blog_id());
-            jsonData += "{";
-            jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
-            jsonData += "\"title\": \"" + escapedTitle + "\",";
-            jsonData += "\"excerpt\": \"" + escapedContent + "\",";
-            jsonData += "\"thumbnail\": \"" + user.get_avatar() + "\",";
-            jsonData += "\"author\": \"" + user.get_username() + "\",";
-            jsonData += "\"authorAvatar\": \"" + user.get_avatar() + "\",";
-            jsonData += "\"date\": \"" + blog.get_blog_postTime() + "\",";
-            jsonData += "\"category\": \"" + category + "\",";
-            jsonData += "\"views\": " + std::to_string(blog.get_views()) + ",";
-            jsonData += "\"likes\": " + std::to_string(likes) + ",";
-            jsonData += "\"comments\": " + std::to_string(comments);
-            jsonData += "}";
-            if (i < blogs.size() - 1) jsonData += ",";
+            
+            // 填充文章数据
+            article["id"] = blog.get_blog_id();
+            article["title"] = blog.get_blog_title();
+            article["excerpt"] = blog.get_blog_content();
+            article["thumbnail"] = blog.get_thumbnail(); // 之前代码里注释掉了 user.get_avatar()
+            article["author"] = user.get_username();
+            article["authorAvatar"] = user.get_avatar();
+            article["date"] = blog.get_blog_postTime();
+            article["category"] = category;
+            article["views"] = blog.get_views();
+            article["likes"] = likes;
+            article["comments"] = comments;
+            
+            // 添加到文章数组
+            response["articles"].push_back(article);
         }
-        jsonData += "],";
-        int totalPages = totalCount / size;
-        int currentPage = page;
-        jsonData += "\"totalPages\": " + std::to_string(totalPages) + ",";
-        jsonData += "\"currentPage\": " + std::to_string(currentPage);
-        jsonData += "}";
+        
+        // 添加分页信息
+        int totalPages = (totalCount + size - 1) / size; // 向上取整
+        response["totalPages"] = totalPages;
+        response["currentPage"] = page;
 
+        jsonData = response.dump();
         return BLOG_DATA;
     }
     // 获取热门博客
@@ -1377,12 +1610,11 @@ http_conn::HTTP_CODE http_conn::do_request()
         for (int i = 0; i < blogs.size(); i++) {
             Blog blog = blogs[i];
             string escapedTitle = escapeJsonString(blog.get_blog_title());
-            User user = tool.get_userdata_by_userid(blog.get_user_id());
             int likes = tool.get_blog_likes_count(blog.get_blog_id());
             jsonData += "{";
             jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
             jsonData += "\"title\": \"" + escapedTitle + "\",";
-            jsonData += "\"thumbnail\": \"" + user.get_avatar() + "\",";
+            jsonData += "\"thumbnail\": \"" + blog.get_thumbnail() + "\",";
             jsonData += "\"views\": " + std::to_string(blog.get_views()) + ",";
             jsonData += "\"likes\": " + std::to_string(likes);
             jsonData += "}";
@@ -1428,11 +1660,12 @@ http_conn::HTTP_CODE http_conn::do_request()
             User user = tool.get_userdata_by_userid(userid);
             int view_count = tool.get_view_count_by_userid(userid);
             int like_count = tool.get_blog_liked_count_by_userid(userid);
+            int article_count = tool.get_article_count_by_userid(userid);
 
             jsonData = "{";
             jsonData += "\"username\": \"" + user.get_username() + "\",";
             jsonData += "\"avatar\": \"" + user.get_avatar() + "\",";
-            jsonData += "\"articleCount\": \"" + to_string(user.get_article_count()) + "\",";
+            jsonData += "\"articleCount\": \"" + to_string(article_count) + "\",";
             jsonData += "\"viewCount\": \"" + to_string(view_count) + "\",";
             jsonData += "\"likeCount\": \"" + to_string(like_count) + "\"";
             jsonData += "}";
@@ -1472,7 +1705,7 @@ http_conn::HTTP_CODE http_conn::do_request()
             {"title", escapedTitle},
             {"content", escapedContent},
             {"date", blog.get_blog_postTime()},
-            {"thumbnail", user.get_avatar()},
+            {"thumbnail", blog.get_thumbnail()},
             {"category", category},
             {"tags", json::array()}, // 创建一个空数组，然后添加标签
             {"author", user.get_username()},
@@ -1502,6 +1735,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         };
 
         jsonData = response.dump();
+        tool.increase_blog_view_count(articleId);
         return BLOG_DATA;
     }
     // 获取评论列表
@@ -1553,7 +1787,7 @@ http_conn::HTTP_CODE http_conn::do_request()
     else if (strstr(m_url, "/api/article/related")) {
         string category = "";
         int excludeId = -1;
-        int size = 6;
+        int size = 5;
 
         // 解析请求参数
         char* categoryParam = strstr(m_url, "category=");
@@ -1598,7 +1832,7 @@ http_conn::HTTP_CODE http_conn::do_request()
             json blogObj = {
                 {"id", blog.get_blog_id()},
                 {"title", blog.get_blog_title()},
-                {"thumbnail", user.get_avatar()},
+                {"thumbnail", blog.get_thumbnail()},
                 {"views", blog.get_views()},
                 {"likes", likes}
             };
@@ -1742,6 +1976,125 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         jsonData = "{\"success\": false, \"message\": \"评论失败\"}";
         return BLOG_DATA;
+    }
+    // 文章发布
+    else if (m_method == POST && strstr(m_url, "/api/articles") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+        sql_blog_tool tool;
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析multipart/form-data格式的请求体
+        if(m_boundary.empty()){
+            return BAD_REQUEST;
+        }
+
+        std::map<std::string, std::string> form_data;
+        std::map<std::string, file_data_t> files;
+        if(!parse_multipart_form_data(m_boundary, form_data, files)){
+            return BAD_REQUEST;
+        }
+
+        if(form_data.find("title") == form_data.end()){
+            json response = {
+                {"success", false},
+                {"message", "标题不能为空"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+        if(form_data.find("content") == form_data.end()){
+            json response = {
+                {"success", false},
+                {"message", "内容不能为空"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+
+        string title = form_data["title"];
+        string content = form_data["content"];
+        string category = "";
+        string tags = "";
+        string thumbnail_path = "";
+        int categoryId = 1;
+        // 获取category
+        if(form_data.find("category") != form_data.end()){
+            category = form_data["category"];
+            categoryId = tool.get_category_id_by_name(category);
+            if(categoryId == -1){
+                json response = {
+                    {"success", false},
+                    {"message", "分类不存在"}
+                };
+                jsonData = response.dump();
+                return BLOG_DATA;
+            }
+        }
+        // 获取thumbnail
+        if(files.find("thumbnail") != files.end()){
+            file_data_t thumbnail = files["thumbnail"];
+            char filename[100] = {0};
+            // sprintf(filename, "thumbnail/%s.%s", article_id, get_file_extension(thumbnail.filename).c_str());
+            sprintf(filename, "/root/projects/C-WebServer/root/thumbnail/%s", generate_unique_filename(thumbnail.filename).c_str());
+            
+            // 保存文件
+            FILE *fp = fopen(filename, "wb");
+            if (fp) {
+                fwrite(thumbnail.data, 1, thumbnail.size, fp);
+                fclose(fp);
+                // 只提取路径中的/thumbnail/部分
+                size_t pos = string(filename).find("/thumbnail/");
+                if (pos != string::npos) {
+                    thumbnail_path = string(filename).substr(pos);
+                } else {
+                    thumbnail_path = "/thumbnail/" + string(generate_unique_filename(thumbnail.filename));
+                }
+            }
+        }
+        int userid = tool.get_userid(username);
+        int blogId = tool.add_blog(title, content, userid, categoryId, thumbnail_path);
+        if(blogId == -1){
+            json response = {
+                {"success", false},
+                {"message", "文章发布失败"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+
+        // 获取tags
+        if(form_data.find("tags") != form_data.end()){
+            tags = form_data["tags"];
+        }
+        if(!tags.empty()){
+            // 解析tags
+            json tags_json = json::parse(tags);
+            for(const auto& tag : tags_json.items()){
+                string tag_name = tag.value();
+                int tagId = tool.get_tag_id_by_name(tag_name);
+                if(tagId != -1){
+                    tool.add_blog_tag(blogId, tagId);
+                }else{
+                    int newTagId = tool.create_tag(tag_name);
+                    tool.add_blog_tag(blogId, newTagId);
+                }
+            }
+        }
+
+        json response = {
+            {"success", true},
+            {"message", "文章发布成功"},
+            {"articleId", blogId}
+        };
+        jsonData = response.dump();
+
+        return BLOG_DATA;
+        
     }
     // 处理访问 blog_detail.html 的情况
     else if (strstr(m_url, "/blog_detail.html") != nullptr) {
@@ -2192,7 +2545,6 @@ http_conn::HTTP_CODE http_conn::do_request()
     else if(strstr(m_url, "/user_center.html")){
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
-        cout << username << " " << session_id << endl;
 
         if(cookie.validateSession(username, session_id)){
             char *m_url_real = (char *)malloc(sizeof(char) * 200);
@@ -2206,7 +2558,7 @@ http_conn::HTTP_CODE http_conn::do_request()
     }
     // 个人中心-个人资料
     else if (strstr(m_url, "/profile")){
-        string username = cookie.getCookie("username");
+        string username = cookie.getCookie("username"); 
         string session_id = cookie.getCookie("session_id");
 
         if(cookie.validateSession(username, session_id)){

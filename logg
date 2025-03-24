@@ -1,58 +1,55 @@
-==56917== Memcheck, a memory error detector
-==56917== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
-==56917== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
-==56917== Command: ./server -c 1
-==56917== Parent PID: 23846
-==56917== 
-==56917== Thread 2:
-==56917== Invalid read of size 8
-==56917==    at 0x42D4CD: std::_List_const_iterator<st_mysql*>::operator++() (stl_list.h:235)
-==56917==    by 0x42D3CC: std::iterator_traits<std::_List_const_iterator<st_mysql*> >::difference_type std::__distance<std::_List_const_iterator<st_mysql*> >(std::_List_const_iterator<st_mysql*>, std::_List_const_iterator<st_mysql*>, std::input_iterator_tag) (stl_iterator_base_funcs.h:82)
-==56917==    by 0x42D1DB: std::iterator_traits<std::_List_const_iterator<st_mysql*> >::difference_type std::distance<std::_List_const_iterator<st_mysql*> >(std::_List_const_iterator<st_mysql*>, std::_List_const_iterator<st_mysql*>) (stl_iterator_base_funcs.h:118)
-==56917==    by 0x42CF1C: std::list<st_mysql*, std::allocator<st_mysql*> >::size() const (stl_list.h:874)
-==56917==    by 0x42C97B: connection_pool::GetConnection() (sql_connection_pool.cpp:69)
-==56917==    by 0x42CC93: connectionRAII::connectionRAII(st_mysql**, connection_pool*) (sql_connection_pool.cpp:142)
-==56917==    by 0x452695: threadpool<http_conn>::run() (threadpool.h:159)
-==56917==    by 0x452407: threadpool<http_conn>::worker(void*) (threadpool.h:107)
-==56917==    by 0x4E3EEA4: start_thread (in /usr/lib64/libpthread-2.17.so)
-==56917==    by 0x61A5B0C: clone (in /usr/lib64/libc-2.17.so)
-==56917==  Address 0xd3dcd30 is 0 bytes inside a block of size 24 free'd
-==56917==    at 0x4C2B51D: operator delete(void*) (vg_replace_malloc.c:586)
-==56917==    by 0x42D429: __gnu_cxx::new_allocator<std::_List_node<st_mysql*> >::deallocate(std::_List_node<st_mysql*>*, unsigned long) (new_allocator.h:110)
-==56917==    by 0x42D2F3: std::_List_base<st_mysql*, std::allocator<st_mysql*> >::_M_put_node(std::_List_node<st_mysql*>*) (stl_list.h:338)
-==56917==    by 0x42D235: std::list<st_mysql*, std::allocator<st_mysql*> >::_M_erase(std::_List_iterator<st_mysql*>) (stl_list.h:1577)
-==56917==    by 0x42CF77: std::list<st_mysql*, std::allocator<st_mysql*> >::pop_front() (stl_list.h:1002)
-==56917==    by 0x42CA0A: connection_pool::GetConnection() (sql_connection_pool.cpp:80)
-==56917==    by 0x42CC93: connectionRAII::connectionRAII(st_mysql**, connection_pool*) (sql_connection_pool.cpp:142)
-==56917==    by 0x452695: threadpool<http_conn>::run() (threadpool.h:159)
-==56917==    by 0x452407: threadpool<http_conn>::worker(void*) (threadpool.h:107)
-==56917==    by 0x4E3EEA4: start_thread (in /usr/lib64/libpthread-2.17.so)
-==56917==    by 0x61A5B0C: clone (in /usr/lib64/libc-2.17.so)
-==56917==  Block was alloc'd at
-==56917==    at 0x4C2A593: operator new(unsigned long) (vg_replace_malloc.c:344)
-==56917==    by 0x42D530: __gnu_cxx::new_allocator<std::_List_node<st_mysql*> >::allocate(unsigned long, void const*) (new_allocator.h:104)
-==56917==    by 0x42D44D: std::_List_base<st_mysql*, std::allocator<st_mysql*> >::_M_get_node() (stl_list.h:334)
-==56917==    by 0x42D312: std::_List_node<st_mysql*>* std::list<st_mysql*, std::allocator<st_mysql*> >::_M_create_node<st_mysql* const&>(st_mysql* const&) (stl_list.h:502)
-==56917==    by 0x42D141: void std::list<st_mysql*, std::allocator<st_mysql*> >::_M_insert<st_mysql* const&>(std::_List_iterator<st_mysql*>, st_mysql* const&) (stl_list.h:1561)
-==56917==    by 0x42CEE7: std::list<st_mysql*, std::allocator<st_mysql*> >::push_back(st_mysql* const&) (stl_list.h:1016)
-==56917==    by 0x42CA8A: connection_pool::ReleaseConnection(st_mysql*) (sql_connection_pool.cpp:97)
-==56917==    by 0x42CCDD: connectionRAII::~connectionRAII() (sql_connection_pool.cpp:150)
-==56917==    by 0x4526AD: threadpool<http_conn>::run() (threadpool.h:160)
-==56917==    by 0x452407: threadpool<http_conn>::worker(void*) (threadpool.h:107)
-==56917==    by 0x4E3EEA4: start_thread (in /usr/lib64/libpthread-2.17.so)
-==56917==    by 0x61A5B0C: clone (in /usr/lib64/libc-2.17.so)
-==56917== 
-==56917== 
-==56917== Process terminating with default action of signal 2 (SIGINT)
-==56917==    at 0x61A60E3: ??? (in /usr/lib64/libc-2.17.so)
-==56917==    by 0x451A14: WebServer::eventLoop() (webserver.cpp:418)
-==56917==    by 0x405D3D: main (main.cpp:49)
-==56917== 
-==56917== HEAP SUMMARY:
-==56917==     in use at exit: 8,849,634 bytes in 297 blocks
-==56917==   total heap usage: 641,141 allocs, 640,844 frees, 27,728,512 bytes allocated
-==56917== 
-==56917== For a detailed leak analysis, rerun with: --leak-check=full
-==56917== 
-==56917== For lists of detected and suppressed errors, rerun with: -s
-==56917== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+==117312== Memcheck, a memory error detector
+==117312== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==117312== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==117312== Command: ./server
+==117312== Parent PID: 13975
+==117312== 
+==117312== Conditional jump or move depends on uninitialised value(s)
+==117312==    at 0x408385: addfd(int, int, bool, int) (http_conn.cpp:85)
+==117312==    by 0x408530: http_conn::init(int, sockaddr_in const&, char*, int, int, std::string, std::string, std::string) (http_conn.cpp:140)
+==117312==    by 0x4A2868: WebServer::timer(int, sockaddr_in) (webserver.cpp:188)
+==117312==    by 0x4A2C0A: WebServer::dealclientdata() (webserver.cpp:247)
+==117312==    by 0x4A3290: WebServer::eventLoop() (webserver.cpp:433)
+==117312==    by 0x4063ED: main (main.cpp:49)
+==117312== 
+==117312== 
+==117312== Process terminating with default action of signal 2 (SIGINT)
+==117312==    at 0x61A60E3: ??? (in /usr/lib64/libc-2.17.so)
+==117312==    by 0x4A31F2: WebServer::eventLoop() (webserver.cpp:418)
+==117312==    by 0x4063ED: main (main.cpp:49)
+==117312== 
+==117312== HEAP SUMMARY:
+==117312==     in use at exit: 37,677,677 bytes in 2,362 blocks
+==117312==   total heap usage: 21,155 allocs, 18,793 frees, 54,190,424 bytes allocated
+==117312== 
+==117312== 576 bytes in 1 blocks are possibly lost in loss record 39 of 64
+==117312==    at 0x4C2C089: calloc (vg_replace_malloc.c:762)
+==117312==    by 0x4012784: _dl_allocate_tls (in /usr/lib64/ld-2.17.so)
+==117312==    by 0x4E3F87B: pthread_create@@GLIBC_2.2.5 (in /usr/lib64/libpthread-2.17.so)
+==117312==    by 0x593C596: std::thread::_M_start_thread(std::shared_ptr<std::thread::_Impl_base>) (in /usr/lib64/libstdc++.so.6.0.19)
+==117312==    by 0x40683B: std::thread::thread<void (&)()>(void (&)()) (thread:135)
+==117312==    by 0x4063CF: main (main.cpp:45)
+==117312== 
+==117312== 4,608 bytes in 8 blocks are possibly lost in loss record 49 of 64
+==117312==    at 0x4C2C089: calloc (vg_replace_malloc.c:762)
+==117312==    by 0x4012784: _dl_allocate_tls (in /usr/lib64/ld-2.17.so)
+==117312==    by 0x4E3F87B: pthread_create@@GLIBC_2.2.5 (in /usr/lib64/libpthread-2.17.so)
+==117312==    by 0x4A3910: threadpool<http_conn>::threadpool(int, connection_pool*, int, int) (threadpool.h:50)
+==117312==    by 0x4A23C3: WebServer::thread_pool() (webserver.cpp:109)
+==117312==    by 0x40639D: main (main.cpp:37)
+==117312== 
+==117312== LEAK SUMMARY:
+==117312==    definitely lost: 0 bytes in 0 blocks
+==117312==    indirectly lost: 0 bytes in 0 blocks
+==117312==      possibly lost: 5,184 bytes in 9 blocks
+==117312==    still reachable: 37,672,493 bytes in 2,353 blocks
+==117312==                       of which reachable via heuristic:
+==117312==                         stdstring          : 74,541 bytes in 2,118 blocks
+==117312==                         newarray           : 37,104,008 bytes in 1 blocks
+==117312==         suppressed: 0 bytes in 0 blocks
+==117312== Reachable blocks (those to which a pointer was found) are not shown.
+==117312== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==117312== 
+==117312== Use --track-origins=yes to see where uninitialised values come from
+==117312== For lists of detected and suppressed errors, rerun with: -s
+==117312== ERROR SUMMARY: 6 errors from 3 contexts (suppressed: 0 from 0)

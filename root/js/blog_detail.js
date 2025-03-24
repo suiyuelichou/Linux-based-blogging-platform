@@ -154,9 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // 检查用户是否已点赞或收藏
                     checkUserInteractions();
-                    
-                    // 更新阅读量
-                    updateViewCount();
                 } else {
                     throw new Error('文章不存在');
                 }
@@ -188,8 +185,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 设置文章头图
         const postImage = document.getElementById('postImage');
-        postImage.src = article.thumbnail;
-        postImage.alt = article.title;
+        const postHeader = document.querySelector('.post-header');
+        
+        if (article.thumbnail && article.thumbnail.trim() !== '') {
+            // 有缩略图
+            postImage.src = article.thumbnail;
+            postImage.alt = article.title;
+            postImage.style.display = 'block';
+            postHeader.classList.remove('no-image');
+        } else {
+            // 无缩略图
+            postImage.style.display = 'none';
+            postHeader.classList.add('no-image');
+        }
         
         // 设置分类
         const postCategory = document.getElementById('postCategory');
@@ -206,14 +214,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // 设置作者信息
         const authorAvatar = document.getElementById('authorAvatar');
         const authorName = document.getElementById('authorName');
-        authorAvatar.src = article.authorAvatar;
+        // 如果作者头像为空，使用默认头像
+        authorAvatar.src = article.authorAvatar || 'img/default_touxiang.jpg';
         authorName.textContent = article.author;
         
-                        // 设置侧边栏作者信息
-                        const sidebarAuthorAvatar = document.getElementById('sidebarAuthorAvatar');
+        // 设置侧边栏作者信息
+        const sidebarAuthorAvatar = document.getElementById('sidebarAuthorAvatar');
         const sidebarAuthorName = document.getElementById('sidebarAuthorName');
         const authorBio = document.getElementById('authorBio');
-        sidebarAuthorAvatar.src = article.authorAvatar;
+        // 如果作者头像为空，使用默认头像
+        sidebarAuthorAvatar.src = article.authorAvatar || 'img/default_touxiang.jpg';
         sidebarAuthorName.textContent = article.author;
         authorBio.textContent = article.authorBio || '这位作者暂未添加个人简介';
         
@@ -247,18 +257,60 @@ document.addEventListener('DOMContentLoaded', function() {
         const prevPost = document.getElementById('prevPost');
         const nextPost = document.getElementById('nextPost');
         
-        if (article.prevPost) {
+        // 移除可能已经绑定的所有点击事件
+        prevPost.onclick = null;
+        nextPost.onclick = null;
+        
+        // 检查prevPost是否有效（ID大于0）
+        if (article.prevPost && article.prevPost.id > 0 && article.prevPost.title) {
+            prevPost.removeAttribute('onclick');
             prevPost.href = `blog_detail.html?id=${article.prevPost.id}`;
             prevPost.querySelector('.post-navigation-title').textContent = article.prevPost.title;
+            prevPost.classList.remove('disabled');
+            
+            // 添加自定义点击事件
+            prevPost.onclick = function(e) {
+                e.preventDefault();
+                handleArticleNavigation(article.prevPost.id);
+                return false;
+            };
         } else {
-            prevPost.style.display = 'none';
+            prevPost.removeAttribute('href');
+            prevPost.classList.add('disabled');
+            prevPost.querySelector('.post-navigation-title').textContent = '已经是第一篇文章了';
+            
+            // 为禁用按钮添加点击事件
+            prevPost.onclick = function(e) {
+                e.preventDefault();
+                showNotification('已经是第一篇文章了', 'info');
+                return false;
+            };
         }
         
-        if (article.nextPost) {
+        // 检查nextPost是否有效（ID大于0）
+        if (article.nextPost && article.nextPost.id > 0 && article.nextPost.title) {
+            nextPost.removeAttribute('onclick');
             nextPost.href = `blog_detail.html?id=${article.nextPost.id}`;
             nextPost.querySelector('.post-navigation-title').textContent = article.nextPost.title;
+            nextPost.classList.remove('disabled');
+            
+            // 添加自定义点击事件
+            nextPost.onclick = function(e) {
+                e.preventDefault();
+                handleArticleNavigation(article.nextPost.id);
+                return false;
+            };
         } else {
-            nextPost.style.display = 'none';
+            nextPost.removeAttribute('href');
+            nextPost.classList.add('disabled');
+            nextPost.querySelector('.post-navigation-title').textContent = '已经是最后一篇文章了';
+            
+            // 为禁用按钮添加点击事件
+            nextPost.onclick = function(e) {
+                e.preventDefault();
+                showNotification('已经是最后一篇文章了', 'info');
+                return false;
+            };
         }
     }
     
@@ -371,12 +423,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         let html = '';
-        articles.forEach(post => {
+        articles.forEach((post, index) => {
+            // 检查缩略图是否为空，如果为空则使用随机图片
+            const thumbnail = post.thumbnail ? post.thumbnail : `https://picsum.photos/300/200?random=${post.id || index}`;
+            
             html += `
             <li class="popular-post">
-                <img src="${post.thumbnail}" alt="${post.title}">
+                <img src="${thumbnail}" alt="${post.title}">
                 <div class="popular-post-info">
-                    <h4><a href="new_blog_post.html?id=${post.id}">${post.title}</a></h4>
+                    <h4><a href="blog_detail.html?id=${post.id}">${post.title}</a></h4>
                     <div class="meta">
                         <span><i class="fas fa-eye"></i> ${post.views}</span>
                         <span><i class="fas fa-heart"></i> ${post.likes}</span>
@@ -467,7 +522,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // 检查用户是否已登录
         const userData = localStorage.getItem('userInfo');
         if (!userData) {
-            showNotification('请先登录后再点赞', 'error');
+            // 游客点赞时弹出提示，并提供登录链接
+            showLoginNotification('请先登录后再点赞', 'warning');
             return;
         }
         
@@ -499,9 +555,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }),
             credentials: 'include'
         })
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    // 服务器返回未授权状态码时
+                    throw new Error('未登录或登录已过期');
+                }
+                throw new Error('操作失败');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 服务器确认成功后显示成功消息
+            showNotification(isLiked ? '点赞成功' : '已取消点赞', 'success');
+        })
         .catch(error => {
             console.error('更新点赞状态失败:', error);
-            showNotification('操作失败，请重试', 'error');
+            
+            if (error.message === '未登录或登录已过期') {
+                // 登录已过期的情况
+                localStorage.removeItem('userInfo');
+                showLoginNotification('登录已过期，请重新登录后再点赞', 'error');
+            } else {
+                showNotification('操作失败，请重试', 'error');
+            }
             
             // 恢复原状态
             isLiked = !isLiked;
@@ -517,12 +594,73 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // 添加一个新的函数，显示带有登录按钮的通知
+    function showLoginNotification(message, type = 'info') {
+        // 先删除可能存在的通知
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        // 创建新通知
+        const notification = document.createElement('div');
+        notification.className = `notification ${type} with-button`;
+        
+        let icon = '';
+        switch (type) {
+            case 'success':
+                icon = '<i class="fas fa-check-circle"></i>';
+                break;
+            case 'error':
+                icon = '<i class="fas fa-exclamation-circle"></i>';
+                break;
+            case 'warning':
+                icon = '<i class="fas fa-exclamation-triangle"></i>';
+                break;
+            default:
+                icon = '<i class="fas fa-info-circle"></i>';
+        }
+        
+        notification.innerHTML = `
+            ${icon}
+            <div class="notification-message">${message}</div>
+            <a href="blog_login.html" class="notification-login-btn">立即登录</a>
+            <div class="notification-close"><i class="fas fa-times"></i></div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // 显示通知
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        
+        // 添加关闭事件
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        });
+        
+        // 自动关闭（时间更长，让用户有足够时间点击登录按钮）
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }
+        }, 8000);
+    }
+    
     // 收藏文章
     function toggleBookmark() {
         // 检查用户是否已登录
         const userData = localStorage.getItem('userInfo');
         if (!userData) {
-            showNotification('请先登录后再收藏', 'error');
+            showLoginNotification('请先登录后再收藏', 'warning');
             return;
         }
         
@@ -595,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 检查用户是否已登录
         const userData = localStorage.getItem('userInfo');
         if (!userData) {
-            showNotification('请先登录后再点赞评论', 'error');
+            showLoginNotification('请先登录后再点赞评论', 'warning');
             return;
         }
         
@@ -642,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 检查用户是否已登录
         const userData = localStorage.getItem('userInfo');
         if (!userData) {
-            showNotification('请先登录后再回复评论', 'error');
+            showLoginNotification('请先登录后再回复评论', 'warning');
             return;
         }
         
@@ -659,7 +797,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 检查用户是否已登录
         const userData = localStorage.getItem('userInfo');
         if (!userData) {
-            showNotification('请先登录后再发表评论', 'error');
+            showLoginNotification('请先登录后再发表评论', 'warning');
             return;
         }
         
@@ -808,18 +946,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 更新文章阅读量
-    function updateViewCount() {
-        // 发送请求更新阅读量
-        fetch(`/api/article/view/${articleId}`, {
-            method: 'POST',
-            credentials: 'include'
-        })
-        .catch(error => {
-            console.error('更新阅读量失败:', error);
-        });
-    }
-    
     // 检查登录状态
     function checkAuthStatus() {
         // 发送请求到后端检查用户登录状态
@@ -956,8 +1082,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // 加载完成后，已经渲染了实际内容，所以不需要特别处理
     }
     
-        // 显示通知消息
-        function showNotification(message, type = 'info') {
+    // 显示通知消息
+    function showNotification(message, type = 'info') {
         // 先删除可能存在的通知
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
@@ -1221,5 +1347,72 @@ flex-direction: column;
         }
         
         return articles;
+    }
+
+    // 添加一个专门处理翻页点击的函数
+    function handleArticleNavigation(articleId) {
+        // 保存当前滚动位置
+        const scrollPosition = window.scrollY;
+        
+        // 添加加载指示器
+        const postContainer = document.getElementById('postContainer');
+        postContainer.classList.add('loading');
+        
+        // 在URL中设置新ID但不刷新页面
+        window.history.pushState({}, '', `blog_detail.html?id=${articleId}`);
+        
+        // 加载新文章
+        fetch(`/api/article/${articleId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络响应异常');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.article) {
+                    // 更新全局文章ID
+                    articleId = data.article.id;
+                    
+                    // 渲染新文章
+                    renderArticle(data.article);
+                    
+                    // 加载评论
+                    loadComments(articleId);
+                    
+                    // 加载相关文章
+                    loadRelatedArticles(data.article.category, articleId);
+                    
+                    // 生成目录
+                    generateTableOfContents();
+                    
+                    // 检查用户是否已点赞或收藏
+                    checkUserInteractions();
+                    
+                    // 显示通知
+                    showNotification('文章加载成功', 'success');
+                    
+                    // 滚动到页面顶部
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    throw new Error('文章不存在');
+                }
+            })
+            .catch(error => {
+                console.error('加载文章失败:', error);
+                showNotification('加载文章失败，请重试', 'error');
+                
+                // 恢复之前的URL
+                window.history.replaceState({}, '', `blog_detail.html?id=${articleId}`);
+                
+                // 恢复滚动位置
+                window.scrollTo(0, scrollPosition);
+            })
+            .finally(() => {
+                postContainer.classList.remove('loading');
+            });
     }
 });

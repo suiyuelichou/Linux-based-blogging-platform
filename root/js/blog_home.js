@@ -36,11 +36,34 @@ document.addEventListener('DOMContentLoaded', function() {
         const userDropdown = document.querySelector('.user-dropdown');
         
         if (userAvatar && userDropdown) {
+            let timeoutId;
+            
+            // 点击头像显示下拉菜单
             userAvatar.addEventListener('click', function(e) {
                 e.stopPropagation();
                 userDropdown.classList.toggle('show');
             });
             
+            // 鼠标离开头像时不立即隐藏，而是设置延时
+            userAvatar.addEventListener('mouseout', function() {
+                timeoutId = setTimeout(() => {
+                    userDropdown.classList.remove('show');
+                }, 300); // 300毫秒延迟
+            });
+            
+            // 鼠标进入下拉菜单时，取消隐藏计时器
+            userDropdown.addEventListener('mouseover', function() {
+                clearTimeout(timeoutId);
+            });
+            
+            // 鼠标离开下拉菜单时，设置延时隐藏
+            userDropdown.addEventListener('mouseout', function() {
+                timeoutId = setTimeout(() => {
+                    userDropdown.classList.remove('show');
+                }, 300); // 300毫秒延迟
+            });
+            
+            // 点击页面其他区域关闭菜单
             document.addEventListener('click', function() {
                 if (userDropdown.classList.contains('show')) {
                     userDropdown.classList.remove('show');
@@ -173,15 +196,21 @@ document.addEventListener('DOMContentLoaded', function() {
             html = '<div class="no-articles">没有找到文章</div>';
         } else {
             articles.forEach((article, index) => {
+                // 检查缩略图是否为空，如果为空则使用随机图片
+                const thumbnail = article.thumbnail ? article.thumbnail : `https://picsum.photos/600/400?random=${article.id || index}`;
+                
+                // 处理文章摘要内容，移除HTML标签并限制长度
+                const excerpt = extractExcerpt(article.excerpt, 150);
+                
                 html += `
                 <article class="article-card fade-in" style="animation-delay: ${index * 0.1}s">
                     <div class="thumbnail">
-                        <img src="${article.thumbnail}" alt="${article.title}">
+                        <img src="${thumbnail}" alt="${article.title}">
                     </div>
                     <div class="content">
                         <span class="category">${article.category}</span>
                         <h3><a href="blog_detail.html?id=${article.id}">${article.title}</a></h3>
-                        <p>${article.excerpt}</p>
+                        <p>${excerpt}</p>
                         <div class="article-meta">
                             <div class="author">
                                 <img src="${article.authorAvatar}" alt="${article.author}">
@@ -200,6 +229,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         articlesContainer.innerHTML = html;
+    }
+    
+    // 辅助函数：提取HTML内容中的纯文本并生成摘要
+    function extractExcerpt(htmlContent, maxLength = 150) {
+        if (!htmlContent) return '无内容摘要';
+        
+        // 创建临时DOM元素来解析HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlContent;
+        
+        // 获取纯文本内容
+        let textContent = tempDiv.textContent || tempDiv.innerText || '';
+        
+        // 去除多余空白字符
+        textContent = textContent.replace(/\s+/g, ' ').trim();
+        
+        // 限制长度并添加省略号
+        if (textContent.length > maxLength) {
+            return textContent.substring(0, maxLength) + '...';
+        }
+        
+        return textContent;
     }
     
     // 渲染分页
@@ -289,12 +340,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const posts = data.articles || [];
                 
                 let html = '';
-                posts.forEach(post => {
+                posts.forEach((post, index) => {
+                    // 检查缩略图是否为空，如果为空则使用随机图片
+                    const thumbnail = post.thumbnail ? post.thumbnail : `https://picsum.photos/600/400?random=${post.id || index + 100}`;
+                    
+                    // 确保标题是纯文本
+                    const title = post.title ? extractExcerpt(post.title, 60) : '无标题';
+                    
                     html += `
                     <li class="popular-post">
-                        <img src="${post.thumbnail}" alt="${post.title}">
+                        <img src="${thumbnail}" alt="${title}">
                         <div class="popular-post-info">
-                            <h4><a href="blog_detail.html?id=${post.id}">${post.title}</a></h4>
+                            <h4><a href="blog_detail.html?id=${post.id}">${title}</a></h4>
                             <div class="meta">
                                 <span><i class="fas fa-eye"></i> ${post.views}</span>
                                 <span><i class="fas fa-heart"></i> ${post.likes}</span>
@@ -437,11 +494,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const categoryCount = document.getElementById('categoryCount');
         const likeCount = document.getElementById('likeCount');
         const userDropdown = document.querySelector('.user-dropdown');
+        // 获取侧边栏用户头像元素
+        const sidebarUserAvatar = document.querySelector('.user-profile-header img');
         
         if (isLoggedIn && userData) {
             // 用户已登录，显示用户信息
             if (userName) userName.textContent = userData.username || '用户';
             if (userAvatar) userAvatar.src = userData.avatar || 'img/default_touxiang.jpg';
+            // 更新侧边栏用户头像
+            if (sidebarUserAvatar) sidebarUserAvatar.src = userData.avatar || 'img/default_touxiang.jpg';
             if (articleCount) articleCount.textContent = userData.articleCount || '0';
             if (categoryCount) categoryCount.textContent = userData.viewCount || '0';
             if (likeCount) likeCount.textContent = userData.likeCount || '0';
@@ -468,6 +529,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // 用户未登录，显示游客信息
             if (userName) userName.textContent = '游客';
             if (userAvatar) userAvatar.src = 'img/default_touxiang.jpg';
+            // 更新侧边栏用户头像为默认头像
+            if (sidebarUserAvatar) sidebarUserAvatar.src = 'img/default_touxiang.jpg';
             if (articleCount) articleCount.textContent = '0';
             if (categoryCount) categoryCount.textContent = '0';
             if (likeCount) likeCount.textContent = '0';

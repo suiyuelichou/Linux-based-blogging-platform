@@ -37,7 +37,7 @@ class http_conn
 {
 public:
     static const int FILENAME_LEN = 200;        // 文件名的最大长度
-    static const int READ_BUFFER_SIZE = 2048;   // 读缓冲区大小
+    static const int READ_BUFFER_SIZE = 16384;   // 读缓冲区大小
     static const int WRITE_BUFFER_SIZE = 1024;  // 写缓冲区大小
 
     // HTTP 请求方法
@@ -97,7 +97,13 @@ public:
     };
 
 public:
-    http_conn() {}
+    http_conn() {
+        // memset(&m_address, 0, sizeof(m_address));
+        // memset(m_read_buf, 0, READ_BUFFER_SIZE);
+        // memset(m_write_buf, 0, WRITE_BUFFER_SIZE);
+        // memset(m_real_file, 0, FILENAME_LEN);
+        // memset(m_file_address, 0, FILENAME_LEN);    
+    }
     ~http_conn() {}
 
 public:
@@ -115,6 +121,13 @@ public:
     // 计时器标志和改进标志
     int timer_flag;
     int improv;
+
+    // 解析multipart/form-data格式的请求体
+    struct file_data_t {
+        std::string filename;
+        char* data;
+        size_t size;
+    };
 
 
 private:
@@ -139,10 +152,16 @@ private:
     unordered_map<string, string> parse_post_data(const string& body);  // 解析post请求体的内容
     string url_decode(const string &str);   // url解码函数
     string handle_file_upload(const string& boundary, const string& body, const string& upload_dir);  // 用于解析 multipart/form-data 并保存文件
+    bool parse_multipart_form_data(const std::string& boundary, 
+                                         std::map<std::string, std::string>& form_data,
+                                         std::map<std::string, file_data_t>& files);
+    string get_file_extension(const std::string &filename);  // 获取文件扩展名
     string sanitize_filename(const std::string &filename);  // 移除文件名中的潜在危险字符
     string generate_unique_filename(const std::string &filename);   // 生成一个唯一的文件名，避免文件名冲突
     bool is_valid_username(const char *name);   // 检测注册的用户名是否合法
     bool is_valid_password(const char *password);   // 检测注册的密码是否合法
+    bool is_valid_email(const char *email);   // 检测注册的邮箱是否合法
+    bool is_valid_avatar(const char *avatar);   // 检测注册的头像是否合法
     void parse_id(char* start, size_t length, vector<int>& ids);
 
 public:

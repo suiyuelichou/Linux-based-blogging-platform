@@ -209,6 +209,17 @@ button {
     z-index: 100;
     display: none;
     margin-top: 10px;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
+.user-dropdown.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 .user-dropdown a {
@@ -222,10 +233,6 @@ button {
 .user-dropdown a:hover {
     background-color: rgba(52, 152, 219, 0.1);
     color: var(--primary-color);
-}
-
-.user-menu:hover .user-dropdown {
-    display: block;
 }
 
 .theme-toggle {
@@ -766,6 +773,18 @@ button {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 0.9rem;
     opacity: 0.8;
+}
+
+.footer-bottom a {
+    color: var(--footer-text);
+    opacity: 0.8;
+    transition: var(--transition);
+    text-decoration: underline;
+}
+
+.footer-bottom a:hover {
+    opacity: 1;
+    color: var(--primary-color);
 }
 
 /* 回到顶部按钮 */

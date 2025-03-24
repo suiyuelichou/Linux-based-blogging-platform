@@ -63,6 +63,8 @@ public:
 	string get_updatedAt();
 	void set_views(int views);
 	int get_views();
+	void set_thumbnail(string thumbnail);
+	string get_thumbnail();
 
 private:
 	int m_blog_id;			// 博客id
@@ -73,6 +75,7 @@ private:
 	int m_category_id;		// 分类id
 	string m_updatedAt;		// 博客更新时间
 	int views;				// 浏览量
+	string thumbnail;		// 封面路径
 
 };
 
@@ -265,8 +268,10 @@ public:
 	void add_comment_by_blogid(Comments comment);		// 通过博客id插入评论
 	User get_userdata_by_userid(int userid); 			// 通过用户id获取用户信息
 	vector<Blog> get_blogs_by_userid(int userid);		// 通过用户id获取该用户的所有博客
+	int get_article_count_by_userid(int userid);		// 通过用户id获取该用户的文章总数
 	vector<Messages> get_messages_by_userid(int userid);// 通过用户id获取该用户收到的所有信息
 	bool insert_blog(Blog blog);						// 将用户post过来的博客内容存储数据库
+	int add_blog(string title, string content, int userid, int categoryid, string thumbnail_path);	// 添加博客
 	int get_userid(string username);					// 通过用户名获取用户id
 	void modify_password_by_username(string username, string password);	// 通过用户名修改用户密码
 	bool check_username_is_exist(string username);		// 检查该用户名是否已经被注册
