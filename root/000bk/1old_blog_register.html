@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客注册页</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/register.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="nav">
+        <!-- 图片的引入 -->
+        <img src="img/logo.png">
+        <!-- 标题 -->
+        <div class="title">云中杉木博客平台</div>
+        <!-- 导航链接 -->
+        <div class="nav-links">
+            <a href="message_board.html">留言板</a>
+            <a href="blog_home.html">主页</a>
+            <a href="blog_editor.html">写博客</a>
+            <a href="blog_login.html">登录</a>
+        </div>
+    </div>
+    <!-- 注册页面版心 -->
+    <div class="login-container">
+        <!-- 注册对话框 -->
+        <div class="login-dialog">
+            <h3>注&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;册</h3>
+            <!-- 使用form包裹一下下列内容，便于给后续服务器提交数据 -->
+            <form action="3CGISQL.cgi" method="post" onsubmit="return validatePassword();">
+                <div class="row">
+                    <span>用户名</span>
+                    <div class="input-group">
+                        <input type="text" name="user" id="username" pattern="[a-zA-Z0-9]{6,20}" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" placeholder="请输入用户名" required="required" onblur="checkUsername();">
+                        <!-- 添加问号，并用 data-hint 存储提示信息 -->
+                        <span class="tooltip" data-hint="用户名只能包含字母、数字, 长度6-20位">�</span>
+                        <!-- 用于显示用户名验证提示信息 -->
+                        <div id="username-hint" class="hint-text"></div>
+                    </div>
+                </div>
+                <!-- 修改密码输入部分的HTML结构 -->
+                <div class="row">
+                    <span>密&nbsp;&nbsp;&nbsp;&nbsp;码</span>
+                    <div class="input-group">
+                        <input type="password" name="password" id="password" placeholder="请输入密码" required="required" onblur="checkPassword()">
+                        <div id="password-hint" class="hint-text">密码8-16位,并包含字母和（数字或符号）</div>
+                    </div>
+                </div>    
+                <div class="row">
+                    <span>确认密码</span>
+                    <div class="input-group">
+                        <input type="password" id="confirm-password" placeholder="请再次输入密码" required="required" onblur="checkConfirmPassword()">
+                        <div id="confirm-password-hint" class="hint-text">两次输入的密码不一致</div>
+                    </div>
+                </div>                        
+                <div class="row">
+                    <input type="submit" value="注    册" id="submit">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let isUsernameAvailable = false; // 记录用户名是否可用
+    
+        function updateSubmitButtonState() {
+            let username = document.getElementById("username").value.trim();
+            let password = document.getElementById("password").value;
+            let confirmPassword = document.getElementById("confirm-password").value;
+            let submitButton = document.getElementById("submit");
+    
+            let usernameRegex = /^[a-zA-Z0-9]{6,20}$/;
+            let passwordRegex = /^(?=.*[A-Za-z])(?=.*\d|.*[^A-Za-z\d]).{8,}$/;
+    
+            let isUsernameValid = usernameRegex.test(username);
+            let isPasswordValid = passwordRegex.test(password);
+            let isPasswordConfirmed = password === confirmPassword && password !== "";
+    
+            // 只有当用户名可用、用户名格式正确、密码格式正确、确认密码一致时，才启用注册按钮
+            if (isUsernameValid && isUsernameAvailable && isPasswordValid && isPasswordConfirmed) {
+                submitButton.disabled = false;
+            } else {
+                submitButton.disabled = true;
+            }
+        }
+    
+        function checkUsername() {
+            let username = document.getElementById("username").value.trim();
+            let hint = document.getElementById("username-hint");
+    
+            let regex = /^[a-zA-Z0-9]{6,20}$/;
+            if (!regex.test(username)) {
+                hint.textContent = "用户名只能包含字母、数字，长度 6-20 位";
+                hint.style.display = "block";
+                isUsernameAvailable = false;
+                updateSubmitButtonState();
+                return;
+            } else {
+                hint.style.display = "none";
+            }
+    
+            if (username === "") {
+                isUsernameAvailable = false;
+                updateSubmitButtonState();
+                return;
+            }
+    
+            // 发起 Ajax 请求检查用户名是否存在
+            fetch(`check_username_is_exist?username=${encodeURIComponent(username)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        hint.textContent = "该用户名已被注册";
+                        hint.style.display = "block";
+                        isUsernameAvailable = false;
+                    } else {
+                        hint.style.display = "none";
+                        isUsernameAvailable = true;
+                    }
+                    updateSubmitButtonState();
+                })
+                .catch(error => {
+                    console.error("Error checking username:", error);
+                    isUsernameAvailable = false;
+                    updateSubmitButtonState();
+                });
+        }
+    
+        function checkPassword() {
+            let password = document.getElementById("password").value;
+            let hint = document.getElementById("password-hint");
+            let regex = /^(?=.*[A-Za-z])(?=.*\d|.*[^A-Za-z\d]).{8,}$/;
+    
+            if (!regex.test(password)) {
+                hint.style.display = "block";
+            } else {
+                hint.style.display = "none";
+            }
+    
+            updateSubmitButtonState();
+        }
+    
+        function checkConfirmPassword() {
+            let password = document.getElementById("password").value;
+            let confirmPassword = document.getElementById("confirm-password").value;
+            let hint = document.getElementById("confirm-password-hint");
+    
+            if (confirmPassword && password !== confirmPassword) {
+                hint.style.display = "block";
+            } else {
+                hint.style.display = "none";
+            }
+    
+            updateSubmitButtonState();
+        }
+    
+        function validatePassword() {
+            let password = document.getElementById("password").value;
+            let confirmPassword = document.getElementById("confirm-password").value;
+            let regex = /^(?=.*[A-Za-z])(?=.*\d|.*[^A-Za-z\d]).{8,}$/;
+    
+            if (!regex.test(password)) {
+                alert("密码至少8位, 并包含字母和（数字或符号）");
+                return false;
+            }
+    
+            if (password !== confirmPassword) {
+                alert("两次输入的密码不一致！");
+                return false;
+            }
+            return true;
+        }
+    
+        // 页面加载时禁用注册按钮
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("submit").disabled = true;
+        });
+    
+    </script>
+    
+    
+</body>
+</html>

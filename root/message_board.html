@@ -1,23 +1,164 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>留言板</title>
-  <!-- <link rel="stylesheet" href="css/common.css"> -->
-  <link rel="stylesheet" href="./css/message_board.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>留言板 - 云中杉木博客</title>
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/message_board.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="img/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/message_board.js" defer></script>
 </head>
 <body>
-  <div class="comment-board">
-    <h2>留言板</h2>
-    <div class="comment-list">
-      <!-- 留言列表将由 JavaScript 动态生成 -->
-    </div>
-    <div class="comment-form">
-      <input type="text" id="comment-input" placeholder="输入您的留言..." />
-      <button onclick="postComment()">发表</button>
-    </div>
-  </div>
-  <script src="js/message_board.js"></script>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="img/logo.png" alt="云中杉木">
+                <h1>云中杉木</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="blog_home.html"><i class="fas fa-home"></i> 首页</a></li>
+                    <li><a href="blog_categories.html"><i class="fas fa-layer-group"></i> 分类</a></li>
+                    <li><a href="message_board.html" class="active"><i class="fas fa-comments"></i> 留言板</a></li>
+                    <li><a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a></li>
+                </ul>
+            </nav>
+            <div class="user-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="搜索文章...">
+                    <button><i class="fas fa-search"></i></button>
+                </div>
+                <div class="user-menu">
+                    <img src="img/default_touxiang.jpg" alt="用户头像" id="userAvatar">
+                    <div class="user-dropdown">
+                        <a href="blog_login.html"><i class="fas fa-sign-in-alt"></i> 登录</a>
+                        <a href="blog_register.html"><i class="fas fa-user-plus"></i> 注册</a>
+                        <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
+                        <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                    </div>
+                </div>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            <button class="mobile-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="main-content">
+        <div class="container">
+            <!-- 留言板区域 -->
+            <section class="message-board-section">
+                <div class="message-board-header">
+                    <div class="header-content">
+                        <p>在这里，你可以留下任何想说的话，分享你的想法，或者给我们提出建议 💭</p>
+                    </div>
+                </div>
+
+                <!-- 留言发布表单 -->
+                <div class="message-form-container">
+                    <div class="message-form">
+                        <div class="user-avatar">
+                            <img src="img/default_touxiang.jpg" alt="头像" id="currentUserAvatar">
+                        </div>
+                        <div class="message-input-wrapper">
+                            <textarea id="messageInput" placeholder="请输入留言内容..."></textarea>
+                            <div class="form-actions">
+                                <button type="button" id="submitMessage" class="submit-button">
+                                    发布留言
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 留言列表 -->
+                <div class="messages-container" id="messagesContainer">
+                    <!-- 留言将通过JS动态加载 -->
+                </div>
+
+                <!-- 加载更多 -->
+                <div class="load-more-container">
+                    <button id="loadMoreBtn" class="load-more-btn">
+                        <i class="fas fa-spinner"></i> 加载更多
+                    </button>
+                </div>
+            </section>
+            
+            <!-- 侧边栏 -->
+            <aside class="sidebar">
+                <!-- 留言指南 -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title"><i class="fas fa-info-circle"></i> 留言指南</h3>
+                    <div class="guidelines">
+                        <div class="guideline-item">
+                            <div class="guideline-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="guideline-text">文明互动，友善交流</div>
+                        </div>
+                        <div class="guideline-item">
+                            <div class="guideline-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="guideline-text">请勿发布垃圾广告内容</div>
+                        </div>
+                        <div class="guideline-item">
+                            <div class="guideline-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="guideline-text">尊重他人，避免人身攻击</div>
+                        </div>
+                        <div class="guideline-item">
+                            <div class="guideline-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="guideline-text">对问题留言我们会尽快回复</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>云中杉木博客</h3>
+                    <p>分享知识，连接世界</p>
+                    <div class="social-links">
+                        <a href="https://github.com/suiyuelichou/Linux-based-blogging-platform.git" target="_blank"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-weibo"></i></a>
+                        <a href="#"><i class="fab fa-zhihu"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>快速链接</h3>
+                    <ul>
+                        <li><a href="blog_home.html">首页</a></li>
+                        <li><a href="blog_categories.html">分类</a></li>
+                        <li><a href="message_board.html">留言板</a></li>
+                        <li><a href="blog_editor.html">写博客</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>联系我们</h3>
+                    <p><i class="fas fa-envelope"></i> 1959503231@qq.com </p>
+                    <p><i class="fas fa-map-marker-alt"></i> 中国，广东</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 云中杉木博客平台. 保留所有权利. <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2024355354号</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到顶部按钮 -->
+    <button id="backToTop" class="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 </body>
 </html>

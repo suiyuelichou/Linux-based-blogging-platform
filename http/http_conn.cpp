@@ -1540,6 +1540,9 @@ http_conn::HTTP_CODE http_conn::do_request()
         int page = 1, size = 6;
         char* pageParam = strstr(m_url, "page=");
         char* sizeParam = strstr(m_url, "size=");
+        char* categoryParam = strstr(m_url, "category=");
+        char* tagParam = strstr(m_url, "tag=");
+        
         if (pageParam) {
             page = std::atoi(pageParam + 5);
             if (page <= 0) page = 1;
@@ -1551,8 +1554,51 @@ http_conn::HTTP_CODE http_conn::do_request()
         
         // 查询数据库
         sql_blog_tool tool;
-        vector<Blog> blogs = tool.get_blogs_by_page(page, size);
-        int totalCount = tool.get_total_blog_count();
+        vector<Blog> blogs;
+        int totalCount;
+        
+        if (categoryParam) {
+            // 解析category参数值
+            string category;
+            char* end = strchr(categoryParam + 9, '&');
+            if (end) {
+                category = string(categoryParam + 9, end - (categoryParam + 9));
+            } else {
+                category = string(categoryParam + 9);
+            }
+            category = url_decode(category);
+            
+            // 按分类查询博客
+            int categoryId = tool.get_category_id_by_name(category);
+            if(categoryId == -1){
+                return BAD_REQUEST;
+            }
+            blogs = tool.get_blogs_by_category_id(categoryId, page, size);
+            totalCount = tool.get_total_blog_count_by_category(categoryId);
+        } else if (tagParam) {
+            // 解析tag参数值
+            string tag;
+            char* end = strchr(tagParam + 4, '&');
+            if (end) {
+                tag = string(tagParam + 4, end - (tagParam + 4));
+            } else {
+                tag = string(tagParam + 4);
+            }
+            tag = url_decode(tag);
+            
+            // 按标签查询博客
+            int tagId = tool.get_tag_id_by_name(tag);
+            if(tagId == -1){
+                return BAD_REQUEST;
+            }
+            blogs = tool.get_blogs_by_tag_id(tagId, page, size);
+            totalCount = tool.get_total_blog_count_by_tag(tagId);
+        } else {
+            // 不按分类查询
+            blogs = tool.get_blogs_by_page(page, size);
+            totalCount = tool.get_total_blog_count();
+        }
+
         // 构建文章数组
         json response = {
             {"articles", nlohmann::json::array()}
@@ -1587,6 +1633,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         int totalPages = (totalCount + size - 1) / size; // 向上取整
         response["totalPages"] = totalPages;
         response["currentPage"] = page;
+        response["totalArticles"] = totalCount;
 
         jsonData = response.dump();
         return BLOG_DATA;
@@ -1703,7 +1750,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         json article = {
             {"id", blog.get_blog_id()},
             {"title", escapedTitle},
-            {"content", escapedContent},
+            {"content", blog.get_blog_content()},
             {"date", blog.get_blog_postTime()},
             {"thumbnail", blog.get_thumbnail()},
             {"category", category},
@@ -2095,6 +2142,92 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         return BLOG_DATA;
         
+    }
+    // 处理图片上传
+    else if (m_method == POST && strstr(m_url, "/api/upload/image") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析multipart/form-data
+        if(m_boundary.empty()){
+            return BAD_REQUEST;
+        }
+
+        std::map<std::string, std::string> form_data;
+        std::map<std::string, file_data_t> files;
+        if(!parse_multipart_form_data(m_boundary, form_data, files)){
+            return BAD_REQUEST;
+        }
+
+        if(files.find("image") == files.end()){
+            json response = {
+                {"success", false},
+                {"message", "未找到图片文件"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+
+        file_data_t image = files["image"];
+        char filename[100] = {0};
+        sprintf(filename, "/root/projects/C-WebServer/root/blog_images/%s", 
+                generate_unique_filename(image.filename).c_str());
+        
+        // 保存文件
+        FILE *fp = fopen(filename, "wb");
+        if (fp) {
+            fwrite(image.data, 1, image.size, fp);
+            fclose(fp);
+            
+            // 生成访问URL
+            string image_url = "/blog_images/" + string(generate_unique_filename(image.filename));
+            
+            json response = {
+                {"success", true},
+                {"url", image_url}
+            };
+            jsonData = response.dump();
+        } else {
+            json response = {
+                {"success", false},
+                {"message", "图片保存失败"}
+            };
+            jsonData = response.dump();
+        }
+
+        return BLOG_DATA;
+    }
+    // 获取标签列表
+    else if (strstr(m_url, "/api/tags") != nullptr) {
+        sql_blog_tool tool;
+        vector<string> tagNames = tool.get_all_tags(); // 获取所有标签名称
+        
+        json response = {
+            {"code", 200},
+            {"message", "获取标签列表成功"},
+            {"tags", json::array()}
+        };
+
+        // 获取每个标签的博客数量并构建响应
+        for (const auto& tagName : tagNames) {
+            Tags tag = tool.get_tag_by_tagname(tagName);
+            int tagId = tag.get_id();
+            int blogCount = tool.get_total_blog_count_by_tag(tagId);
+            
+            response["tags"].push_back({
+                {"id", tagId},
+                {"name", tagName},
+                {"count", blogCount}
+            });
+        }
+
+        jsonData = response.dump();
+        return BLOG_DATA;
     }
     // 处理访问 blog_detail.html 的情况
     else if (strstr(m_url, "/blog_detail.html") != nullptr) {

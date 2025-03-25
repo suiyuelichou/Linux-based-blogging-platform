@@ -24,8 +24,8 @@
             <nav class="main-nav">
                 <ul>
                     <li><a href="blog_home.html"><i class="fas fa-home"></i> 首页</a></li>
-                    <li><a href="new_blog_categories.html"><i class="fas fa-layer-group"></i> 分类</a></li>
-                    <li><a href="new_message_board.html"><i class="fas fa-comments"></i> 留言板</a></li>
+                    <li><a href="blog_categories.html"><i class="fas fa-layer-group"></i> 分类</a></li>
+                    <li><a href="message_board.html"><i class="fas fa-comments"></i> 留言板</a></li>
                     <li><a href="blog_editor.html" class="active"><i class="fas fa-edit"></i> 写博客</a></li>
                 </ul>
             </nav>
@@ -176,8 +176,8 @@
                     <h3>快速链接</h3>
                     <ul>
                         <li><a href="blog_home.html">首页</a></li>
-                        <li><a href="new_blog_categories.html">分类</a></li>
-                        <li><a href="new_message_board.html">留言板</a></li>
+                        <li><a href="blog_categories.html">分类</a></li>
+                        <li><a href="message_board.html">留言板</a></li>
                         <li><a href="blog_editor.html">写博客</a></li>
                     </ul>
                 </div>
@@ -230,18 +230,118 @@
                 theme: 'snow',
                 placeholder: '开始撰写你的博客内容...',
                 modules: {
-                    toolbar: [
-                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ 'color': [] }, { 'background': [] }],
-                        [{ 'align': [] }],
-                        ['blockquote', 'code-block'],
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        ['link', 'image'],
-                        ['clean']
-                    ]
+                    toolbar: {
+                        container: [
+                            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'color': [] }, { 'background': [] }],
+                            [{ 'align': [] }],
+                            ['blockquote', 'code-block'],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            ['link', 'image'],
+                            ['clean']
+                        ],
+                        handlers: {
+                            'image': function() {
+                                // 触发文件选择
+                                const input = document.createElement('input');
+                                input.setAttribute('type', 'file');
+                                input.setAttribute('accept', 'image/*');
+                                input.click();
+
+                                input.onchange = async () => {
+                                    const file = input.files[0];
+                                    if (file) {
+                                        try {
+                                            const formData = new FormData();
+                                            formData.append('image', file);
+
+                                            // 显示上传进度提示
+                                            showNotification('正在上传图片...', 'info');
+
+                                            const response = await fetch('/api/upload/image', {
+                                                method: 'POST',
+                                                credentials: 'same-origin',
+                                                body: formData
+                                            });
+
+                                            if (!response.ok) {
+                                                throw new Error('图片上传失败');
+                                            }
+
+                                            const data = await response.json();
+                                            if (data.success) {
+                                                // 获取光标位置
+                                                const range = quill.getSelection(true);
+                                                
+                                                // 修改这里：移除URL中的引号
+                                                const imageUrl = data.url.replace(/['"]/g, ''); // 移除所有引号
+                                                
+                                                // 插入图片
+                                                quill.insertEmbed(range.index, 'image', imageUrl);
+                                                // 光标移动到图片后面
+                                                quill.setSelection(range.index + 1);
+                                                showNotification('图片上传成功', 'success');
+                                            } else {
+                                                throw new Error(data.message || '图片上传失败');
+                                            }
+                                        } catch (error) {
+                                            console.error('图片上传失败:', error);
+                                            showNotification('图片上传失败: ' + error.message, 'error');
+                                        }
+                                    }
+                                };
+                            }
+                        }
+                    }
                 }
             });
+            
+            // 添加图片粘贴处理
+            quill.clipboard.addMatcher('img', (node, delta) => {
+                // 获取图片URL
+                const url = node.src;
+                // 如果是base64图片，需要先上传到服务器
+                if (url.startsWith('data:image')) {
+                    uploadBase64Image(url).then(newUrl => {
+                        const range = quill.getSelection(true);
+                        quill.insertEmbed(range.index, 'image', newUrl);
+                    }).catch(error => {
+                        console.error('粘贴图片上传失败:', error);
+                        showNotification('粘贴图片上传失败', 'error');
+                    });
+                    return false; // 阻止默认粘贴行为
+                }
+                return delta;
+            });
+
+            // 上传base64图片的函数
+            async function uploadBase64Image(base64Url) {
+                try {
+                    const response = await fetch('/api/upload/base64', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ image: base64Url })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('图片上传失败');
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        return data.url;
+                    } else {
+                        throw new Error(data.message || '图片上传失败');
+                    }
+                } catch (error) {
+                    console.error('Base64图片上传失败:', error);
+                    throw error;
+                }
+            }
             
             // 设置暗黑模式
             setupDarkMode();

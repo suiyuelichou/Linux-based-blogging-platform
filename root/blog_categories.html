@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章分类 - 云中杉木博客</title>
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/categories.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="img/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/blog_categories.js" defer></script>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="img/logo.png" alt="云中杉木">
+                <h1>云中杉木</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="blog_home.html"><i class="fas fa-home"></i> 首页</a></li>
+                    <li><a href="blog_categories.html" class="active"><i class="fas fa-layer-group"></i> 分类</a></li>
+                    <li><a href="message_board.html"><i class="fas fa-comments"></i> 留言板</a></li>
+                    <li><a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a></li>
+                </ul>
+            </nav>
+            <div class="user-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="搜索文章...">
+                    <button><i class="fas fa-search"></i></button>
+                </div>
+                <div class="user-menu">
+                    <img src="img/default_touxiang.jpg" alt="用户头像" id="userAvatar">
+                    <div class="user-dropdown">
+                        <a href="blog_login.html"><i class="fas fa-sign-in-alt"></i> 登录</a>
+                        <a href="blog_register.html"><i class="fas fa-user-plus"></i> 注册</a>
+                    </div>
+                </div>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            <button class="mobile-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="main-content">
+        <div class="container">
+            <!-- 分类内容 -->
+            <section class="categories-section">
+                <div class="section-header">
+                    <h2>文章分类</h2>
+                    <div class="categories-search">
+                        <input type="text" id="categorySearch" placeholder="搜索分类...">
+                        <button><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                
+                <!-- 分类统计 -->
+                <div class="categories-info">
+                    <div class="categories-stat">
+                        <span class="stat-value" id="totalCategories">0</span>
+                        <span class="stat-label">分类总数</span>
+                    </div>
+                    <div class="categories-stat">
+                        <span class="stat-value" id="totalArticles">0</span>
+                        <span class="stat-label">文章总数</span>
+                    </div>
+                </div>
+                
+                <!-- 分类卡片列表 -->
+                <div class="categories-container" id="categoriesContainer">
+                    <!-- 分类将通过JS动态加载 -->
+                </div>
+                
+                <!-- 当前分类的文章列表 -->
+                <div class="category-articles" id="categoryArticles">
+                    <div class="category-header">
+                        <h3><i class="fas fa-folder-open"></i> <span id="currentCategory">所有分类</span></h3>
+                        <div class="view-options">
+                            <button class="active" data-view="card"><i class="fas fa-th-large"></i></button>
+                            <button data-view="list"><i class="fas fa-list"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="articles-container" id="articlesContainer">
+                        <!-- 文章将通过JS动态加载 -->
+                    </div>
+                    
+                    <div class="pagination">
+                        <button id="prevPage" class="pagination-btn"><i class="fas fa-chevron-left"></i> 上一页</button>
+                        <div class="page-numbers" id="pageNumbers">
+                            <!-- 页码将通过JS动态生成 -->
+                        </div>
+                        <button id="nextPage" class="pagination-btn">下一页 <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 侧边栏 -->
+            <aside class="sidebar">
+                <!-- 用户信息卡片 -->
+                <div class="sidebar-card user-profile">
+                    <div class="user-profile-header">
+                        <img src="img/default_touxiang.jpg" alt="用户头像">
+                        <h3 id="userName">游客</h3>
+                    </div>
+                    <div class="user-stats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="articleCount">0</span>
+                            <span class="stat-label">文章</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="categoryCount">0</span>
+                            <span class="stat-label">被浏览</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="likeCount">0</span>
+                            <span class="stat-label">获赞</span>
+                        </div>
+                    </div>
+                    <div class="user-actions">
+                        <a href="blog_editor.html" class="btn btn-primary"><i class="fas fa-edit"></i> 写博客</a>
+                        <a href="user_center.html" class="btn btn-secondary"><i class="fas fa-user-cog"></i> 个人中心</a>
+                    </div>
+                </div>
+                
+                <!-- 热门文章 -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title"><i class="fas fa-fire"></i> 热门文章</h3>
+                    <ul class="popular-posts" id="popularPosts">
+                        <!-- 热门文章将通过JS动态加载 -->
+                    </ul>
+                </div>
+                
+                <!-- 标签云 -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title"><i class="fas fa-tags"></i> 标签云</h3>
+                    <div class="categories-cloud" id="tagsCloud">
+                        <!-- 标签将通过JS动态加载 -->
+                    </div>
+                </div>
+                
+                <!-- 关于作者 -->
+                <div class="sidebar-card">
+                    <h3 class="sidebar-title"><i class="fas fa-info-circle"></i> 关于作者</h3>
+                    <div class="about-author">
+                        <p>云中杉木，专注于分享技术博客和学习笔记。</p>
+                        <div class="social-links">
+                            <a href="https://github.com/suiyuelichou/Linux-based-blogging-platform.git" target="_blank"><i class="fab fa-github"></i></a>
+                            <a href="#" target="_blank"><i class="fab fa-weibo"></i></a>
+                            <a href="#" target="_blank"><i class="fab fa-zhihu"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>云中杉木博客</h3>
+                    <p>分享知识，连接世界</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-weibo"></i></a>
+                        <a href="#"><i class="fab fa-zhihu"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>快速链接</h3>
+                    <ul>
+                        <li><a href="blog_home.html">首页</a></li>
+                        <li><a href="blog_categories.html">分类</a></li>
+                        <li><a href="message_board.html">留言板</a></li>
+                        <li><a href="blog_editor.html">写博客</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>联系我们</h3>
+                    <p><i class="fas fa-envelope"></i> 1959503231@qq.com </p>
+                    <p><i class="fas fa-map-marker-alt"></i> 中国，广东</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 云中杉木博客平台. 保留所有权利. <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2024355354号</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到顶部按钮 -->
+    <button id="backToTop" class="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+</body>
+</html>

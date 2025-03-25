@@ -92,6 +92,33 @@
     color: var(--text-primary);
 }
 
+/* 编辑器图片样式 */
+.ql-editor img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em auto;
+}
+
+/* 图片上传进度提示 */
+.image-uploading {
+    padding: 1em;
+    text-align: center;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    margin: 1em 0;
+}
+
+.image-uploading i {
+    margin-right: 8px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* 标签输入 */
 .tags-input {
     display: flex;

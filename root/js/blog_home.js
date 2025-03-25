@@ -414,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 categories.forEach(category => {
                     const fontSize = 0.8 + (category.count / 20) * 0.4; // 根据数量调整大小
                     html += `
-                    <a href="new_blog_categories.html?category=${encodeURIComponent(category.name)}" 
+                    <a href="blog_categories.html?category=${encodeURIComponent(category.name)}" 
                        class="category-tag" 
                        style="font-size: ${fontSize}rem">
                         ${category.name} (${category.count})
@@ -444,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 categories.forEach(category => {
                     const fontSize = 0.8 + (category.count / 20) * 0.4;
                     html += `
-                    <a href="new_blog_categories.html?category=${encodeURIComponent(category.name)}" 
+                    <a href="blog_categories.html?category=${encodeURIComponent(category.name)}" 
                        class="category-tag" 
                        style="font-size: ${fontSize}rem">
                         ${category.name} (${category.count})
@@ -511,8 +511,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (userDropdown) {
                 userDropdown.innerHTML = `
                 <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
-                <a href="new_blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
-                <a href="new_user_settings.html"><i class="fas fa-cog"></i> 设置</a>
+                <a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
+                <a href="blog_settings.html"><i class="fas fa-cog"></i> 设置</a>
                 <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
                 `;
                 

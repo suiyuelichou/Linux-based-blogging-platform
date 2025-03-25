@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (article.tags && article.tags.length > 0) {
             let tagsHTML = '';
             article.tags.forEach(tag => {
-                tagsHTML += `<a href="new_blog_categories.html?tag=${encodeURIComponent(tag)}" class="post-tag">${tag}</a>`;
+                tagsHTML += `<a href="blog_categories.html?tag=${encodeURIComponent(tag)}" class="post-tag">${tag}</a>`;
             });
             postTags.innerHTML = tagsHTML;
         } else {

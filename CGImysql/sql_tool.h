@@ -220,6 +220,8 @@ public:
 	vector<Blog> select_all_blog();						// 查询所有博客
 	vector<Blog> get_blogs_by_page(int page, int size);	// 分页查询博客
 	vector<Blog> get_blogs_by_page_by_views(int page, int size);	// 分页查询博客，按浏览量排序	
+	vector<Blog> get_blogs_by_category_id(int categoryId, int page, int size);	// 按分类id查询博客
+	vector<Blog> get_blogs_by_tag_id(int tagId, int page, int size);	// 按标签id查询博客
 	vector<Blog> get_blogs_by_page_and_sort(int page, int size, const string& sortField, const string& sortOrder);								// 也是分页查询，但是多了查询参数
 	vector<Blog> get_blogs_by_category_and_page(int categoryId, int page, int size, const string& sortField, const string& sortOrder);				// 也是分页查询，但是多了参数
 	vector<Blog> get_blogs_by_search(int page, int size, const string& sortField, const string& sortOrder, const string& keyword);	// 按关键词搜索博客
@@ -237,6 +239,7 @@ public:
 	vector<Categories> get_categories_by_page_and_sort_and_search(int page, int size, const string& sortField, const string& sortOrder, const string& search);// 分页+排序+搜索
 	vector<Categories> get_categories_by_articles_count(int page, int size, const string& sortOrder);
 	vector<Categories> get_categories_by_articles_count_and_search(int page, int size, const string& sortOrder, const string& searchKeyword);
+	vector<string> get_all_tags();	// 获取所有标签
 	vector<Tags> get_tags_by_blog_count(int page, int size, const string& sortOrder);	// 获取标签按博客数量排序
 	vector<Tags> get_tags_by_blog_count_and_search(int page, int size, const string& sortOrder, const string& searchKeyword);	// 获取标签按博客数量排序+搜索
 	vector<Tags> get_tags_by_page_and_sort(int page, int size, const string& sortField, const string& sortOrder);	// 获取标签按指定字段排序
