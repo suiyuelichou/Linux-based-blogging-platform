@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
         setupEventListeners();
         loadArticles();
         loadPopularPosts();
-        loadCategories();
         checkAuthStatus();
         setupDarkMode();
     }
@@ -199,8 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 检查缩略图是否为空，如果为空则使用随机图片
                 const thumbnail = article.thumbnail ? article.thumbnail : `https://picsum.photos/600/400?random=${article.id || index}`;
                 
-                // 处理文章摘要内容，移除HTML标签并限制长度
-                const excerpt = extractExcerpt(article.excerpt, 150);
+                // 改进的摘要处理，确保处理HTML内容和图片
+                const excerpt = extractExcerpt(article.content || article.excerpt, 150);
                 
                 html += `
                 <article class="article-card fade-in" style="animation-delay: ${index * 0.1}s">
@@ -239,10 +238,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = htmlContent;
         
+        // 移除所有图片标签
+        const images = tempDiv.querySelectorAll('img');
+        images.forEach(img => img.remove());
+        
         // 获取纯文本内容
         let textContent = tempDiv.textContent || tempDiv.innerText || '';
         
-        // 去除多余空白字符
+        // 去除多余空白字符和换行符
         textContent = textContent.replace(/\s+/g, ' ').trim();
         
         // 限制长度并添加省略号
@@ -389,74 +392,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // 加载分类
-    function loadCategories() {
-        const categoriesCloud = document.getElementById('categoriesCloud');
-        if (!categoriesCloud) return;
-        
-        // 发送请求到后端获取分类列表
-        fetch('/api/categories')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('网络响应异常');
-                }
-                return response.json();
-            })
-            .then(data => {
-                const categories = data.categories || [];
-                
-                if (categories.length === 0) {
-                    categoriesCloud.innerHTML = '<p>暂无分类</p>';
-                    return;
-                }
-                
-                let html = '';
-                categories.forEach(category => {
-                    const fontSize = 0.8 + (category.count / 20) * 0.4; // 根据数量调整大小
-                    html += `
-                    <a href="blog_categories.html?category=${encodeURIComponent(category.name)}" 
-                       class="category-tag" 
-                       style="font-size: ${fontSize}rem">
-                        ${category.name} (${category.count})
-                    </a>
-                    `;
-                });
-                
-                categoriesCloud.innerHTML = html;
-            })
-            .catch(error => {
-                console.error('获取分类列表失败:', error);
-                // 使用模拟数据作为后备方案
-                const categories = [
-                    { name: '技术', count: 15 },
-                    { name: '生活', count: 8 },
-                    { name: '旅行', count: 6 },
-                    { name: '美食', count: 10 },
-                    { name: '编程', count: 20 },
-                    { name: '前端', count: 12 },
-                    { name: '后端', count: 9 },
-                    { name: '设计', count: 7 },
-                    { name: '数据库', count: 5 },
-                    { name: '算法', count: 8 }
-                ];
-                
-                let html = '';
-                categories.forEach(category => {
-                    const fontSize = 0.8 + (category.count / 20) * 0.4;
-                    html += `
-                    <a href="blog_categories.html?category=${encodeURIComponent(category.name)}" 
-                       class="category-tag" 
-                       style="font-size: ${fontSize}rem">
-                        ${category.name} (${category.count})
-                    </a>
-                    `;
-                });
-                
-                categoriesCloud.innerHTML = html;
-                showNotification('获取分类列表失败，显示模拟数据', 'error');
-            });
-    }
-    
     // 检查登录状态
     function checkAuthStatus() {
         // 发送请求到后端检查用户登录状态
@@ -575,6 +510,38 @@ document.addEventListener('DOMContentLoaded', function() {
         
         currentView = view;
         renderArticles();
+        
+        // 给浏览器一点时间来应用新的样式
+        setTimeout(() => {
+            adjustListViewHeight();
+        }, 50);
+    }
+    
+    // 调整列表视图的高度
+    function adjustListViewHeight() {
+        if (currentView !== 'list') return;
+        
+        const articleCards = document.querySelectorAll('.article-card');
+        articleCards.forEach(card => {
+            // 重置固定高度为auto
+            card.style.height = 'auto';
+            
+            // 获取内容部分
+            const content = card.querySelector('.content');
+            if (content) {
+                // 确保内容可见
+                content.style.overflow = 'visible';
+                
+                // 调整内容的显示方式
+                const contentP = content.querySelector('p');
+                if (contentP) {
+                    contentP.style.display = '-webkit-box';
+                    contentP.style.webkitLineClamp = '2';
+                    contentP.style.webkitBoxOrient = 'vertical';
+                    contentP.style.overflow = 'hidden';
+                }
+            }
+        });
     }
     
     // 设置暗黑模式

@@ -214,6 +214,50 @@ private:
 	int m_tag_id;	// 标签id
 };
 
+// 留言板类
+class MessageBoard{
+public:
+	void set_message_id(int message_id);
+	int get_message_id();
+	void set_content(string content);
+	string get_content();
+	void set_created_at(string created_at);
+	string get_created_at();
+	void set_date(string date);
+	string get_date();
+	void set_user_id(int user_id);
+	int get_user_id();
+	void set_parent_id(int parent_id);
+	int get_parent_id();
+
+private:
+	int m_message_id;
+	string m_content;
+	string m_created_at;
+	string m_date;
+	int m_user_id;
+	int m_parent_id;
+};
+
+// 留言点赞类
+class Message_like{
+public:
+	void set_like_id(int like_id);
+	int get_like_id();
+	void set_message_id(int message_id);
+	int get_message_id();
+	void set_user_id(int user_id);
+	int get_user_id();
+	void set_like_time(string like_time);
+	string get_like_time();
+	
+private:
+	int m_like_id;
+	int m_message_id;
+	int m_user_id;
+	string m_like_time;
+};
+
 // 对blog和user表进行数据库操作
 class sql_blog_tool{
 public:
@@ -336,6 +380,20 @@ public:
 	int create_tag(string tag);
 	bool add_blog_tag(int blogid, int tagid);
 
+
+	// 留言板相关
+
+	vector<MessageBoard> get_message_board_by_page(int page, int size);	// 分页获取留言板内容
+	int get_total_message_board_count();	// 获取留言板总条数
+	int add_message_board(int userid, string content, int parentId);	// 添加留言
+	MessageBoard get_message_board_by_id(int Id);	// 根据id获取留言
+	bool delete_message_board(int messageId);	// 删除留言
+
+	// 留言点赞相关
+	bool insert_new_message_like(int userid, int messageid);	// 插入新的留言点赞
+	bool remove_message_like(int userid, int messageid);	// 删除留言点赞
+	int get_message_likes_count(int messageid);	// 获取当前留言的点赞总数
+	bool is_user_liked_message(int userid, int messageid);	// 检测用户是否已经对该留言点赞
 public:
 	int m_close_log;	// 日志开关
 };

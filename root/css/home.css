@@ -363,6 +363,12 @@ button {
     background-color: rgba(46, 204, 113, 0.1);
     color: var(--secondary-color);
     margin-bottom: 10px;
+    cursor: default;
+    transition: var(--transition);
+}
+
+.article-card .category:hover {
+    background-color: rgba(46, 204, 113, 0.1);
 }
 
 .article-card h3 {
@@ -419,12 +425,14 @@ button {
 /* 列表视图样式 */
 .articles-container.list-view .article-card {
     display: flex;
-    height: 150px;
+    min-height: 150px;
+    height: auto;
+    overflow: visible;
 }
 
 .articles-container.list-view .article-card .thumbnail {
     width: 200px;
-    height: 100%;
+    min-height: 150px;
     flex-shrink: 0;
 }
 
@@ -433,6 +441,13 @@ button {
     flex-direction: column;
     flex: 1;
     justify-content: space-between;
+    overflow: visible;
+    padding: 15px;
+}
+
+.articles-container.list-view .article-card .content p {
+    -webkit-line-clamp: 2;
+    max-height: 3em;
 }
 
 /* 分页样式 */

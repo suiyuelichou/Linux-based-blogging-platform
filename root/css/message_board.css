@@ -316,191 +316,83 @@
 }
 
 /* 回复区域 */
-.message-replies {
+.replies-section {
     margin-top: 15px;
-    margin-left: 50px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.reply-toggle {
-    color: var(--primary-color);
-    background: none;
-    border: none;
-    padding: 5px 0;
-    font-size: 0.9rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 10px;
-}
-
-.reply-toggle:hover {
-    text-decoration: underline;
+    margin-left: 40px;
+    border-left: 2px solid var(--border-color);
+    padding-left: 15px;
 }
 
 .reply-item {
-    display: flex;
-    gap: 10px;
     padding: 15px;
-    border-radius: 8px;
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    animation: fadeIn 0.5s var(--animation-timing);
+    border-bottom: 1px solid var(--border-color);
+    animation: fadeIn 0.3s ease;
 }
 
-.reply-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    object-fit: cover;
+.reply-item:last-child {
+    border-bottom: none;
 }
 
-.reply-content {
-    flex: 1;
-}
-
-.reply-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 5px;
-}
-
-.reply-author {
-    font-weight: 500;
-    color: var(--text-color);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.reply-date {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
-
-.reply-text {
-    color: var(--text-color);
-    line-height: 1.5;
-    margin-bottom: 8px;
-    word-break: break-word;
-}
-
-.reply-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.reply-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.reply-action-btn:hover {
-    color: var(--primary-color);
-}
-
-.reply-action-btn.liked {
-    color: #e74c3c;
-}
-
-/* 回复表单 */
 .reply-form {
-    display: flex;
-    gap: 10px;
     margin-top: 15px;
-}
-
-.reply-form-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.reply-form-input {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.reply-form-input textarea {
-    width: 100%;
-    padding: 10px;
+    padding: 15px;
+    background: var(--bg-color);
     border-radius: 8px;
     border: 1px solid var(--border-color);
-    background-color: var(--input-bg);
-    resize: none;
-    min-height: 80px;
-    color: var(--text-color);
-    transition: var(--transition);
 }
 
-.reply-form-input textarea:focus {
+.reply-form textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    resize: vertical;
+    background: var(--input-bg);
+    color: var(--text-color);
+}
+
+.reply-form textarea:focus {
     border-color: var(--primary-color);
+    outline: none;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
 .reply-form-actions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
-.reply-emoji-btn {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1rem;
+.reply-form .submit-btn,
+.reply-form .cancel-btn {
+    padding: 8px 16px;
+    border-radius: 4px;
     cursor: pointer;
-    padding: 5px;
-    transition: var(--transition);
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
 }
 
-.reply-emoji-btn:hover {
-    color: var(--primary-color);
-}
-
-.reply-submit-btn {
-    background-color: var(--primary-color);
+.reply-form .submit-btn {
+    background: var(--primary-color);
     color: white;
     border: none;
-    padding: 8px 15px;
-    border-radius: 15px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: var(--transition);
 }
 
-.reply-submit-btn:hover {
-    background-color: var(--primary-dark);
+.reply-form .submit-btn:hover {
+    background: var(--primary-dark);
 }
 
-.reply-cancel-btn {
-    background-color: transparent;
-    color: var(--text-secondary);
+.reply-form .cancel-btn {
+    background: none;
     border: 1px solid var(--border-color);
-    padding: 8px 15px;
-    border-radius: 15px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: var(--transition);
-    margin-right: 10px;
+    color: var(--text-secondary);
 }
 
-.reply-cancel-btn:hover {
-    color: var(--text-color);
+.reply-form .cancel-btn:hover {
     border-color: var(--text-color);
+    color: var(--text-color);
 }
 
 /* 加载更多按钮 */
@@ -775,5 +667,192 @@
 @media (max-width: 992px) {
     .main-content .container {
         grid-template-columns: 1fr;
+    }
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    cursor: pointer;
+    padding: 5px;
+    transition: all 0.3s ease;
+}
+
+.delete-btn:hover {
+    transform: scale(1.1);
+}
+
+.no-messages {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-secondary);
+}
+
+/* 登录提示样式 */
+.notification.with-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--card-bg);
+    border-radius: 4px;
+    padding: 12px 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    max-width: 300px;
+}
+
+.notification-login-btn {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 3px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.notification-login-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.3s;
+}
+
+.close-btn:hover {
+    color: var(--text-color);
+}
+
+/* 点赞和回复按钮样式 */
+.action-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
+}
+
+.action-btn:hover {
+    color: var(--primary-color);
+}
+
+.action-btn.liked {
+    color: #e74c3c;
+}
+
+.reply-author {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reply-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.reply-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* 新增带有登录按钮的通知样式 */
+.notification.with-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-width: 300px;
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+}
+
+.notification.with-button.show {
+    transform: translateX(0);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.notification-content i {
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.notification-login-btn {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.notification-login-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.3s;
+}
+
+.close-btn:hover {
+    color: var(--text-color);
+}
+
+/* 响应式调整 */
+@media (max-width: 576px) {
+    .notification.with-button {
+        flex-direction: column;
+        align-items: flex-start;
+        max-width: 90%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-100%);
+    }
+
+    .notification.with-button.show {
+        transform: translateX(-50%) translateY(0);
+    }
+    
+    .notification-login-btn {
+        align-self: flex-end;
     }
 }

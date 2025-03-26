@@ -865,11 +865,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const categoryCount = document.getElementById('categoryCount');
         const likeCount = document.getElementById('likeCount');
         const userDropdown = document.querySelector('.user-dropdown');
+        const sidebarAvatar = document.querySelector('.user-profile-header img'); // 添加侧边栏头像选择器
         
         if (isLoggedIn && userData) {
             // 用户已登录，显示用户信息
             if (userName) userName.textContent = userData.username || '用户';
             if (userAvatar) userAvatar.src = userData.avatar || 'img/default_touxiang.jpg';
+            if (sidebarAvatar) sidebarAvatar.src = userData.avatar || 'img/default_touxiang.jpg'; // 更新侧边栏头像
             if (articleCount) articleCount.textContent = userData.articleCount || '0';
             if (categoryCount) categoryCount.textContent = userData.viewCount || '0';
             if (likeCount) likeCount.textContent = userData.likeCount || '0';
@@ -896,6 +898,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 用户未登录，显示游客信息
             if (userName) userName.textContent = '游客';
             if (userAvatar) userAvatar.src = 'img/default_touxiang.jpg';
+            if (sidebarAvatar) sidebarAvatar.src = 'img/default_touxiang.jpg'; // 更新侧边栏头像
             if (articleCount) articleCount.textContent = '0';
             if (categoryCount) categoryCount.textContent = '0';
             if (likeCount) likeCount.textContent = '0';

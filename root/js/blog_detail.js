@@ -246,7 +246,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (article.tags && article.tags.length > 0) {
             let tagsHTML = '';
             article.tags.forEach(tag => {
-                tagsHTML += `<a href="blog_categories.html?tag=${encodeURIComponent(tag)}" class="post-tag">${tag}</a>`;
+                // tagsHTML += `<a href="blog_categories.html?tag=${encodeURIComponent(tag)}" class="post-tag">${tag}</a>`;
+                tagsHTML += `<span class="post-tag">${tag}</span>`;
             });
             postTags.innerHTML = tagsHTML;
         } else {
@@ -357,14 +358,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="comment-date">${formatDate(comment.date)}</span>
                     </div>
                     <div class="comment-text">${comment.content}</div>
-                    <div class="comment-actions">
-                        <span class="comment-action comment-like" data-id="${comment.id}">
-                            <i class="far fa-heart"></i> ${comment.likes || 0}
-                        </span>
-                        <span class="comment-action comment-reply" data-id="${comment.id}">
-                            <i class="far fa-comment"></i> 回复
-                        </span>
-                    </div>
                 </div>
             </div>
             `;
@@ -373,25 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
         commentsList.innerHTML = commentsHTML;
         commentCount.textContent = comments.length;
         commentCountDisplay.textContent = comments.length;
-        
-        // 添加评论点赞和回复事件
-        const commentLikeButtons = document.querySelectorAll('.comment-like');
-        const commentReplyButtons = document.querySelectorAll('.comment-reply');
-        
-        commentLikeButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-id');
-                likeComment(commentId);
-            });
-        });
-        
-        commentReplyButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-id');
-                const authorName = this.closest('.comment').querySelector('.comment-author').textContent;
-                replyToComment(commentId, authorName);
-            });
-        });
     }
     
     // 加载相关文章
@@ -858,14 +832,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="comment-date">刚刚</span>
                 </div>
                 <div class="comment-text">${commentContent}</div>
-                <div class="comment-actions">
-                    <span class="comment-action comment-like" data-id="${data.id}">
-                        <i class="far fa-heart"></i> 0
-                    </span>
-                    <span class="comment-action comment-reply" data-id="${data.id}">
-                        <i class="far fa-comment"></i> 回复
-                    </span>
-                </div>
             </div>
             `;
             
@@ -879,21 +845,6 @@ document.addEventListener('DOMContentLoaded', function() {
             commentCountDisplay.textContent = newCount;
             
             showNotification('评论发表成功', 'success');
-            
-            // 添加评论点赞和回复事件
-            const newLikeButton = newComment.querySelector('.comment-like');
-            const newReplyButton = newComment.querySelector('.comment-reply');
-            
-            newLikeButton.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-id');
-                likeComment(commentId);
-            });
-            
-            newReplyButton.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-id');
-                const authorName = this.closest('.comment').querySelector('.comment-author').textContent;
-                replyToComment(commentId, authorName);
-            });
         })
         .catch(error => {
             console.error('提交评论失败:', error);

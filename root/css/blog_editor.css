@@ -309,15 +309,101 @@ body.dark-theme .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
     width: 100%;
     height: 100%;
     background-color: rgba(0,0,0,0.5);
+    overflow: auto;
+    backdrop-filter: blur(3px);
+    transition: all 0.3s ease;
 }
 
 .modal-content {
     background-color: var(--card-bg);
     margin: 10% auto;
-    padding: 20px;
-    border-radius: 8px;
-    width: 80%;
+    padding: 0;
+    border-radius: 10px;
+    width: 90%;
     max-width: 500px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+}
+
+.modal.show .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-secondary);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+}
+
+.close-modal {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.close-modal:hover {
+    color: var(--primary-color);
+}
+
+.modal-body {
+    padding: 20px;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background-color: var(--bg-secondary);
+}
+
+.btn {
+    padding: 8px 20px;
+    border-radius: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-secondary {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-secondary);
+}
+
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 /* 用户下拉菜单样式 */

@@ -2229,6 +2229,383 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData = response.dump();
         return BLOG_DATA;
     }
+    // 用户功能-留言板-获取留言列表
+    else if (m_method == GET && strstr(m_url, "/api/messages_board") != nullptr) {
+        // 解析页码和每页数量参数
+        int page = 1;
+        int size = 10;
+        
+        // 获取page参数
+        const char* pageParam = strstr(m_url, "page=");
+        if (pageParam != nullptr) {
+            page = atoi(pageParam + 5);
+        }
+        
+        // 获取size参数
+        const char* sizeParam = strstr(m_url, "size=");
+        if (sizeParam != nullptr) {
+            size = atoi(sizeParam + 5);
+        }
+        
+        // 确保参数有效
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+        
+        // 查询数据库获取留言列表
+        sql_blog_tool tool;
+        vector<MessageBoard> messages = tool.get_message_board_by_page(page, size);
+        
+        // 获取总留言数
+        int total_messages = tool.get_total_message_board_count();
+        int total_pages = (total_messages + size - 1) / size; // 计算总页数
+        
+        // 构造JSON响应
+        json response = {
+            {"messages", json::array()},
+            {"hasMore", page < total_pages},
+            {"totalCount", total_messages},
+            {"currentPage", page},
+            {"totalPages", total_pages}
+        };
+        
+        // 创建消息ID到消息对象的映射，用于构建父子关系
+        map<int, json> messageMap;
+        
+        for (auto& message : messages) {
+            // 获取作者信息
+            User user = tool.get_userdata_by_userid(message.get_user_id());
+            
+            // 获取点赞数
+            int likes = tool.get_message_likes_count(message.get_message_id());
+            
+            // 检查当前用户是否点赞
+            bool isLiked = false;
+            if (user.get_userid() > 0) {
+                isLiked = tool.is_user_liked_message(user.get_userid(), message.get_message_id());
+            }
+            
+            // 获取父消息ID
+            int parentId = message.get_parent_id();
+            if(parentId == 0){
+                parentId = -1;
+            }
+            
+            json messageObj = {
+                {"id", message.get_message_id()},
+                {"parentId", parentId},
+                {"author", user.get_username()},
+                {"authorAvatar", user.get_avatar()},
+                {"content", message.get_content()},
+                {"date", message.get_date()},
+                {"likes", likes},
+                {"isLiked", isLiked}
+            };
+            
+            // 将消息添加到响应中
+            response["messages"].push_back(messageObj);
+            
+            // 同时保存到映射中，以便后续处理回复关系
+            messageMap[message.get_message_id()] = messageObj;
+        }
+        
+        jsonData = response.dump();
+        return BLOG_DATA;
+    }
+    // 用户功能-留言板-发表留言
+    else if (m_method == POST && strcmp(m_url, "/api/messages_board") == 0) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        // 验证用户登录状态
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析POST请求体
+        json post_data;
+        try {
+            post_data = json::parse(m_string);
+        } catch (const json::parse_error& e) {
+            jsonData = "{\"success\": false, \"message\": \"请求格式错误\"}";
+            return BAD_REQUEST;
+        }
+
+        // 检查必要字段
+        if (!post_data.contains("content") || post_data["content"].empty()) {
+            jsonData = "{\"success\": false, \"message\": \"留言内容不能为空\"}";
+            return BAD_REQUEST;
+        }
+
+        string content = post_data["content"];
+        int parentIdInt = -1;
+        
+        // 检查parentId是否存在并正确处理类型
+        if (post_data.contains("parentId")) {
+            if (post_data["parentId"].is_number()) {
+                parentIdInt = post_data["parentId"];
+            } else if (post_data["parentId"].is_string()) {
+                try {
+                    parentIdInt = stoi(post_data["parentId"].get<string>());
+                } catch (const exception& e) {
+                    // 转换失败时使用默认值-1
+                    parentIdInt = -1;
+                }
+            }
+        }
+
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+        int message_id = tool.add_message_board(userid, content, parentIdInt);
+
+        // 获取用户信息
+        User user = tool.get_userdata_by_userid(userid);
+        MessageBoard message_board = tool.get_message_board_by_id(message_id);
+
+        // 构建响应
+        json messageObj = {
+            {"id", message_id},
+            {"parentId", parentIdInt},
+            {"author", user.get_username()},
+            {"authorAvatar", user.get_avatar()},
+            {"content", message_board.get_content()},
+            {"date", message_board.get_date()},
+            {"likes", 0},
+            {"isLiked", false}
+        };
+
+        json response = {
+            {"message", messageObj}
+        };
+        
+        jsonData = response.dump();
+        return BLOG_DATA;
+    }
+    // 用户功能-留言板-删除留言
+    else if (m_method == DELETE && strstr(m_url, "/api/messages_board/") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+        
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 从URL中提取留言ID
+        const char* idStart = strstr(m_url, "/api/messages_board/") + strlen("/api/messages_board/");
+        int messageId = atoi(idStart);
+        
+        if (messageId <= 0) {
+            jsonData = "{\"success\": false, \"message\": \"无效的留言ID\"}";
+            return BAD_REQUEST;
+        }
+
+        // 删除留言
+        sql_blog_tool tool;
+        bool success = tool.delete_message_board(messageId);
+
+        // 构建响应
+        json response = {
+            {"success", success},
+            {"message", success ? "留言删除成功" : "删除失败"}
+        };
+        
+        jsonData = response.dump();
+        return BLOG_DATA;
+    }
+    // 用户功能-留言板-点赞留言
+    else if (m_method == POST && strstr(m_url, "/api/messages_board/like/") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 从URL中提取留言ID
+        const char* idStart = strstr(m_url, "/api/messages_board/like/") + strlen("/api/messages_board/like/");
+        int messageId = atoi(idStart);
+        
+        if (messageId <= 0) {
+            jsonData = "{\"success\": false, \"message\": \"无效的留言ID\"}";
+            return BLOG_DATA;
+        }
+
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+        json post_data;
+        bool success = false;
+        bool isLiked = false;
+        
+        try {
+            post_data = json::parse(m_string);
+            isLiked = post_data["liked"];
+            
+            if(isLiked){
+                success = tool.insert_new_message_like(userid, messageId);
+            }else{
+                success = tool.remove_message_like(userid, messageId);
+            }
+        } catch (const json::parse_error& e) {
+            jsonData = "{\"success\": false, \"message\": \"请求格式错误\"}";
+            return BLOG_DATA;
+        }
+
+        // 获取点赞数
+        int likes = tool.get_message_likes_count(messageId);
+
+        // 构建响应
+        json response = {
+            {"isLiked", isLiked},
+            {"likes", likes}
+        };
+        
+        jsonData = response.dump();
+        return BLOG_DATA;
+    }
+    // 用户功能-留言板-对留言进行回复
+    else if (m_method == POST && strncmp(m_url, "/api/messages_board/replies/", 28) == 0 && isdigit(m_url[28])) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+        
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+        
+        // 从URL中提取父留言ID
+        const char* idStart = strstr(m_url, "/api/messages_board/replies/") + strlen("/api/messages_board/replies/");
+        int parentIdFromUrl = atoi(idStart);
+        
+        // 解析POST请求体
+        json post_data;
+        try {
+            post_data = json::parse(m_string);
+        } catch (const json::parse_error& e) {
+            jsonData = "{\"success\": false, \"message\": \"请求格式错误\"}";
+            return BAD_REQUEST;
+        }
+
+        // 检查必要字段
+        if (!post_data.contains("content") || post_data["content"].empty()) {
+            jsonData = "{\"success\": false, \"message\": \"回复内容不能为空\"}";
+            return BAD_REQUEST;
+        }
+
+        string content = post_data["content"];
+        int parentIdInt = parentIdFromUrl; // 优先使用URL中的ID
+        
+        // 如果请求体中也有parentId，则使用请求体中的值
+        if (post_data.contains("parentId")) {
+            if (post_data["parentId"].is_number()) {
+                parentIdInt = post_data["parentId"];
+            } else if (post_data["parentId"].is_string()) {
+                try {
+                    parentIdInt = stoi(post_data["parentId"].get<string>());
+                } catch (const exception& e) {
+                    // 保持使用URL中的ID
+                }
+            }
+        }
+        
+        // 验证父留言ID的有效性
+        if (parentIdInt <= 0) {
+            jsonData = "{\"success\": false, \"message\": \"无效的留言ID\"}";
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+        
+        // 添加回复
+        try {
+            int replyId = tool.add_message_board(userid, content, parentIdInt);
+            
+            if (replyId <= 0) {
+                jsonData = "{\"success\": false, \"message\": \"添加回复失败\"}";
+                return INTERNAL_ERROR;
+            }
+            
+            // 获取回复信息
+            MessageBoard reply = tool.get_message_board_by_id(replyId);
+            User user = tool.get_userdata_by_userid(userid);
+
+            // 构建响应
+            json messageObj = {
+                {"id", replyId},
+                {"parentId", parentIdInt},
+                {"author", user.get_username()},
+                {"authorAvatar", user.get_avatar()},
+                {"content", reply.get_content()},
+                {"date", reply.get_date()},
+                {"likes", 0},
+                {"isLiked", false}
+            };
+
+            json response = {
+                {"reply", messageObj}
+            };
+            
+            jsonData = response.dump();
+            return BLOG_DATA;
+        } catch (const exception& e) {
+            jsonData = "{\"success\": false, \"message\": \"服务器内部错误\"}";
+            return INTERNAL_ERROR;
+        }
+    }
+    // 用户功能-留言板-对回复进行点赞
+    else if (m_method == POST && strstr(m_url, "/api/messages_board/replies/like/") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 从URL中提取回复ID
+        const char* idStart = strstr(m_url, "/api/messages_board/replies/like/") + strlen("/api/messages_board/replies/like/");
+        int replyId = atoi(idStart);
+        
+        if (replyId <= 0) {
+            jsonData = "{\"success\": false, \"message\": \"无效的回复ID\"}";
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+        json post_data;
+        bool success = false;
+        bool isLiked = false;
+        
+        try {
+            post_data = json::parse(m_string);
+            isLiked = post_data["liked"];
+            
+            if(isLiked){
+                success = tool.insert_new_message_like(userid, replyId);
+            }else{
+                success = tool.remove_message_like(userid, replyId);
+            }
+        } catch (const json::parse_error& e) {
+            jsonData = "{\"success\": false, \"message\": \"请求格式错误\"}";
+            return BLOG_DATA;
+        }
+
+        // 获取点赞数
+        int likes = tool.get_message_likes_count(replyId);
+
+        // 构建响应
+        json response = {
+            {"isLiked", isLiked},
+            {"likes", likes}
+        };
+        
+        jsonData = response.dump();
+        return BLOG_DATA;
+    }
+    
     // 处理访问 blog_detail.html 的情况
     else if (strstr(m_url, "/blog_detail.html") != nullptr) {
         // 直接返回 blog_detail.html 页面
@@ -3165,20 +3542,24 @@ http_conn::HTTP_CODE http_conn::do_request()
             if (!searchKeyword.empty()) {
                 if (categoryId != -1) {
                     // 分类 + 关键词搜索
+                    cout << "111" << endl;
                     blogs = tool.get_blogs_by_category_and_search(categoryId, searchKeyword, page, size, sortField, sortOrder);
                     totalCount = tool.get_total_blog_count_by_category_and_search(categoryId, searchKeyword);
                 } else {
                     // 仅搜索
+                    cout << "222" << endl;
                     blogs = tool.get_blogs_by_search(page, size, sortField, sortOrder, searchKeyword);
                     totalCount = tool.get_total_blog_count_by_search(searchKeyword);
                 }
             } else {
                 if (categoryId != -1) {
                     // 仅分类
+                    cout << "333" << endl;
                     blogs = tool.get_blogs_by_category_and_page(categoryId, page, size, sortField, sortOrder);
                     totalCount = tool.get_total_blog_count_by_category(categoryId);
                 } else {
                     // 普通查询
+                    cout << "444" << endl;
                     blogs = tool.get_blogs_by_page_and_sort(page, size, sortField, sortOrder);
                     totalCount = tool.get_total_blog_count();
                 }

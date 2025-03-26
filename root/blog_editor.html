@@ -547,22 +547,27 @@
                 
                 // 显示确认对话框
                 confirmModal.style.display = 'block';
+                setTimeout(() => {
+                    confirmModal.classList.add('show');
+                }, 10);
                 console.log('确认对话框应该已显示');
             });
             
             // 关闭模态窗口
-            closeModal.onclick = function() {
-                confirmModal.style.display = 'none';
-            };
+            function closeModalFunction() {
+                confirmModal.classList.remove('show');
+                setTimeout(() => {
+                    confirmModal.style.display = 'none';
+                }, 300);
+            }
             
-            modalCancelBtn.onclick = function() {
-                confirmModal.style.display = 'none';
-            };
+            closeModal.onclick = closeModalFunction;
+            modalCancelBtn.onclick = closeModalFunction;
             
             // 点击模态窗口外部关闭
             window.onclick = function(event) {
                 if (event.target == confirmModal) {
-                    confirmModal.style.display = 'none';
+                    closeModalFunction();
                 }
             };
             
@@ -632,7 +637,7 @@
                     }
                     
                     // 关闭模态窗口
-                    confirmModal.style.display = 'none';
+                    closeModalFunction();
                     
                     if (xhr.status === 200 && response.success) {
                         showNotification('文章发布成功！', 'success');
