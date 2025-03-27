@@ -1,0 +1,479 @@
+/* style.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f5f5f5;
+    overflow-x: hidden; /* 防止水平滚动条出现 */
+}
+
+/* 顶部导航栏样式 */
+.nav {
+    width: 100%;
+    height: 50px;
+    background-color: rgba(50, 50, 50, 0.4);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    position: fixed; /* 固定顶部 */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+/* 导航链接 */
+.nav-links-top {
+    margin-left: auto; /* 将链接推到右侧 */
+}
+
+.nav img {
+    width: 40px;
+    height: 40px;
+    margin-left: 30px;
+    margin-right: 10px;
+    border-radius: 20px;
+}
+
+.nav .title {
+    font-size: 15px;
+}
+
+.nav-links-top {
+    line-height: 50px; /* 与导航栏高度一致 */
+    height: 50px;      /* 固定高度，防止偏移 */
+    display: inline-block;
+}
+
+.nav a {
+    color: white;
+    text-decoration: none;
+    padding: 0 10px;
+}
+
+/* 调整容器样式 */
+.container {
+    display: flex;
+    height: calc(100vh - 50px); /* 设置高度，减去顶部导航栏 */
+    margin-top: 50px; /* 为顶部导航栏留出空间 */
+    overflow: hidden; /* 防止水平滚动条 */
+}
+
+/* 侧边栏样式 */
+.sidebar {
+    width: 250px;
+    background-color: #2c3e50;
+    color: white;
+    padding: 20px 0;
+    position: fixed;
+    height: calc(100vh - 50px); /* 减去顶部导航栏的高度 */
+    top: 50px; /*从导航栏下方开始 */
+    overflow-y: auto; /* 如果侧边栏内容过多时显示滚动条 */
+}
+
+.profile-preview {
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #34495e;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+}
+
+/* 添加到现有的 .avatar 样式中或在其后面 */
+.avatar-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+    transition: filter 0.3s ease; /* 添加过渡效果 */
+}
+
+/* 添加悬停提示样式 */
+.hover-tip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* 悬停效果 */
+.avatar-wrapper:hover .avatar {
+    filter: brightness(70%);
+}
+
+.avatar-wrapper:hover .hover-tip {
+    opacity: 1;
+}
+
+#avatar-upload{
+    display: none;
+}
+
+.nav-links {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.nav-links li {
+    padding: 15px 25px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+}
+
+.nav-links li:hover {
+    background-color: #34495e;
+}
+
+.nav-links li.active {
+    background-color: #3498db;
+}
+
+.icon {
+    margin-right: 10px;
+}
+
+/* 内容区样式 */
+.content {
+    flex: 1;
+    margin-left: 250px;
+    height: calc(100vh - 50px); /* 设置高度，减去顶部导航栏 */
+    overflow-y: auto; /* 添加滚动条 */
+    /* overflow: hidden; 隐藏外部滚动条 */
+    padding: 30px;
+    background-color: #fff;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+h2 {
+    margin-bottom: 30px;
+    color: #2c3e50;
+}
+
+/* 个人资料页样式 */
+.profile-info {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.info-item {
+    margin-bottom: 20px;
+}
+
+.info-item label {
+    font-weight: bold;
+    color: #2c3e50;
+    display: inline-block;
+    width: 80px;
+}
+
+/* 博客管理页面样式 */
+.manage-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* 自适应列数 */
+    gap: 20px; /* 每列之间的间距 */
+    padding: 20px;
+}
+
+.manage-card {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.manage-card:hover {
+    transform: translateY(-5px); /* 鼠标悬停时上浮 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.manage-title {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.manage-time {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.manage-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.edit-btn, .delete-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.edit-btn {
+    background-color: #3498db;
+    color: white;
+}
+
+.edit-btn:hover {
+    background-color: #2980b9;
+}
+
+.delete-btn {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+}
+
+/* 博客管理页面样式 -- 编辑或删除 */
+/* 模态框背景 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+/* 模态框内容 */
+.modal-content {
+    background-color: #fff;
+    border-radius: 8px;
+    width: 300px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+/* 标题样式 */
+.modal-content h3 {
+    margin-top: 0;
+    color: #333;
+}
+/* 按钮容器 */
+.modal-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+/* 按钮样式 */
+.modal-actions .btn-confirm,
+.modal-actions .btn-cancel {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+/* 确认按钮样式 */
+.modal-actions .btn-confirm {
+    background-color: #e63946;
+    color: white;
+}
+.modal-actions .btn-confirm:hover {
+    background-color: #d62839;
+}
+/* 取消按钮样式 */
+.modal-actions .btn-cancel {
+    background-color: #f1f1f1;
+    color: #333;
+}
+.modal-actions .btn-cancel:hover {
+    background-color: #ddd;
+}
+
+
+
+/* 账号设置页样式 */
+.settings-form {
+    max-width: 500px;
+}
+
+.form-item {
+    margin-bottom: 20px;
+}
+
+.form-item label {
+    display: block;
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.form-item input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.save-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+
+/* 消息中心页样式 */
+.message-controls {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 10;
+    margin-bottom: 15px;
+    text-align: right;
+    padding: 10px 0;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.message-center {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* 确保占满可用高度，避免消息中心滚动条的出现 */
+}
+
+.message-list {
+    max-height: calc(100vh - 200px); /* 根据实际页面调整高度 */
+    overflow-y: auto;
+    padding-right: 10px; /* 为滚动条腾出空间 */
+}
+
+.mark-all-read-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s;
+}
+
+.mark-all-read-btn:hover {
+    background-color: #2980b9;
+}
+
+.message-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.message-item.unread {
+    background-color: #f0f4f8;
+    border-left: 4px solid #3498db;
+}
+
+.message-item.read {
+    background-color: #f8f9fa;
+    border-left: 4px solid #7f8c8d;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.message-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.message-actions button,
+.message-actions .view-link {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    text-decoration: none;
+}
+
+.message-actions button:hover,
+.message-actions .view-link:hover {
+    background-color: #2980b9;
+}
+
+.no-messages {
+    text-align: center;
+    color: #7f8c8d;
+    padding: 20px;
+}
+
+.unread-badge {
+    color: #e74c3c;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
+
+/* 自定义滚动条样式 */
+.message-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.message-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.message-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

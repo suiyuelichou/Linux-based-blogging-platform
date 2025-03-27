@@ -1314,31 +1314,31 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
     }
     // 这里用来判断是否修改用户密码
-    else if(m_method == PATCH && strstr(m_url, "/update_password") != nullptr){
-        string username = cookie.getCookie("username");
-        string session_id = cookie.getCookie("session_id");
+    // else if(m_method == PATCH && strstr(m_url, "/update_password") != nullptr){
+    //     string username = cookie.getCookie("username");
+    //     string session_id = cookie.getCookie("session_id");
 
-        if(cookie.validateSession(username, session_id)){
-            // 获取userId
-            sql_blog_tool tool;
-            int userid = tool.get_userid(username);
+    //     if(cookie.validateSession(username, session_id)){
+    //         // 获取userId
+    //         sql_blog_tool tool;
+    //         int userid = tool.get_userid(username);
 
-            string body = url_decode(m_string);
-            auto post_data = parse_post_data(body);
+    //         string body = url_decode(m_string);
+    //         auto post_data = parse_post_data(body);
 
-            string old_password = post_data["oldPassword"];
-            string new_password = post_data["newPassword"];
+    //         string old_password = post_data["oldPassword"];
+    //         string new_password = post_data["newPassword"];
 
-            // 这里是用来检测用户输入的旧密码对不对
-            if(users[username] == old_password){
-                tool.modify_password_by_username(username, new_password);
-                users[username] = new_password;
-                return REDIRECT_USER_HOME;
-            }else{
-                return BAD_REQUEST;
-            }
-        }
-    }
+    //         // 这里是用来检测用户输入的旧密码对不对
+    //         if(users[username] == old_password){
+    //             tool.modify_password_by_username(username, new_password);
+    //             users[username] = new_password;
+    //             return REDIRECT_USER_HOME;
+    //         }else{
+    //             return BAD_REQUEST;
+    //         }
+    //     }
+    // }
 
     if (strstr(m_url, "/get_blogs?")) {
         int page = 1, size = 20;
@@ -1708,13 +1708,18 @@ http_conn::HTTP_CODE http_conn::do_request()
             int view_count = tool.get_view_count_by_userid(userid);
             int like_count = tool.get_blog_liked_count_by_userid(userid);
             int article_count = tool.get_article_count_by_userid(userid);
+            int comment_count = tool.get_blog_comments_count_by_userid(username);
 
             jsonData = "{";
             jsonData += "\"username\": \"" + user.get_username() + "\",";
             jsonData += "\"avatar\": \"" + user.get_avatar() + "\",";
+            jsonData += "\"email\": \"" + user.get_eamil() + "\",";
+            jsonData += "\"registerDate\": \"" + user.get_register_time() + "\",";
+            jsonData += "\"bio\": \"" + user.get_description() + "\",";
             jsonData += "\"articleCount\": \"" + to_string(article_count) + "\",";
             jsonData += "\"viewCount\": \"" + to_string(view_count) + "\",";
-            jsonData += "\"likeCount\": \"" + to_string(like_count) + "\"";
+            jsonData += "\"likeCount\": \"" + to_string(like_count) + "\",";
+            jsonData += "\"commentCount\": \"" + to_string(comment_count) + "\"";
             jsonData += "}";
 
             return BLOG_DATA;
@@ -2605,7 +2610,40 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData = response.dump();
         return BLOG_DATA;
     }
-    
+    // 用户功能-修改密码
+    else if (m_method == PATCH && strcmp(m_url, "/api/user/update_password") == 0) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析POST请求体
+        json post_data;
+        try {
+            post_data = json::parse(m_string);
+        } catch (const json::parse_error& e) {
+            jsonData = "{\"success\": false, \"message\": \"请求格式错误\"}";
+            return BAD_REQUEST;
+        }
+
+        string oldPassword = post_data["oldPassword"];
+        string newPassword = post_data["newPassword"];
+        string hash_password = BCrypt::generateHash(newPassword);
+
+        sql_blog_tool tool;
+        if(users[username] == oldPassword || BCrypt::validatePassword(oldPassword, users[username])){
+            tool.modify_password_by_username(username, hash_password);
+            users.insert(pair<string, string>(username, hash_password));
+            jsonData = "{\"success\": true, \"message\": \"密码修改成功\"}";
+        }else{
+            jsonData = "{\"success\": false, \"message\": \"原密码不正确\"}";
+        }
+
+        return BLOG_DATA;
+    }
     // 处理访问 blog_detail.html 的情况
     else if (strstr(m_url, "/blog_detail.html") != nullptr) {
         // 直接返回 blog_detail.html 页面

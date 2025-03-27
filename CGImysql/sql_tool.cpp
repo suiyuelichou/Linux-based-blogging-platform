@@ -7561,6 +7561,71 @@ int sql_blog_tool::add_comment_to_article(string username, int articleid, string
     return comment_id;
 }
 
+// 获取用户博客被评论总数
+int sql_blog_tool::get_blog_comments_count_by_userid(string username)
+{
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlconn(&mysql, connpool);
+
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    const char* query = "SELECT COUNT(*) FROM blog_comments WHERE username = ?";
+
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return 0;
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return 0;
+    }
+
+    MYSQL_BIND bind[1];
+    memset(bind, 0, sizeof(bind));
+
+    bind[0].buffer_type = MYSQL_TYPE_STRING;
+    bind[0].buffer = (char*)username.c_str();
+    bind[0].buffer_length = username.length();
+
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return 0;
+    }
+
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return 0;
+    }
+
+    int comment_count = 0;
+    MYSQL_BIND result_bind[1];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    result_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[0].buffer = &comment_count;
+
+    if (mysql_stmt_bind_result(stmt, result_bind)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return 0;
+    }
+
+    if (mysql_stmt_fetch(stmt) != 0) {
+        cerr << "mysql_stmt_fetch() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return 0;
+    }
+
+    mysql_stmt_close(stmt);
+    return comment_count;
+}
+
 // 增加博客的浏览量
 bool sql_blog_tool::increase_blog_view_count(int blogid)
 {

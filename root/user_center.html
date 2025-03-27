@@ -1,56 +1,123 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>个人中心</title>
-
-    <!--引入jquery-->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+    <title>个人中心 - 云中杉木博客</title>
+    <link rel="stylesheet" href="css/home.css">
     <link rel="stylesheet" href="css/user_center.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="img/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/user_center.js" defer></script>
 </head>
 <body>
     <!-- 顶部导航栏 -->
-    <div class="nav">
-        <img src="img/logo.png" alt="logo">
-        <div class="title">云中杉木博客平台</div>
-        <div class="nav-links-top">
-            <a href="message_board.html">留言板</a>
-            <a href="blog_user_home.html">主页</a>
-            <a href="blog_editor.html">写博客</a>
-            <a href="logout_user">注销</a>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="img/logo.png" alt="云中杉木">
+                <h1>云中杉木</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="blog_home.html"><i class="fas fa-home"></i> 首页</a></li>
+                    <li><a href="blog_categories.html"><i class="fas fa-layer-group"></i> 分类</a></li>
+                    <li><a href="message_board.html"><i class="fas fa-comments"></i> 留言板</a></li>
+                    <li><a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a></li>
+                </ul>
+            </nav>
+            <div class="user-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="搜索文章...">
+                    <button><i class="fas fa-search"></i></button>
+                </div>
+                <div class="user-menu">
+                    <img src="img/default_touxiang.jpg" alt="用户头像" id="userAvatar">
+                    <div class="user-dropdown">
+                        <a href="user_center.html" class="active"><i class="fas fa-user-circle"></i> 个人中心</a>
+                        <a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
+                        <a href="blog_settings.html"><i class="fas fa-cog"></i> 设置</a>
+                        <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                    </div>
+                </div>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            <button class="mobile-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
-    </div>
+    </header>
 
-    <div class="container">
-        <!-- 左侧导航栏 -->
-        <nav class="sidebar">
-            <div class="profile-preview">
-                <label for="avatar-upload" class="avatar-wrapper">
-                    <img id="avatar" src="img/default_touxiang.jpg" alt="头像" class="avatar" onclick="triggerFileInput()">
-                    <div class="hover-tip">点击更换头像</div>
-                </label>
-                <input type="file" id="avatar-upload" accept="image/*" style="display: none;" onchange="uploadAvatar(this)">
-                <h3 id="username">加载中...</h3>
-            </div>       
-            <ul class="nav-links">
-                <li class="active" data-page="profile" onclick="loadPageData('profile')">👤 个人资料</li>
-                <li data-page="manage" onclick="loadPageData('manage')">📝 博客管理</li>
-                <li data-page="settings" onclick="updatePageContent('settings')">⚙️ 账号设置</li>
-                <li data-page="messages" onclick="updatePageContent('messages')">✉️ 消息中心</li>
-            </ul>
-        </nav>
+    <!-- 主要内容区 -->
+    <main class="main-content">
+        <div class="user-center-container">
+            <!-- 侧边栏 -->
+            <aside class="user-sidebar">
+                <div class="profile-preview">
+                    <label for="avatar-upload" class="avatar-wrapper">
+                        <img id="avatarImage" src="img/default_touxiang.jpg" alt="头像" class="user-avatar">
+                        <div class="hover-tip">点击更换头像</div>
+                    </label>
+                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                    <h3 id="userName">加载中...</h3>
+                </div>
+                <ul class="user-nav-links">
+                    <li class="active" data-page="profile"><i class="fas fa-user"></i> 个人资料</li>
+                    <li data-page="manage"><i class="fas fa-file-alt"></i> 博客管理</li>
+                    <li data-page="settings"><i class="fas fa-cog"></i> 账号设置</li>
+                    <li data-page="messages"><i class="fas fa-bell"></i> 消息中心</li>
+                </ul>
+            </aside>
 
-        <!-- 右侧内容区 -->
-        <main class="content" id="content">
-            <!-- 动态内容加载区域 -->
-            <!-- <div id="profile" class="page">...</div>
-            <div id="manage" class="page">...</div>
-            <div id="settings" class="page">...</div>
-            <div id="messages" class="page">...</div> -->
-        </main>
-    </div>
+            <!-- 右侧内容区 -->
+            <section class="user-content" id="userContent">
+                <!-- 动态内容加载区域 -->
+            </section>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>云中杉木博客</h3>
+                    <p>分享知识，连接世界</p>
+                    <div class="social-links">
+                        <a href="https://github.com/suiyuelichou/Linux-based-blogging-platform.git" target="_blank"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-weibo"></i></a>
+                        <a href="#"><i class="fab fa-zhihu"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>快速链接</h3>
+                    <ul>
+                        <li><a href="blog_home.html">首页</a></li>
+                        <li><a href="blog_categories.html">分类</a></li>
+                        <li><a href="message_board.html">留言板</a></li>
+                        <li><a href="blog_editor.html">写博客</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>联系我们</h3>
+                    <p><i class="fas fa-envelope"></i> 1959503231@qq.com </p>
+                    <p><i class="fas fa-map-marker-alt"></i> 中国，广东</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 云中杉木博客平台. 保留所有权利. <a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2024355354号</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到顶部按钮 -->
+    <button id="backToTop" class="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 </body>
 </html>
