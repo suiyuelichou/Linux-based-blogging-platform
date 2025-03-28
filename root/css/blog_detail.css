@@ -115,56 +115,158 @@
     color: var(--text-primary);
 }
 
-.post-content p, 
-.post-content ul, 
-.post-content ol {
-    margin-bottom: 1.5rem;
-}
-
+.post-content h1, 
 .post-content h2, 
 .post-content h3, 
-.post-content h4 {
-    margin: 2rem 0 1rem;
+.post-content h4, 
+.post-content h5, 
+.post-content h6 {
+    margin-top: 1.8em;
+    margin-bottom: 0.8em;
+    font-weight: 600;
+    line-height: 1.4;
     color: var(--text-primary);
 }
 
-.post-content img {
-    max-width: 100%;
+.post-content h1 {
+    font-size: 2rem;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.post-content h2 {
+    font-size: 1.75rem;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.post-content h3 {
+    font-size: 1.5rem;
+}
+
+.post-content h4 {
+    font-size: 1.25rem;
+}
+
+.post-content h5 {
+    font-size: 1.1rem;
+}
+
+.post-content h6 {
+    font-size: 1rem;
+}
+
+.post-content p {
+    margin-bottom: 1.2em;
+}
+
+.post-content ul,
+.post-content ol {
+    margin-bottom: 1.2em;
+    padding-left: 2em;
+}
+
+.post-content ul li,
+.post-content ol li {
+    margin-bottom: 0.5em;
+}
+
+.post-content code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background-color: var(--code-bg);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.post-content pre {
+    background-color: var(--code-bg);
+    padding: 1em;
     border-radius: 8px;
-    margin: 1.5rem 0;
+    overflow-x: auto;
+    margin: 1.5em 0;
+}
+
+.post-content pre code {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.9em;
+    white-space: pre;
+}
+
+.post-content blockquote {
+    border-left: 4px solid var(--primary-color);
+    padding: 0.8em 1em;
+    margin: 1.5em 0;
+    background-color: rgba(var(--primary-rgb), 0.05);
+    color: var(--text-secondary);
+}
+
+.post-content blockquote p:last-child {
+    margin-bottom: 0;
 }
 
 .post-content a {
     color: var(--primary-color);
     text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s;
 }
 
 .post-content a:hover {
-    text-decoration: underline;
+    border-bottom-color: var(--primary-color);
 }
 
-.post-content pre {
-    background-color: var(--code-bg);
-    padding: 1rem;
-    border-radius: 5px;
+.post-content img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 1.5em 0;
+    display: block;
+}
+
+.post-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
     overflow-x: auto;
-    margin: 1.5rem 0;
+    display: block;
+    max-width: 100%;
 }
 
-.post-content code {
-    background-color: var(--code-bg);
-    padding: 2px 5px;
-    border-radius: 3px;
-    font-family: monospace;
+.post-content table th,
+.post-content table td {
+    padding: 0.75em 1em;
+    border: 1px solid var(--border-color);
 }
 
-.post-content blockquote {
-    border-left: 4px solid var(--primary-color);
-    padding-left: 1rem;
-    margin-left: 0;
-    margin-right: 0;
-    font-style: italic;
-    color: var(--text-secondary);
+.post-content table th {
+    background-color: var(--bg-secondary);
+    font-weight: 600;
+}
+
+.post-content table tr:nth-child(even) {
+    background-color: var(--bg-secondary);
+}
+
+.post-content hr {
+    height: 1px;
+    border: none;
+    background-color: var(--border-color);
+    margin: 2em 0;
+}
+
+body.dark-theme .post-content pre,
+body.dark-theme .post-content code {
+    background-color: #282c34;
+}
+
+body.dark-theme .post-content blockquote {
+    background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+body.dark-theme .hljs {
+    background-color: #282c34;
 }
 
 .post-tags {
@@ -287,11 +389,15 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .comment {
     display: flex;
     gap: 1rem;
+    width: 100%;
 }
 
 .comment-avatar {
@@ -304,6 +410,7 @@
 
 .comment-body {
     flex: 1;
+    min-width: 0;
 }
 
 .comment-header {
@@ -325,6 +432,30 @@
 .comment-text {
     line-height: 1.5;
     color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    max-width: 100%;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.comment-text code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background-color: var(--code-bg);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.comment-text a {
+    word-break: break-all;
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.comment-text a:hover {
+    text-decoration: underline;
 }
 
 .comment-actions {
@@ -470,6 +601,30 @@
         margin-top: 10px;
         align-self: flex-start;
     }
+    
+    .comment {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .comment-avatar {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .comment-body {
+        width: 100%;
+    }
+    
+    .main-content .container {
+        padding: 0 10px;
+        overflow: hidden;
+    }
+    
+    .post-section {
+        overflow: hidden;
+    }
 }
 
 /* 针对没有头图的文章调整样式 */
@@ -480,4 +635,35 @@
 /* 由于某些浏览器可能不支持:has选择器，添加一个备用类 */
 .post-header.no-image {
     margin-top: 20px;
+}
+
+/* 确保主内容区域不溢出 */
+.post-container {
+    overflow: hidden;
+    max-width: 100%;
+}
+
+/* 确保表格的响应式行为 */
+.post-content table {
+    table-layout: fixed;
+}
+
+.post-content table th,
+.post-content table td {
+    word-break: break-word;
+}
+
+/* 确保评论图片不会溢出 */
+.comment-text img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* 增强代码块的样式，防止溢出 */
+.comment-text pre,
+.post-content pre {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }

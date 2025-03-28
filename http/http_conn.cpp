@@ -2236,6 +2236,15 @@ http_conn::HTTP_CODE http_conn::do_request()
     }
     // 用户功能-留言板-获取留言列表
     else if (m_method == GET && strstr(m_url, "/api/messages_board") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+        sql_blog_tool tool;
+        int userid = -1;
+
+        if(cookie.validateSession(username, session_id)){
+            userid = tool.get_userid(username);
+        }
+
         // 解析页码和每页数量参数
         int page = 1;
         int size = 10;
@@ -2257,7 +2266,6 @@ http_conn::HTTP_CODE http_conn::do_request()
         if (size < 1) size = 10;
         
         // 查询数据库获取留言列表
-        sql_blog_tool tool;
         vector<MessageBoard> messages = tool.get_message_board_by_page(page, size);
         
         // 获取总留言数
@@ -2285,8 +2293,8 @@ http_conn::HTTP_CODE http_conn::do_request()
             
             // 检查当前用户是否点赞
             bool isLiked = false;
-            if (user.get_userid() > 0) {
-                isLiked = tool.is_user_liked_message(user.get_userid(), message.get_message_id());
+            if (userid > 0) {
+                isLiked = tool.is_user_liked_message(userid, message.get_message_id());
             }
             
             // 获取父消息ID
@@ -2641,6 +2649,104 @@ http_conn::HTTP_CODE http_conn::do_request()
         }else{
             jsonData = "{\"success\": false, \"message\": \"原密码不正确\"}";
         }
+
+        return BLOG_DATA;
+    }
+    // 个人中心-博客管理-博客列表
+    else if (m_method == GET && strstr(m_url, "/api/blogs/user") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+        int page = 1;
+        int pageSize = 10;
+        string keyword = "";
+        string sort = "postTime";
+
+        // 解析请求参数
+        char* pageStart = strstr(m_url, "page=");
+        char* pageSizeStart = strstr(m_url, "pageSize=");
+        char* keywordStart = strstr(m_url, "keyword=");
+        char* sortStart = strstr(m_url, "sort=");
+
+        if(pageStart != nullptr){
+            page = std::atoi(pageStart + 5);
+            if(page <= 0) page = 1;
+        }
+
+        if(pageSizeStart != nullptr){
+            pageSize = std::atoi(pageSizeStart + 9);
+            if(pageSize <= 0 || pageSize > 100) pageSize = 10;
+        }
+
+        if(keywordStart != nullptr){
+            keyword = string(keywordStart + 8);
+            size_t ampPos = keyword.find("&");
+            if (ampPos != string::npos) {
+                keyword = keyword.substr(0, ampPos);
+            }
+            keyword = url_decode(keyword);  // 进行 URL 解码
+        }
+
+        if(sortStart != nullptr){
+            sort = string(sortStart + 5);
+            size_t ampPos = sort.find("&");
+            if (ampPos != string::npos) {
+                sort = sort.substr(0, ampPos);
+            }
+        }
+
+        sql_blog_tool tool;
+        vector<Blog> blogs;
+        int total = 0;
+        int userid = tool.get_userid(username);
+
+        if(sort == "postTime"){
+            blogs = tool.get_blogs_by_user(userid, page, pageSize, keyword, sort);
+            total = tool.get_total_blog_count_by_user(userid, keyword);
+        }else if(sort == "view_count"){
+            blogs = tool.get_blogs_by_user(userid, page, pageSize, keyword, sort);
+            total = tool.get_total_blog_count_by_user(userid, keyword);
+        }else if(sort == "like_count"){
+            blogs = tool.get_blogs_by_user_by_like_count(userid, page, pageSize, keyword, sort);
+            total = tool.get_total_blog_count_by_user_by_like_count(userid, keyword);
+        }
+
+        jsonData = "{\"code\": 200, \"message\": \"获取成功\", \"data\": {\"total\": " + std::to_string(total) + ", \"blogs\": [";
+        for(int i = 0; i < blogs.size(); ++i){
+            Blog blog = blogs[i];
+            
+            // 获取博客点赞数和评论数
+            int likes = tool.get_blog_likes_count(blog.get_blog_id());
+            int comments = tool.get_blog_comments_count(blog.get_blog_id());
+            
+            // 获取分类名称
+            string categoryName = tool.get_cotegoriename_by_cotegorieid(blog.get_category_id());
+            string escapedSummary = escapeJsonString((blog.get_blog_content().length() > 100 ? blog.get_blog_content().substr(0, 100) + "..." : blog.get_blog_content()) + "\",");
+
+            jsonData += "{";
+            jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
+            jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
+            jsonData += "\"summary\": \"" + escapedSummary + "\",";
+            jsonData += "\"coverImage\": \"" + blog.get_thumbnail() + "\",";
+            jsonData += "\"publishDate\": \"" + blog.get_blog_postTime() + "\",";
+            jsonData += "\"updateDate\": \"" + blog.get_updatedAt() + "\",";
+            jsonData += "\"status\": \"published\",";
+            jsonData += "\"views\": " + std::to_string(blog.get_views()) + ",";
+            jsonData += "\"likes\": " + std::to_string(likes) + ",";
+            jsonData += "\"comments\": " + std::to_string(comments) + ",";
+            jsonData += "\"categoryId\": " + std::to_string(blog.get_category_id()) + ",";
+            jsonData += "\"categoryName\": \"" + categoryName + "\"";
+            jsonData += "}";
+            
+            if(i != blogs.size() - 1){
+                jsonData += ",";
+            }
+        }
+        jsonData += "] } }";
 
         return BLOG_DATA;
     }

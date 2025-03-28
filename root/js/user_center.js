@@ -394,57 +394,25 @@ function generateProfileHTML() {
     `;
 }
 
-// 生成博客管理HTML
+// 生成博客管理HTML - 优化版
 function generateManageHTML() {
-    // 模拟博客数据
-    const blogs = [
-        { id: 1, title: 'JavaScript高级编程技巧，带你入门函数式编程', date: '2023-10-15', views: 256, likes: 45, image: 'img/blog-1.jpg' },
-        { id: 2, title: 'CSS Grid布局完全指南', date: '2023-09-20', views: 189, likes: 32, image: 'img/blog-2.jpg' },
-        { id: 3, title: 'Vue3和React18的异同点分析', date: '2023-08-10', views: 352, likes: 68, image: 'img/blog-3.jpg' },
-        { id: 4, title: '5分钟搭建一个Node.js服务器', date: '2023-07-05', views: 123, likes: 19, image: 'img/blog-4.jpg' },
-        { id: 5, title: '前端开发中常见的安全问题及解决方案', date: '2023-06-18', views: 210, likes: 41, image: 'img/blog-5.jpg' },
-    ];
-    
-    let html = `
-        <h2>博客管理</h2>
+    return `
+        <h2><i class="fas fa-file-alt"></i> 博客管理</h2>
         <div class="manage-filter">
-            <input type="text" placeholder="搜索博客标题" class="search-input">
+            <input type="text" class="search-input" placeholder="搜索博客标题...">
             <select class="sort-select">
-                <option value="date">按日期排序</option>
-                <option value="views">按浏览量排序</option>
-                <option value="likes">按点赞数排序</option>
+                <option value="postTime">时间排序</option>
+                <option value="view_count">浏览量</option>
+                <option value="like_count">点赞数</option>
             </select>
         </div>
         <div class="manage-list">
-    `;
-    
-    blogs.forEach(blog => {
-        html += `
-            <div class="manage-card" data-id="${blog.id}">
-                <div class="blog-thumbnail">
-                    <img src="${blog.image}" alt="${blog.title}">
-                </div>
-                <div class="blog-info">
-                    <div class="blog-title">${blog.title}</div>
-                    <div class="blog-meta">
-                        <span><i class="far fa-calendar-alt"></i> ${blog.date}</span>
-                        <span><i class="far fa-eye"></i> ${blog.views}</span>
-                        <span><i class="far fa-thumbs-up"></i> ${blog.likes}</span>
-                    </div>
-                    <div class="blog-actions">
-                        <button class="edit-btn"><i class="far fa-edit"></i> 编辑</button>
-                        <button class="delete-btn"><i class="far fa-trash-alt"></i> 删除</button>
-                    </div>
-                </div>
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>正在加载博客列表...</p>
             </div>
-        `;
-    });
-    
-    html += `
         </div>
     `;
-    
-    return html;
 }
 
 // 生成设置页面HTML
@@ -589,72 +557,56 @@ function initMobileMenu() {
 
 // 绑定博客管理事件
 function bindManageEvents() {
-    // 编辑按钮事件
-    const editButtons = document.querySelectorAll('.edit-btn');
-    editButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const blogId = this.closest('.manage-card').getAttribute('data-id');
-            // 跳转到编辑页面
-            window.location.href = `blog_editor.html?id=${blogId}`;
-        });
-    });
+    // 获取URL参数
+    const searchParams = new URLSearchParams(window.location.search);
+    let page = 1;
+    let keyword = '';
+    let sort = 'postTime';
     
-    // 删除按钮事件
-    const deleteButtons = document.querySelectorAll('.delete-btn');
-    deleteButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const blogId = this.closest('.manage-card').getAttribute('data-id');
-            if (confirm('确定要删除这篇博客吗？此操作不可恢复！')) {
-                // 发送删除请求
-                deleteBlog(blogId);
-            }
-        });
-    });
+    if (searchParams.has('page')) {
+        page = parseInt(searchParams.get('page'));
+    }
     
-    // 搜索功能
+    if (searchParams.has('keyword')) {
+        keyword = searchParams.get('keyword');
+    }
+    
+    if (searchParams.has('sort')) {
+        sort = searchParams.get('sort');
+    }
+    
+    // 设置搜索和排序控件的初始值
     const searchInput = document.querySelector('.search-input');
-    searchInput.addEventListener('input', function() {
-        const keyword = this.value.toLowerCase();
-        const blogCards = document.querySelectorAll('.manage-card');
-        
-        blogCards.forEach(card => {
-            const title = card.querySelector('.blog-title').textContent.toLowerCase();
-            if (title.includes(keyword)) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    });
-    
-    // 排序功能
     const sortSelect = document.querySelector('.sort-select');
-    sortSelect.addEventListener('change', function() {
-        const sortType = this.value;
-        const blogList = document.querySelector('.manage-list');
-        const blogCards = Array.from(document.querySelectorAll('.manage-card'));
-        
-        blogCards.sort((a, b) => {
-            if (sortType === 'date') {
-                const dateA = a.querySelector('.blog-meta span:first-child').textContent;
-                const dateB = b.querySelector('.blog-meta span:first-child').textContent;
-                return new Date(dateB) - new Date(dateA);
-            } else if (sortType === 'views') {
-                const viewsA = parseInt(a.querySelector('.blog-meta span:nth-child(2)').textContent.match(/\d+/)[0]);
-                const viewsB = parseInt(b.querySelector('.blog-meta span:nth-child(2)').textContent.match(/\d+/)[0]);
-                return viewsB - viewsA;
-            } else if (sortType === 'likes') {
-                const likesA = parseInt(a.querySelector('.blog-meta span:nth-child(3)').textContent.match(/\d+/)[0]);
-                const likesB = parseInt(b.querySelector('.blog-meta span:nth-child(3)').textContent.match(/\d+/)[0]);
-                return likesB - likesA;
-            }
+    
+    if (searchInput && keyword) {
+        searchInput.value = keyword;
+    }
+    
+    if (sortSelect && sort) {
+        sortSelect.value = sort;
+    }
+    
+    // 绑定搜索输入框事件 - 使用防抖
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(function() {
+            const keyword = this.value.trim();
+            const sort = sortSelect ? sortSelect.value : 'postTime';
+            fetchUserBlogs(keyword, sort, 1, 10); // 搜索时重置到第一页
+        }, 500));
+    }
+    
+    // 绑定排序下拉框事件
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const keyword = searchInput ? searchInput.value.trim() : '';
+            const sort = this.value;
+            fetchUserBlogs(keyword, sort, 1, 10); // 排序时重置到第一页
         });
-        
-        // 重新添加排序后的卡片
-        blogCards.forEach(card => {
-            blogList.appendChild(card);
-        });
-    });
+    }
+    
+    // 加载博客列表
+    fetchUserBlogs(keyword, sort, page, 10);
 }
 
 // 绑定设置表单事件
@@ -856,14 +808,201 @@ function updateUserSettings(formData) {
     });
 }
 
-// 删除博客
-function deleteBlog(blogId) {
-    // 显示删除中提示
-    showNotification('正在删除...', 'info');
+// 获取用户博客列表 - 新增函数
+function fetchUserBlogs(keyword = '', sort = 'postTime', page = 1, pageSize = 10) {
+    // 构建查询参数
+    const params = new URLSearchParams({
+        keyword: keyword,
+        sort: sort,
+        page: page,
+        pageSize: pageSize
+    });
+    
+    // 显示加载状态
+    const contentArea = document.querySelector('.manage-list');
+    if (contentArea) {
+        contentArea.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+    }
     
     // 发送请求
+    fetch(`/api/blogs/user?${params.toString()}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('获取博客列表失败');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 更新UI
+            updateBlogList(data.data.blogs, data.data.total);
+        })
+        .catch(error => {
+            console.error('获取博客列表失败:', error);
+            if (contentArea) {
+                contentArea.innerHTML = '<div class="empty-message"><i class="fas fa-exclamation-circle"></i><p>加载失败，请稍后重试</p></div>';
+            }
+            showNotification('获取博客列表失败，请稍后重试', 'error');
+        });
+}
+
+// 完整的更新博客列表函数
+function updateBlogList(blogs, total) {
+    const contentArea = document.querySelector('.manage-list');
+    if (!contentArea) return;
+    
+    // 清空内容区域
+    contentArea.innerHTML = '';
+    
+    // 检查是否有博客
+    if (!blogs || blogs.length === 0) {
+        contentArea.innerHTML = '<div class="empty-message"><i class="far fa-file-alt"></i><p>暂无博客内容</p></div>';
+        return;
+    }
+    
+    // 设置列表布局
+    contentArea.style.display = 'grid';
+    contentArea.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+    contentArea.style.gap = '20px';
+    
+    // 渲染博客列表
+    blogs.forEach(blog => {
+        try {
+            const statusText = blog.status === 'published' ? '已发布' : '草稿';
+            const statusClass = blog.status === 'published' ? 'published' : 'draft';
+            
+            // 判断图片是否存在且有效
+            let hasCoverImage = blog.coverImage && blog.coverImage.trim() !== '';
+            
+            const blogCard = document.createElement('div');
+            blogCard.className = 'manage-card';
+            blogCard.dataset.blogId = blog.id;
+            
+            blogCard.innerHTML = `
+                <div class="blog-status ${statusClass}">${statusText}</div>
+                <div class="blog-thumbnail">
+                    <img src="${hasCoverImage ? blog.coverImage : 'img/default_touxiang.jpg'}" alt="博客封面" onerror="this.src='img/default_touxiang.jpg'">
+                </div>
+                <div class="blog-info">
+                    <h3 class="blog-title"><a href="blog_detail.html?id=${blog.id}" title="${blog.title}">${blog.title}</a></h3>
+                    <div class="blog-meta">
+                        <span><i class="far fa-calendar-alt"></i> ${new Date(blog.postTime || blog.publishDate).toLocaleDateString()}</span>
+                        <span><i class="far fa-eye"></i> ${blog.views || 0}</span>
+                        <span><i class="far fa-thumbs-up"></i> ${blog.likes || 0}</span>
+                    </div>
+                    <div class="blog-actions">
+                        <button class="edit-btn" data-blog-id="${blog.id}"><i class="far fa-edit"></i> 编辑</button>
+                        <button class="delete-btn" data-blog-id="${blog.id}"><i class="far fa-trash-alt"></i> 删除</button>
+                    </div>
+                </div>
+            `;
+            
+            contentArea.appendChild(blogCard);
+        } catch (error) {
+            console.error('渲染博客卡片出错:', error, blog);
+        }
+    });
+    
+    // 绑定博客卡片事件
+    bindBlogCardEvents();
+    
+    // 添加分页
+    addPagination(total, 10);
+}
+
+// 绑定博客卡片事件
+function bindBlogCardEvents() {
+    // 绑定编辑按钮事件
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const blogId = this.dataset.blogId;
+            window.location.href = `blog_editor.html?id=${blogId}`;
+        });
+    });
+    
+    // 绑定删除按钮事件
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const blogId = this.dataset.blogId;
+            confirmDeleteBlog(blogId);
+        });
+    });
+}
+
+// 确认删除博客 - 新增函数
+function confirmDeleteBlog(blogId) {
+    // 创建确认对话框
+    const dialogHTML = `
+        <div class="modal-overlay" id="deleteConfirmModal">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3>确认删除</h3>
+                    <button class="modal-close-btn" id="modalCloseBtn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p class="confirm-message">确定要删除这篇博客吗？此操作不可恢复！</p>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" id="cancelDeleteBtn">取消</button>
+                        <button class="btn btn-danger" id="confirmDeleteBtn">确认删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 添加对话框到页面
+    document.body.insertAdjacentHTML('beforeend', dialogHTML);
+    
+    // 显示对话框
+    const modal = document.getElementById('deleteConfirmModal');
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
+    
+    // 绑定关闭按钮
+    document.getElementById('modalCloseBtn').addEventListener('click', () => {
+        closeModal(modal);
+    });
+    
+    // 绑定取消按钮
+    document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+        closeModal(modal);
+    });
+    
+    // 点击对话框外部关闭
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal(modal);
+        }
+    });
+    
+    // 绑定确认删除按钮
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+        // 执行删除操作
+        deleteBlog(blogId, modal);
+    });
+}
+
+// 关闭模态框函数 - 新增函数
+function closeModal(modal) {
+    modal.classList.add('closing');
+    setTimeout(() => {
+        modal.remove();
+    }, 300);
+}
+
+// 删除博客 - 修改版
+function deleteBlog(blogId, modal) {
+    // 更新删除按钮状态
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 删除中...';
+    
+    // 发送删除请求
     fetch(`/api/blogs/${blogId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
     })
     .then(response => {
         if (!response.ok) {
@@ -872,42 +1011,170 @@ function deleteBlog(blogId) {
         return response.json();
     })
     .then(data => {
-        // 删除成功，移除对应博客卡片
-        const blogCard = document.querySelector(`.manage-card[data-id="${blogId}"]`);
+        // 关闭对话框
+        closeModal(modal);
+        
+        // 显示成功消息
+        showNotification(data.message || '博客已成功删除', 'success');
+        
+        // 移除对应的博客卡片
+        const blogCard = document.querySelector(`.manage-card[data-blog-id="${blogId}"]`);
         if (blogCard) {
-            blogCard.remove();
-        }
-        
-        showNotification('博客已删除', 'success');
-        
-        // 检查是否还有博客
-        const remainingCards = document.querySelectorAll('.manage-card');
-        if (remainingCards.length === 0) {
-            document.querySelector('.manage-list').innerHTML = '<p>暂无博客内容</p>';
+            blogCard.classList.add('card-removed');
+            setTimeout(() => {
+                blogCard.remove();
+                
+                // 检查是否还有博客卡片
+                const remainingCards = document.querySelectorAll('.manage-card');
+                if (remainingCards.length === 0) {
+                    document.querySelector('.manage-list').innerHTML = '<div class="empty-message"><i class="far fa-file-alt"></i><p>暂无博客内容</p></div>';
+                }
+            }, 300);
         }
     })
     .catch(error => {
-        showNotification('删除失败：' + error.message, 'error');
+        console.error('删除博客失败:', error);
+        
+        // 恢复按钮状态
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '确认删除';
+        
+        // 显示错误消息
+        showNotification('删除博客失败，请稍后重试', 'error');
     });
 }
 
-// 标记消息为已读
-function markMessageAsRead(messageId) {
-    fetch(`/api/messages/${messageId}/read`, {
-        method: 'POST'
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('操作失败');
+// 添加分页功能
+function addPagination(total, pageSize) {
+    const totalPages = Math.ceil(total / pageSize);
+    if (totalPages <= 1) return;
+    
+    // 移除旧的分页容器
+    const oldPagination = document.querySelector('.pagination-container');
+    if (oldPagination) {
+        oldPagination.remove();
+    }
+    
+    // 创建新的分页容器
+    const paginationContainer = document.createElement('div');
+    paginationContainer.className = 'pagination-container';
+    
+    // 获取当前页码
+    let currentPage = 1;
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has('page')) {
+        currentPage = parseInt(searchParams.get('page'));
+    }
+    
+    // 创建分页HTML
+    let paginationHTML = '<div class="pagination">';
+    
+    // 上一页按钮
+    paginationHTML += `
+        <button class="pagination-btn prev-btn" ${currentPage <= 1 ? 'disabled' : ''}>
+            <i class="fas fa-chevron-left"></i> 上一页
+        </button>
+        <div class="page-numbers">
+    `;
+    
+    // 页码按钮
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // 第一页
+    if (startPage > 1) {
+        paginationHTML += `<button class="page-btn" data-page="1">1</button>`;
+        if (startPage > 2) {
+            paginationHTML += `<span class="page-btn page-ellipsis">...</span>`;
         }
-        return response.json();
-    })
-    .then(data => {
-        // 不需要显示提示
-    })
-    .catch(error => {
-        console.error('标记消息已读失败：', error);
+    }
+    
+    // 中间的页码
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    }
+    
+    // 最后一页
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += `<span class="page-btn page-ellipsis">...</span>`;
+        }
+        paginationHTML += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
+    }
+    
+    paginationHTML += `
+        </div>
+        <button class="pagination-btn next-btn" ${currentPage >= totalPages ? 'disabled' : ''}>
+            下一页 <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>`;
+    
+    // 添加分页HTML到容器
+    paginationContainer.innerHTML = paginationHTML;
+    
+    // 添加到内容区
+    const contentArea = document.querySelector('.user-content');
+    contentArea.appendChild(paginationContainer);
+    
+    // 绑定分页事件
+    const pageButtons = paginationContainer.querySelectorAll('.page-btn:not(.page-ellipsis)');
+    pageButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const page = this.dataset.page;
+            if (page) {
+                goToPage(parseInt(page));
+            }
+        });
     });
+    
+    // 绑定上一页、下一页按钮事件
+    const prevBtn = paginationContainer.querySelector('.prev-btn');
+    const nextBtn = paginationContainer.querySelector('.next-btn');
+    
+    if (prevBtn && !prevBtn.disabled) {
+        prevBtn.addEventListener('click', () => {
+            goToPage(currentPage - 1);
+        });
+    }
+    
+    if (nextBtn && !nextBtn.disabled) {
+        nextBtn.addEventListener('click', () => {
+            goToPage(currentPage + 1);
+        });
+    }
+    
+    // 跳转到指定页面
+    function goToPage(pageNum) {
+        // 获取当前的搜索和排序参数
+        const searchInput = document.querySelector('.search-input');
+        const sortSelect = document.querySelector('.sort-select');
+        
+        let keyword = '';
+        let sort = 'postTime';
+        
+        if (searchInput) {
+            keyword = searchInput.value.trim();
+        }
+        
+        if (sortSelect) {
+            sort = sortSelect.value;
+        }
+        
+        // 获取用户博客并更新页面
+        fetchUserBlogs(keyword, sort, pageNum, pageSize);
+        
+        // 更新URL参数
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', pageNum);
+        if (keyword) url.searchParams.set('keyword', keyword);
+        if (sort !== 'postTime') url.searchParams.set('sort', sort);
+        window.history.pushState({}, '', url);
+    }
 }
 
 // 显示通知
@@ -1681,3 +1948,16 @@ styleElement.textContent += `
 `;
 
 document.head.appendChild(styleElement);
+
+// 添加防抖函数
+function debounce(func, wait) {
+    let timeout;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func.apply(context, args);
+        }, wait);
+    };
+}

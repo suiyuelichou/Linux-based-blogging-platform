@@ -1,12 +1,71 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // 全局变量
     let articleId = null;
     let isLiked = false;
     let isBookmarked = false;
+    // 确保必要的库已加载
+    loadResources().then(() => {
+        // 全局变量
+        articleId = null;
+        isLiked = false;
+        isBookmarked = false;
+        
+        // 初始化
+        init();
+    });
+    
+    // 加载必要的资源
+    function loadResources() {
+        return Promise.all([
+            // 确保 Marked.js 加载
+            loadScriptIfNeeded('https://cdn.jsdelivr.net/npm/marked/marked.min.js'),
+            // 确保 Highlight.js 加载
+            loadScriptIfNeeded('https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/highlight.min.js')
+        ]).then(() => {
+            // 加载代码高亮的 CSS
+            if (window.hljs) {
+                loadCSS('https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/github.min.css');
+            }
+        });
+    }
+    
+    // 按需加载脚本
+    function loadScriptIfNeeded(url) {
+        return new Promise((resolve) => {
+            // 检查脚本是否已加载
+            if (url.includes('marked') && window.marked) {
+                resolve();
+                return;
+            }
+            if (url.includes('highlight') && window.hljs) {
+                resolve();
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = resolve;
+            script.onerror = resolve; // 即使加载失败也继续
+            document.head.appendChild(script);
+        });
+    }
+    
+    // 加载 CSS
+    function loadCSS(url) {
+        // 检查是否已加载
+        const links = document.querySelectorAll('link');
+        for (let i = 0; i < links.length; i++) {
+            if (links[i].href.includes(url)) {
+                return;
+            }
+        }
+        
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = url;
+        document.head.appendChild(link);
+    }
     
     // 初始化
-    init();
-    
     function init() {
         setupEventListeners();
         loadArticleDetails();
@@ -237,16 +296,46 @@ document.addEventListener('DOMContentLoaded', function() {
         commentCount.textContent = article.comments;
         commentCountDisplay.textContent = article.comments;
         
-        // 设置文章内容
+        // 设置文章内容 - 根据内容格式正确渲染
         const postContent = document.getElementById('postContent');
-        postContent.innerHTML = article.content;
+        
+        // 根据内容格式决定如何渲染
+        if (article.content_format === 'markdown') {
+            // 使用 Markdown 渲染
+            if (window.marked) {
+                postContent.innerHTML = renderMarkdown(article.content);
+            } else if (article.content_html) {
+                // 如果 marked 库未加载，但有 HTML 版本，使用 HTML
+                postContent.innerHTML = article.content_html;
+            } else {
+                // 无法渲染 Markdown，直接显示
+                postContent.innerHTML = `<pre>${article.content}</pre>`;
+            }
+        } else if (article.content_html) {
+            // 直接使用 HTML 版本
+            postContent.innerHTML = article.content_html;
+        } else {
+            // 尝试判断内容类型
+            if (isLikelyMarkdown(article.content) && window.marked) {
+                postContent.innerHTML = renderMarkdown(article.content);
+            } else {
+                // 默认当作 HTML 处理
+                postContent.innerHTML = article.content;
+            }
+        }
+        
+        // 处理代码高亮
+        if (window.hljs) {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
         
         // 设置标签
         const postTags = document.getElementById('postTags');
         if (article.tags && article.tags.length > 0) {
             let tagsHTML = '';
             article.tags.forEach(tag => {
-                // tagsHTML += `<a href="blog_categories.html?tag=${encodeURIComponent(tag)}" class="post-tag">${tag}</a>`;
                 tagsHTML += `<span class="post-tag">${tag}</span>`;
             });
             postTags.innerHTML = tagsHTML;
@@ -313,6 +402,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             };
         }
+    }
+    
+    // 渲染 Markdown 内容
+    function renderMarkdown(markdown) {
+        if (!window.marked) {
+            console.error('Marked库未加载，无法渲染Markdown');
+            return `<pre>${markdown}</pre>`;
+        }
+        
+        // 配置 Marked
+        marked.setOptions({
+            gfm: true,                  // 启用 GitHub 风格 Markdown
+            breaks: true,               // 允许回车换行
+            smartLists: true,           // 智能列表
+            smartypants: true,          // 智能标点
+            xhtml: false,               // 不使用 xhtml 闭合标签
+            highlight: function(code, lang) {
+                // 如果指定了语言且 hljs 可用，应用代码高亮
+                if (lang && window.hljs) {
+                    try {
+                        return hljs.highlight(code, {language: lang}).value;
+                    } catch (e) {
+                        return code;
+                    }
+                }
+                return code;
+            }
+        });
+        
+        try {
+            return marked.parse(markdown);
+        } catch (e) {
+            console.error('Markdown 渲染错误:', e);
+            return `<pre>${markdown}</pre>`;
+        }
+    }
+    
+    // 判断内容是否可能是 Markdown
+    function isLikelyMarkdown(content) {
+        // 检查常见的 Markdown 语法特征
+        const markdownPatterns = [
+            /^#+ /m,               // 标题
+            /\*\*.*\*\*/,          // 粗体
+            /\*.*\*/,              // 斜体
+            /\[.*\]\(.*\)/,        // 链接
+            /^- /m,                // 无序列表
+            /^[0-9]+\. /m,         // 有序列表
+            /^```[\s\S]*```$/m,    // 代码块
+            /^>/m                  // 引用
+        ];
+        
+        return markdownPatterns.some(pattern => pattern.test(content));
     }
     
     // 加载评论
@@ -1147,81 +1288,95 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 生成文章内容
         const content = `
-        <h2>引言</h2>
-        <p>欢迎阅读这篇博客文章！这是一篇模拟生成的文章，用于展示博客详情页面的设计和功能。</p>
-        
-        <p>在这篇文章中，我们将探讨一些关于Web开发的重要概念和最佳实践。</p>
-        
-        <h2>第一部分：基础知识</h2>
-        <p>在Web开发中，HTML、CSS和JavaScript构成了基础的三大技术栈。</p>
-        
-        <h3>HTML的重要性</h3>
-        <p>HTML（超文本标记语言）是构建网页的基础。它提供了网页的基本结构和内容。</p>
-        
-        <p>一个良好的HTML结构应该具备以下特点：</p>
-        <ul>
-            <li>语义化：使用合适的标签表达内容的含义</li>
-            <li>可访问性：考虑到所有用户的使用需求</li>
-            <li>良好的SEO：有利于搜索引擎索引</li>
-        </ul>
-        
-        <h3>CSS的作用</h3>
-        <p>CSS（层叠样式表）用于控制网页的样式和布局。</p>
-        
-        <p>现代CSS已经非常强大，可以实现复杂的布局和动画效果：</p>
-        <ul>
-            <li>Flexbox和Grid布局</li>
-            <li>CSS变量</li>
-            <li>CSS动画和过渡</li>
-        </ul>
-        
-        <h3>JavaScript的能力</h3>
-        <p>JavaScript是一种功能强大的编程语言，使网页具有交互性和动态性。</p>
-        
-        <p>现代JavaScript生态系统包括：</p>
-        <ul>
-            <li>ES6+的新特性</li>
-            <li>框架和库（React、Vue、Angular等）</li>
-            <li>Node.js服务器端JavaScript</li>
-        </ul>
-        
-        <h2>第二部分：进阶技巧</h2>
-        <p>掌握了基础知识后，让我们来看一些进阶的Web开发技巧。</p>
-        
-        <h3>响应式设计</h3>
-        <p>响应式设计是现代Web开发的标准实践，确保网站在不同设备上都能提供良好的用户体验。</p>
-        
-        <pre><code>/* 媒体查询示例 */
+## 引言
+
+欢迎阅读这篇博客文章！这是一篇模拟生成的文章，用于展示博客详情页面的设计和功能。
+
+在这篇文章中，我们将探讨一些关于Web开发的重要概念和最佳实践。
+
+## 第一部分：基础知识
+
+在Web开发中，HTML、CSS和JavaScript构成了基础的三大技术栈。
+
+### HTML的重要性
+
+HTML（超文本标记语言）是构建网页的基础。它提供了网页的基本结构和内容。
+
+一个良好的HTML结构应该具备以下特点：
+
+- 语义化：使用合适的标签表达内容的含义
+- 可访问性：考虑到所有用户的使用需求
+- 良好的SEO：有利于搜索引擎索引
+
+### CSS的作用
+
+CSS（层叠样式表）用于控制网页的样式和布局。
+
+现代CSS已经非常强大，可以实现复杂的布局和动画效果：
+
+- Flexbox和Grid布局
+- CSS变量
+- CSS动画和过渡
+
+### JavaScript的能力
+
+JavaScript是一种功能强大的编程语言，使网页具有交互性和动态性。
+
+现代JavaScript生态系统包括：
+
+- ES6+的新特性
+- 框架和库（React、Vue、Angular等）
+- Node.js服务器端JavaScript
+
+## 第二部分：进阶技巧
+
+掌握了基础知识后，让我们来看一些进阶的Web开发技巧。
+
+### 响应式设计
+
+响应式设计是现代Web开发的标准实践，确保网站在不同设备上都能提供良好的用户体验。
+
+\`\`\`css
+/* 媒体查询示例 */
 @media (max-width: 768px) {
 .container {
 flex-direction: column;
 }
-}</code></pre>
+}
+\`\`\`
+
+### 性能优化
+
+Web性能对用户体验至关重要。以下是一些关键的性能优化技巧：
+
+- 图片懒加载
+- 代码分割
+- 缓存策略
+- 服务器端渲染
+
+> "性能不是一个功能，而是每个功能的基础要求。"
+
+## 总结
+
+Web开发是一个不断发展的领域，需要持续学习和实践。希望这篇文章能给你带来一些有用的信息和启发。
+
+感谢阅读！如有问题或建议，欢迎在下方评论区留言。
+`;
         
-        <h3>性能优化</h3>
-        <p>Web性能对用户体验至关重要。以下是一些关键的性能优化技巧：</p>
-        <ul>
-            <li>图片懒加载</li>
-            <li>代码分割</li>
-            <li>缓存策略</li>
-            <li>服务器端渲染</li>
-        </ul>
-        
-        <blockquote>
-            <p>"性能不是一个功能，而是每个功能的基础要求。"</p>
-        </blockquote>
-        
-        <h2>总结</h2>
-        <p>Web开发是一个不断发展的领域，需要持续学习和实践。希望这篇文章能给你带来一些有用的信息和启发。</p>
-        
-        <p>感谢阅读！如有问题或建议，欢迎在下方评论区留言。</p>
-        `;
+        // HTML 版本，用于备用
+        const htmlContent = window.marked ? marked.parse(content) : 
+            `<h2>引言</h2>
+            <p>欢迎阅读这篇博客文章！这是一篇模拟生成的文章，用于展示博客详情页面的设计和功能。</p>
+            <p>在这篇文章中，我们将探讨一些关于Web开发的重要概念和最佳实践。</p>
+            <!-- 其他 HTML 内容 -->`;
         
         return {
             id: id,
             title: `博客文章标题 ${id}: 这是一个关于Web开发的深入探讨`,
             excerpt: '这是文章的摘要内容，通常显示文章的前几段文字。这只是一个示例文本，用于展示文章卡片的样式和布局效果。',
             content: content,
+            content_html: htmlContent, 
+            content_format: 'markdown',
             thumbnail: `https://picsum.photos/1200/600?random=${id}`,
             author: author.name,
             authorAvatar: author.avatar,

@@ -12,6 +12,8 @@
     <!-- 引入编辑器依赖 -->
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.0-rc.2/dist/quill.min.js"></script>
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <!-- 顶部导航栏 -->
@@ -579,47 +581,121 @@
             // 发布文章函数
             function publishArticle() {
                 const title = document.getElementById('blogTitle').value;
-                const content = quill.root.innerHTML;
+                const htmlContent = quill.root.innerHTML;
                 
-                // 添加日志，方便调试
-                console.log('准备发布文章:', { title, contentLength: content.length });
-                
-                // 显示发布中状态
+                // 显示上传进度提示
                 modalConfirmBtn.disabled = true;
-                modalConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发布中...';
+                modalConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
                 
-                // 准备文章数据
-                const formData = new FormData();
-                formData.append('title', title);
-                formData.append('content', content);
-                
-                // 检查高级设置是否已填写
-                if (!advancedOptionsPanel.classList.contains('hidden')) {
-                    const category = document.getElementById('blogCategory').value;
-                    if (category) {
-                        formData.append('category', category);
-                        console.log('添加分类:', category);
+                // 转换 HTML 为 Markdown
+                convertHtmlToMarkdown(htmlContent).then(markdownContent => {
+                    console.log('转换为 Markdown 成功');
+                    
+                    // 准备表单数据
+                    const formData = new FormData();
+                    formData.append('title', title);
+                    formData.append('content', markdownContent);  // 存储 Markdown 内容
+                    formData.append('content_format', 'markdown'); // 标记内容格式
+                    
+                    // 可选：同时保存HTML用于快速渲染
+                    formData.append('content_html', htmlContent);
+                    
+                    // 添加高级设置（如果有）
+                    if (!advancedOptionsPanel.classList.contains('hidden')) {
+                        const category = document.getElementById('blogCategory').value;
+                        if (category) {
+                            formData.append('category', category);
+                        }
+                        
+                        if (tags.length > 0) {
+                            formData.append('tags', JSON.stringify(tags));
+                        }
+                        
+                        // 添加封面图片
+                        const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
+                        if (thumbnailFile) {
+                            formData.append('thumbnail', thumbnailFile);
+                        }
                     }
                     
-                    if (tags.length > 0) {
-                        formData.append('tags', JSON.stringify(tags));
-                        console.log('添加标签:', tags);
-                    }
+                    // 发送请求
+                    sendArticleData(formData);
+                }).catch(error => {
+                    console.error('转换为 Markdown 失败:', error);
+                    showNotification('内容处理失败，请重试', 'error');
                     
-                    // 添加封面图片（如果有）
-                    const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
-                    if (thumbnailFile) {
-                        formData.append('thumbnail', thumbnailFile);
-                        console.log('添加封面图片:', thumbnailFile.name);
+                    // 恢复按钮状态
+                    modalConfirmBtn.disabled = false;
+                    modalConfirmBtn.innerHTML = '确认';
+                });
+            }
+            
+            // HTML 转 Markdown 函数，处理图片和内容
+            async function convertHtmlToMarkdown(html) {
+                try {
+                    // 处理内容中的图片（上传base64图片等）
+                    const processedHtml = await processImagesInContent(html);
+                    
+                    // 使用 TurndownService 转换为 Markdown
+                    const turndownService = new TurndownService({
+                        headingStyle: 'atx',
+                        codeBlockStyle: 'fenced',
+                        bulletListMarker: '-',
+                        emDelimiter: '*'
+                    });
+                    
+                    // 自定义规则：更好地处理代码块
+                    turndownService.addRule('codeBlocks', {
+                        filter: function(node) {
+                            return node.nodeName === 'PRE' && 
+                                   node.firstChild && 
+                                   node.firstChild.nodeName === 'CODE';
+                        },
+                        replacement: function(content, node) {
+                            const code = node.firstChild.textContent;
+                            const lang = node.firstChild.className.replace('language-', '');
+                            return '\n\n```' + lang + '\n' + code + '\n```\n\n';
+                        }
+                    });
+                    
+                    // 转换为 Markdown
+                    const markdown = turndownService.turndown(processedHtml);
+                    return markdown;
+                } catch (error) {
+                    console.error('转换过程出错:', error);
+                    throw error;
+                }
+            }
+            
+            // 处理内容中的图片
+            async function processImagesInContent(html) {
+                const tempDOM = document.createElement('div');
+                tempDOM.innerHTML = html;
+                
+                // 查找所有的图片元素
+                const images = tempDOM.querySelectorAll('img');
+                
+                // 处理每一个图片
+                for (let img of images) {
+                    // 处理base64图片
+                    if (img.src.startsWith('data:image')) {
+                        try {
+                            showNotification('正在处理内容中的图片...', 'info');
+                            const imageUrl = await uploadBase64Image(img.src);
+                            img.src = imageUrl;
+                        } catch (error) {
+                            console.error('图片处理失败:', error);
+                            // 继续处理其他图片
+                        }
                     }
                 }
                 
-                // 输出FormData内容以便调试
-                for (let pair of formData.entries()) {
-                    console.log(pair[0] + ': ' + (pair[0] === 'content' ? '(内容太长，不显示)' : pair[1]));
-                }
-                
-                // 使用原生XHR发送请求，更容易调试
+                return tempDOM.innerHTML;
+            }
+            
+            // 发送文章数据到服务器
+            function sendArticleData(formData) {
+                // 使用原生XHR发送请求
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', '/api/articles', true);
                 xhr.withCredentials = true;
@@ -1103,6 +1179,136 @@
                     }
                 });
             }
+
+            // 添加自动保存草稿功能
+            let autoSaveTimer;
+            const AUTO_SAVE_INTERVAL = 60000; // 每分钟自动保存一次
+            
+            function startAutoSave() {
+                // 清除之前的定时器
+                if (autoSaveTimer) {
+                    clearInterval(autoSaveTimer);
+                }
+                
+                // 设置新的定时器
+                autoSaveTimer = setInterval(() => {
+                    const title = document.getElementById('blogTitle').value;
+                    const content = quill.root.innerHTML;
+                    
+                    // 如果有内容才保存
+                    if (title.trim() || quill.getText().trim().length > 10) {
+                        saveDraft(title, content);
+                    }
+                }, AUTO_SAVE_INTERVAL);
+            }
+            
+            // 保存草稿到本地存储
+            function saveDraft(title, content) {
+                try {
+                    const draft = {
+                        title: title,
+                        content: content,
+                        lastSaved: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('blog_draft', JSON.stringify(draft));
+                    console.log('草稿已自动保存', new Date().toLocaleTimeString());
+                } catch (error) {
+                    console.error('保存草稿失败:', error);
+                }
+            }
+            
+            // 加载草稿
+            function loadDraft() {
+                try {
+                    const draftJson = localStorage.getItem('blog_draft');
+                    if (draftJson) {
+                        const draft = JSON.parse(draftJson);
+                        
+                        // 计算上次保存时间
+                        const lastSaved = new Date(draft.lastSaved);
+                        const now = new Date();
+                        const hoursSinceSave = (now - lastSaved) / (1000 * 60 * 60);
+                        
+                        // 如果草稿是24小时内保存的，询问是否恢复
+                        if (hoursSinceSave < 24) {
+                            showDraftRecoveryDialog(draft);
+                        }
+                    }
+                } catch (error) {
+                    console.error('加载草稿失败:', error);
+                }
+            }
+            
+            // 显示草稿恢复对话框
+            function showDraftRecoveryDialog(draft) {
+                const lastSaved = new Date(draft.lastSaved).toLocaleString();
+                
+                const modalBody = document.getElementById('modalBody');
+                const modalTitle = document.getElementById('modalTitle');
+                
+                modalTitle.textContent = '恢复未发布的草稿';
+                modalBody.innerHTML = `
+                    <p>发现一个在 ${lastSaved} 保存的未发布草稿。是否要恢复？</p>
+                    <div class="draft-preview">
+                        <strong>标题:</strong> ${draft.title || '(无标题)'}
+                        <br>
+                        <strong>内容预览:</strong> ${draft.content.substring(0, 100)}...
+                    </div>
+                `;
+                
+                // 更改确认按钮文本
+                modalConfirmBtn.textContent = '恢复草稿';
+                modalCancelBtn.textContent = '丢弃草稿';
+                
+                // 修改确认按钮行为
+                const originalConfirmAction = modalConfirmBtn.onclick;
+                modalConfirmBtn.onclick = function() {
+                    // 恢复草稿
+                    document.getElementById('blogTitle').value = draft.title;
+                    quill.root.innerHTML = draft.content;
+                    
+                    // 关闭对话框
+                    closeModalFunction();
+                    
+                    // 恢复原始确认按钮行为
+                    modalConfirmBtn.onclick = originalConfirmAction;
+                    modalConfirmBtn.textContent = '确认';
+                    modalCancelBtn.textContent = '取消';
+                    
+                    showNotification('草稿已恢复', 'success');
+                };
+                
+                // 修改取消按钮行为
+                const originalCancelAction = modalCancelBtn.onclick;
+                modalCancelBtn.onclick = function() {
+                    // 删除草稿
+                    localStorage.removeItem('blog_draft');
+                    
+                    // 关闭对话框
+                    closeModalFunction();
+                    
+                    // 恢复原始取消按钮行为
+                    modalCancelBtn.onclick = originalCancelAction;
+                    modalConfirmBtn.onclick = originalConfirmAction;
+                    modalConfirmBtn.textContent = '确认';
+                    modalCancelBtn.textContent = '取消';
+                    
+                    showNotification('草稿已丢弃', 'info');
+                };
+                
+                // 显示对话框
+                confirmModal.style.display = 'block';
+                setTimeout(() => {
+                    confirmModal.classList.add('show');
+                }, 10);
+            }
+            
+            // 初始化编辑器时检查是否有草稿
+            loadDraft();
+            
+            // 开始自动保存
+            startAutoSave();
         });
     </script>
 </body>

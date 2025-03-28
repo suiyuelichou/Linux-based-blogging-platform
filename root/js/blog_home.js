@@ -198,8 +198,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 检查缩略图是否为空，如果为空则使用随机图片
                 const thumbnail = article.thumbnail ? article.thumbnail : `https://picsum.photos/600/400?random=${article.id || index}`;
                 
-                // 改进的摘要处理，确保处理HTML内容和图片
-                const excerpt = extractExcerpt(article.content || article.excerpt, 150);
+                // 根据内容格式处理摘要
+                let excerpt = '';
+                if (article.excerpt) {
+                    // 如果文章已经有摘要字段，使用它
+                    excerpt = extractExcerpt(article.excerpt, 150);
+                } else if (article.content) {
+                    // 否则从内容中提取摘要
+                    excerpt = extractExcerpt(article.content, 150);
+                } else {
+                    excerpt = '无内容摘要';
+                }
                 
                 html += `
                 <article class="article-card fade-in" style="animation-delay: ${index * 0.1}s">
@@ -230,10 +239,88 @@ document.addEventListener('DOMContentLoaded', function() {
         articlesContainer.innerHTML = html;
     }
     
-    // 辅助函数：提取HTML内容中的纯文本并生成摘要
-    function extractExcerpt(htmlContent, maxLength = 150) {
-        if (!htmlContent) return '无内容摘要';
+    // 修改辅助函数：提取HTML或Markdown内容中的纯文本并生成摘要
+    function extractExcerpt(content, maxLength = 150) {
+        if (!content) return '无内容摘要';
         
+        // 检查内容格式是否可能是Markdown
+        const isLikelyMarkdown = checkIfMarkdown(content);
+        
+        if (isLikelyMarkdown) {
+            // 处理Markdown内容
+            return extractFromMarkdown(content, maxLength);
+        } else {
+            // 处理HTML内容
+            return extractFromHtml(content, maxLength);
+        }
+    }
+    
+    // 判断内容是否为Markdown格式
+    function checkIfMarkdown(content) {
+        // 简单检测是否包含常见的Markdown语法
+        const markdownPatterns = [
+            /^#+ /m,               // 标题
+            /\*\*.*\*\*/,          // 粗体
+            /\*.*\*/,              // 斜体
+            /\[.*\]\(.*\)/,        // 链接
+            /^- /m,                // 无序列表
+            /^[0-9]+\. /m,         // 有序列表
+            /^```[\s\S]*```$/m,    // 代码块
+            /^>/m                  // 引用
+        ];
+        
+        return markdownPatterns.some(pattern => pattern.test(content));
+    }
+    
+    // 从Markdown提取纯文本
+    function extractFromMarkdown(markdown, maxLength) {
+        // 移除标题
+        let text = markdown.replace(/^#+\s+(.*)$/gm, '$1');
+        
+        // 移除粗体和斜体
+        text = text.replace(/\*\*(.*?)\*\*/g, '$1');
+        text = text.replace(/\*(.*?)\*/g, '$1');
+        
+        // 移除链接，只保留链接文字
+        text = text.replace(/\[(.*?)\]\(.*?\)/g, '$1');
+        
+        // 移除图片
+        text = text.replace(/!\[.*?\]\(.*?\)/g, '');
+        
+        // 移除代码块
+        text = text.replace(/```[\s\S]*?```/g, '');
+        
+        // 移除行内代码
+        text = text.replace(/`(.*?)`/g, '$1');
+        
+        // 移除引用符号
+        text = text.replace(/^>\s+/gm, '');
+        
+        // 移除无序列表符号
+        text = text.replace(/^[\-\*]\s+/gm, '');
+        
+        // 移除有序列表编号
+        text = text.replace(/^\d+\.\s+/gm, '');
+        
+        // 移除水平线
+        text = text.replace(/^---+$/gm, '');
+        
+        // 移除HTML标签
+        text = text.replace(/<[^>]*>/g, '');
+        
+        // 去除多余空白字符和换行符
+        text = text.replace(/\s+/g, ' ').trim();
+        
+        // 限制长度并添加省略号
+        if (text.length > maxLength) {
+            return text.substring(0, maxLength) + '...';
+        }
+        
+        return text;
+    }
+    
+    // 从HTML提取纯文本
+    function extractFromHtml(htmlContent, maxLength) {
         // 创建临时DOM元素来解析HTML
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = htmlContent;

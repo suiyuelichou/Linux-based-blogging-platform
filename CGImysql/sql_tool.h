@@ -65,6 +65,8 @@ public:
 	int get_views();
 	void set_thumbnail(string thumbnail);
 	string get_thumbnail();
+	void set_likes(int likes);
+	int get_likes();
 
 private:
 	int m_blog_id;			// 博客id
@@ -76,7 +78,7 @@ private:
 	string m_updatedAt;		// 博客更新时间
 	int views;				// 浏览量
 	string thumbnail;		// 封面路径
-
+	int likes;				// 点赞数
 };
 
 // 评论类，用于存储每条博客里的用户评论
@@ -270,6 +272,8 @@ public:
 	vector<Blog> get_blogs_by_category_and_page(int categoryId, int page, int size, const string& sortField, const string& sortOrder);				// 也是分页查询，但是多了参数
 	vector<Blog> get_blogs_by_search(int page, int size, const string& sortField, const string& sortOrder, const string& keyword);	// 按关键词搜索博客
 	vector<Blog> get_blogs_by_category_and_search(int categoryId, const string& keyword, int page, int size, const string& sortField, const string& sortOrder);
+	vector<Blog> get_blogs_by_user(int userid, int page, int size, const string &keyword, const string &order_by);
+	vector<Blog> get_blogs_by_user_by_like_count(int userid, int page, int size, const string &keyword, const string &order_by);	// 按点赞数排序
 	vector<Comments> get_comments_by_search(const string& searchKeyword, int page, int size);// 按关键词搜索评论
 	vector<Comments> get_comments(int page, int size);// 分页获取评论
 	vector<Comments> get_comments_by_page_and_sort(int page, int size, const string& sortField, const string& sortOrder);
@@ -291,6 +295,8 @@ public:
 	int get_total_blog_count();							// 获取博客的总条数
 	int get_total_blog_count_by_category(int categoryId);// 根据分类获取博客的总条数
 	int get_total_blog_count_by_search(const string& keyword);	// 获取符合搜索条件的博客总数
+	int get_total_blog_count_by_user(int userid, const string& keyword);	// 获取符合搜索条件的博客总数
+	int get_total_blog_count_by_user_by_like_count(int userid, const string& keyword);	// 获取符合搜索条件的博客总数
 	int get_total_comments_count_by_search(const string& keyword);	// 获取符合搜索条件的评论总数
 	int get_total_categories_count_by_search(const string& keyword);	// 获取符合搜索条件的分类总数
 	int get_total_blog_count_by_category_and_search(int categoryId, const string& keyword);
