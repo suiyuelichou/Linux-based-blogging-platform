@@ -2898,6 +2898,10 @@ http_conn::HTTP_CODE http_conn::do_request()
                 }
             }
         }
+         if(form_data.find("thumbnail_path") != form_data.end()){
+            thumbnail_path = form_data["thumbnail_path"];
+         }
+
         int userid = tool.get_userid(username);
         int new_blogId = tool.update_blog(userid, blogId, title, content, categoryId, thumbnail_path);
 

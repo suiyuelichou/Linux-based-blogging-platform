@@ -954,6 +954,13 @@ function bindBlogCardEvents() {
                     showNotification('博客数据不完整，编辑可能受影响', 'warning');
                 }
                 
+                // 确保统一封面图片字段名
+                if (!blogData.coverImage) {
+                    // 尝试其他可能的字段名
+                    blogData.coverImage = blogData.cover_image || blogData.thumbnail || blogData.cover || '';
+                    console.log('统一封面图片字段:', blogData.coverImage);
+                }
+                
                 // 将博客数据存储到 sessionStorage
                 try {
                     sessionStorage.setItem('editBlogData', JSON.stringify(blogData));
@@ -993,7 +1000,19 @@ async function fetchBlogDataAndOpenEditor(blogId) {
             throw new Error('获取博客数据失败');
         }
         
-        const blogData = await response.json();
+        let blogData = await response.json();
+        
+        // 处理不同格式的API响应
+        if (blogData.code && blogData.data) {
+            blogData = blogData.data;
+        }
+        
+        // 确保统一封面图片字段名
+        if (!blogData.coverImage) {
+            // 尝试其他可能的字段名
+            blogData.coverImage = blogData.cover_image || blogData.thumbnail || blogData.cover || '';
+            console.log('统一封面图片字段:', blogData.coverImage);
+        }
         
         // 创建编辑器模态框
         showBlogEditor(blogData);
@@ -1178,6 +1197,13 @@ function initImageUpload() {
     const thumbnailUpload = document.getElementById('thumbnailUpload');
     const thumbnailPreview = document.getElementById('thumbnailPreview');
     
+    // 确保初始状态是正确的 - 如果已经有图片，移除no-image类
+    if (thumbnailPreview.querySelector('img')) {
+        thumbnailPreview.classList.remove('no-image');
+    } else {
+        thumbnailPreview.classList.add('no-image');
+    }
+    
     thumbnailUpload.addEventListener('change', function(e) {
         const file = this.files[0];
         if (file) {
@@ -1289,10 +1315,49 @@ async function saveBlogEdit(blogId, closeModal) {
         formData.append('category', category);
         formData.append('tags', JSON.stringify(tags));
         
-        // 如果有新的封面图片
+        // 处理封面图片
         const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
+        let hasCoverImage = false;
+        
         if (thumbnailFile) {
+            // 如果有新选择的图片，上传新图片
             formData.append('thumbnail', thumbnailFile);
+            hasCoverImage = true;
+        } else {
+            // 如果没有新选择的图片，但有现有的封面图片，传递原有的URL
+            const thumbnailPreview = document.getElementById('thumbnailPreview');
+            const thumbnailImg = thumbnailPreview.querySelector('img');
+            if (thumbnailImg && thumbnailImg.src) {
+                try {
+                    // 获取相对路径 - 从URL中提取
+                    let coverImageUrl = thumbnailImg.src;
+                    
+                    // 处理绝对URL转为相对路径
+                    if (coverImageUrl.includes('/thumbnail/')) {
+                        const pathMatch = coverImageUrl.match(/\/thumbnail\/[^?#]*/);
+                        if (pathMatch) {
+                            coverImageUrl = pathMatch[0];
+                        }
+                    }
+                    
+                    // 如果是数据URL (base64)，我们需要上传该图像
+                    if (coverImageUrl.startsWith('data:image')) {
+                        formData.append('thumbnailBase64', coverImageUrl);
+                    } else {
+                        formData.append('thumbnail_path', coverImageUrl);
+                    }
+                    
+                    hasCoverImage = true;
+                    console.log('保留原有封面图片:', coverImageUrl);
+                } catch (error) {
+                    console.error('处理封面图片URL失败:', error);
+                }
+            }
+        }
+        
+        // 如果没有封面图片，明确指出
+        if (!hasCoverImage) {
+            formData.append('remove_thumbnail', 'true');
         }
         
         // 发送更新请求
