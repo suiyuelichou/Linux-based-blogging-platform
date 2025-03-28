@@ -838,3 +838,110 @@ line-height: 1.5;
 .blog-title a:hover {
     color: var(--primary-color);
 }
+
+/* 博客编辑器模态框样式 */
+.editor-wrapper {
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--card-bg);
+    min-height: 400px;
+    margin-bottom: 20px;
+}
+
+.ql-toolbar.ql-snow {
+    border-color: var(--border-color) !important;
+    background-color: var(--bg-secondary);
+}
+
+.ql-container.ql-snow {
+    border-color: var(--border-color) !important;
+    min-height: 350px;
+    background-color: var(--input-bg);
+}
+
+.ql-editor {
+    min-height: 350px;
+    font-family: var(--body-font);
+    color: var(--text-color);
+}
+
+/* 标签输入样式 */
+.tags-input {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--input-bg);
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+
+.tag .remove-tag {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.tags-input input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 5px 0;
+    background-color: transparent;
+    color: var(--text-color);
+}
+
+/* 缩略图预览样式 */
+.thumbnail-preview {
+    width: 100%;
+    height: 200px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.thumbnail-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.thumbnail-preview.no-image {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* 编辑器模态框响应式调整 */
+@media (max-width: 768px) {
+    .modal-container {
+        width: 95% !important;
+        margin: 10px;
+    }
+    
+    .editor-wrapper {
+        min-height: 300px;
+    }
+    
+    .ql-container.ql-snow {
+        min-height: 250px;
+    }
+    
+    .ql-editor {
+        min-height: 250px;
+    }
+}

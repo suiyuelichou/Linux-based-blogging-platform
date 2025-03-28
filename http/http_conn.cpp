@@ -2146,7 +2146,6 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData = response.dump();
 
         return BLOG_DATA;
-        
     }
     // 处理图片上传
     else if (m_method == POST && strstr(m_url, "/api/upload/image") != nullptr) {
@@ -2747,6 +2746,197 @@ http_conn::HTTP_CODE http_conn::do_request()
             }
         }
         jsonData += "] } }";
+
+        return BLOG_DATA;
+    }
+    // 个人中心-博客管理-获取需要编辑的博客信息
+    else if (m_method == GET && strncmp(m_url, "/api/blogs/", 11) == 0 && isdigit(m_url[11])) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析请求参数
+        char* blogIdStart = strstr(m_url, "/api/blogs/");
+        if(blogIdStart == nullptr){
+            jsonData = "{\"success\": false, \"message\": \"无效的博客ID\"}";
+            return BAD_REQUEST;
+        }
+
+        int blogId = atoi(blogIdStart + 11);
+        if(blogId <= 0){
+            jsonData = "{\"success\": false, \"message\": \"无效的博客ID\"}";
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        Blog blog = tool.select_blog_by_id(blogId);
+        string content = escapeJsonString(blog.get_blog_content());
+        string categoryName = tool.get_cotegoriename_by_cotegorieid(blog.get_category_id());
+        
+        // 获取博客的标签
+        vector<string> tags = tool.get_tags_by_blogid(blogId);
+        string tags_str = "";
+        for(int i = 0; i < tags.size(); i++){
+            tags_str += tags[i];
+            if(i != tags.size() - 1){
+                tags_str += ",";
+            }
+        }
+        
+        jsonData = "{\"code\": 200, \"message\": \"获取成功\", \"data\": ";
+        jsonData += "{";
+        jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
+        jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
+        jsonData += "\"content\": \"" + content + "\",";
+        jsonData += "\"content_format\": \"" + string("markdown") + "\",";
+        jsonData += "\"category\": \"" + categoryName + "\",";
+        jsonData += "\"tags\": \"" + tags_str + "\",";
+        jsonData += "\"coverImage\": \"" + blog.get_thumbnail() + "\",";
+        jsonData += "\"createTime\": \"" + blog.get_blog_postTime() + "\",";
+        jsonData += "\"updateTime\": \"" + blog.get_updatedAt() + "\",";
+        jsonData += "\"status\": \"" + string("published") + "\",";
+        jsonData += "\"author\": {\"id\": " + std::to_string(blog.get_user_id()) + ",";
+        jsonData += "\"username\": \"" + username + "\"}";
+        jsonData += "}";
+        jsonData += "}";
+
+        return BLOG_DATA;
+    }
+    // 个人中心-博客管理-编辑博客
+    else if (m_method == PATCH && strstr(m_url, "/api/blogs/") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+        sql_blog_tool tool;
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析请求参数
+        int blogId = 0;
+        char* blogIdStart = strstr(m_url, "/api/blogs/");
+        if(blogIdStart == nullptr){
+            jsonData = "{\"success\": false, \"message\": \"无效的博客ID\"}";
+            return BAD_REQUEST;
+        }
+        blogId = atoi(blogIdStart + 11);
+        if(blogId <= 0){
+            jsonData = "{\"success\": false, \"message\": \"无效的博客ID\"}";
+            return BAD_REQUEST;
+        }
+
+        // 解析multipart/form-data格式的请求体
+        if(m_boundary.empty()){
+            return BAD_REQUEST;
+        }
+
+        std::map<std::string, std::string> form_data;
+        std::map<std::string, file_data_t> files;
+        if(!parse_multipart_form_data(m_boundary, form_data, files)){
+            return BAD_REQUEST;
+        }
+
+        if(form_data.find("title") == form_data.end()){
+            json response = {
+                {"success", false},
+                {"message", "标题不能为空"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+        if(form_data.find("content") == form_data.end()){
+            json response = {
+                {"success", false},
+                {"message", "内容不能为空"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+
+        string title = form_data["title"];
+        string content = form_data["content"];
+        string category = "";
+        string tags = "";
+        string thumbnail_path = "";
+        int categoryId = 1;
+        // 获取category
+        if(form_data.find("category") != form_data.end()){
+            category = form_data["category"];
+            categoryId = tool.get_category_id_by_name(category);
+            if(categoryId == -1){
+                json response = {
+                    {"success", false},
+                    {"message", "分类不存在"}
+                };
+                jsonData = response.dump();
+                return BLOG_DATA;
+            }
+        }
+        // 获取thumbnail
+        if(files.find("thumbnail") != files.end()){
+            file_data_t thumbnail = files["thumbnail"];
+            char filename[100] = {0};
+            // sprintf(filename, "thumbnail/%s.%s", article_id, get_file_extension(thumbnail.filename).c_str());
+            sprintf(filename, "/root/projects/C-WebServer/root/thumbnail/%s", generate_unique_filename(thumbnail.filename).c_str());
+            
+            // 保存文件
+            FILE *fp = fopen(filename, "wb");
+            if (fp) {
+                fwrite(thumbnail.data, 1, thumbnail.size, fp);
+                fclose(fp);
+                // 只提取路径中的/thumbnail/部分
+                size_t pos = string(filename).find("/thumbnail/");
+                if (pos != string::npos) {
+                    thumbnail_path = string(filename).substr(pos);
+                } else {
+                    thumbnail_path = "/thumbnail/" + string(generate_unique_filename(thumbnail.filename));
+                }
+            }
+        }
+        int userid = tool.get_userid(username);
+        int new_blogId = tool.update_blog(userid, blogId, title, content, categoryId, thumbnail_path);
+
+        if(new_blogId == -1){
+            json response = {
+                {"success", false},
+                {"message", "文章发布失败"}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+
+        // 获取tags
+        if(form_data.find("tags") != form_data.end()){
+            tags = form_data["tags"];
+        }
+        if(!tags.empty()){
+            // 解析tags
+            json tags_json = json::parse(tags);
+            for(const auto& tag : tags_json.items()){
+                string tag_name = tag.value();
+                int tagId = tool.get_tag_id_by_name(tag_name);
+                if(tagId != -1){
+                    tool.add_blog_tag(blogId, tagId);
+                }else{
+                    int newTagId = tool.create_tag(tag_name);
+                    tool.add_blog_tag(blogId, newTagId);
+                }
+            }
+        }
+
+        json response = {
+            {"code", 200},
+            {"message", "博客更新成功"},
+            {"data", {
+                {"id", new_blogId}
+            }}
+        };
+        jsonData = response.dump();
 
         return BLOG_DATA;
     }

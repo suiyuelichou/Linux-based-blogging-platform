@@ -913,9 +913,64 @@ function updateBlogList(blogs, total) {
 function bindBlogCardEvents() {
     // 绑定编辑按钮事件
     document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', async function() {
             const blogId = this.dataset.blogId;
-            window.location.href = `blog_editor.html?id=${blogId}`;
+            try {
+                showNotification('正在加载博客数据...', 'info');
+                
+                // 获取博客数据的API调用
+                const response = await fetch(`/api/blogs/${blogId}`);
+                if (!response.ok) {
+                    throw new Error('获取博客数据失败');
+                }
+                
+                let blogData;
+                try {
+                    blogData = await response.json();
+                    console.log('获取到的博客数据:', blogData); // 调试日志
+                } catch (parseError) {
+                    console.error('解析博客数据失败:', parseError);
+                    throw new Error('解析博客数据失败');
+                }
+                
+                if (!blogData) {
+                    throw new Error('未获取到有效的博客数据');
+                }
+                
+                // 检查博客数据结构
+                if (blogData.code && blogData.data) {
+                    // API返回了标准格式的数据
+                    if (blogData.code === 200) {
+                        blogData = blogData.data; // 使用data字段中的博客数据
+                        console.log('使用标准API响应中的数据字段');
+                    } else {
+                        throw new Error(blogData.message || '获取博客数据失败');
+                    }
+                }
+                
+                // 确保数据包含必要的字段
+                if (!blogData.title || !blogData.content) {
+                    console.warn('博客数据缺少必要字段:', blogData);
+                    showNotification('博客数据不完整，编辑可能受影响', 'warning');
+                }
+                
+                // 将博客数据存储到 sessionStorage
+                try {
+                    sessionStorage.setItem('editBlogData', JSON.stringify(blogData));
+                    console.log('博客数据已存储到sessionStorage');
+                } catch (storageError) {
+                    console.error('存储博客数据失败:', storageError);
+                    showNotification('存储博客数据失败，编辑可能受影响', 'warning');
+                }
+                
+                // 跳转到博客编辑页面
+                console.log('准备跳转到编辑页面，博客ID:', blogId);
+                window.location.href = `blog_editor.html?mode=edit&id=${blogId}`;
+                
+            } catch (error) {
+                console.error('加载博客数据失败:', error);
+                showNotification('加载博客数据失败，请重试', 'error');
+            }
         });
     });
     
@@ -926,6 +981,347 @@ function bindBlogCardEvents() {
             confirmDeleteBlog(blogId);
         });
     });
+}
+
+// 获取博客数据并打开编辑器
+async function fetchBlogDataAndOpenEditor(blogId) {
+    try {
+        showNotification('正在加载博客数据...', 'info');
+        
+        const response = await fetch(`/api/blogs/${blogId}`);
+        if (!response.ok) {
+            throw new Error('获取博客数据失败');
+        }
+        
+        const blogData = await response.json();
+        
+        // 创建编辑器模态框
+        showBlogEditor(blogData);
+    } catch (error) {
+        console.error('加载博客数据失败:', error);
+        showNotification('加载博客数据失败，请重试', 'error');
+    }
+}
+
+// 显示博客编辑器
+function showBlogEditor(blogData) {
+    // 创建模态框HTML
+    const modalHtml = `
+        <div class="modal-overlay" id="blogEditorModal">
+            <div class="modal-container" style="max-width: 90%; width: 1000px;">
+                <div class="modal-header">
+                    <h3>编辑博客</h3>
+                    <button class="modal-close-btn" id="modalCloseBtn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <form id="blogEditForm">
+                        <div class="form-group">
+                            <label for="blogTitle">文章标题</label>
+                            <input type="text" id="blogTitle" name="title" value="${blogData.title || ''}" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editor">文章内容</label>
+                            <div id="editor" class="editor-wrapper"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="blogCategory">分类</label>
+                            <select id="blogCategory" name="category">
+                                <option value="">选择分类</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tagsInput">标签</label>
+                            <div class="tags-input" id="tagsContainer">
+                                <input type="text" id="tagsInput" placeholder="输入标签后按回车添加" />
+                            </div>
+                            <small class="form-hint">最多添加5个标签，每个标签不超过10个字符</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="thumbnailUpload">封面图片</label>
+                            <input type="file" id="thumbnailUpload" name="thumbnail" accept="image/*">
+                            <div class="thumbnail-preview" id="thumbnailPreview">
+                                ${blogData.coverImage ? `<img src="${blogData.coverImage}" alt="封面预览">` : '<span>尚未上传封面图片</span>'}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="cancelEditBtn">取消</button>
+                    <button class="btn btn-primary" id="saveEditBtn">保存更改</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 添加模态框到页面
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // 初始化编辑器
+    initBlogEditor(blogData);
+    
+    // 显示模态框
+    const modal = document.getElementById('blogEditorModal');
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
+    
+    // 绑定关闭事件
+    const closeBtn = document.getElementById('modalCloseBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    
+    function closeModal() {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
+    
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    
+    // 点击模态框外部关闭
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+    
+    // 绑定保存事件
+    const saveBtn = document.getElementById('saveEditBtn');
+    saveBtn.addEventListener('click', () => saveBlogEdit(blogData.id, closeModal));
+}
+
+// 初始化博客编辑器 - 完善版
+function initBlogEditor(blogData) {
+    // 初始化Quill编辑器
+    const quill = new Quill('#editor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'align': [] }],
+                ['blockquote', 'code-block'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link', 'image'],
+                ['clean']
+            ]
+        }
+    });
+    
+    // 设置编辑器内容
+    if (blogData.content) {
+        // 如果内容是Markdown格式，先转换为HTML
+        if (blogData.content_format === 'markdown') {
+            const html = marked.parse(blogData.content);
+            quill.root.innerHTML = html;
+        } else {
+            quill.root.innerHTML = blogData.content;
+        }
+    }
+    
+    // 加载分类
+    loadCategories(blogData.category);
+    
+    // 初始化标签输入
+    initTagsInput(blogData.tags);
+    
+    // 图片上传处理
+    initImageUpload();
+}
+
+// 初始化标签输入功能
+function initTagsInput(existingTags = []) {
+    const tagsContainer = document.getElementById('tagsContainer');
+    const tagsInput = document.getElementById('tagsInput');
+    
+    // 清空现有标签
+    Array.from(tagsContainer.querySelectorAll('.tag')).forEach(tag => tag.remove());
+    
+    // 添加已有标签
+    if (Array.isArray(existingTags)) {
+        existingTags.forEach(tag => addTag(tag));
+    }
+    
+    // 绑定标签输入事件
+    tagsInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            
+            const tagValue = this.value.trim();
+            if (tagValue) {
+                if (tagValue.length > 10) {
+                    showNotification('标签长度不能超过10个字符', 'error');
+                    return;
+                }
+                
+                const existingTags = document.querySelectorAll('.tag');
+                if (existingTags.length >= 5) {
+                    showNotification('最多添加5个标签', 'error');
+                    return;
+                }
+                
+                addTag(tagValue);
+                this.value = '';
+            }
+        }
+    });
+}
+
+// 初始化图片上传功能
+function initImageUpload() {
+    const thumbnailUpload = document.getElementById('thumbnailUpload');
+    const thumbnailPreview = document.getElementById('thumbnailPreview');
+    
+    thumbnailUpload.addEventListener('change', function(e) {
+        const file = this.files[0];
+        if (file) {
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                showNotification('请选择图片文件', 'error');
+                this.value = '';
+                return;
+            }
+            
+            // 验证文件大小（限制为2MB）
+            if (file.size > 2 * 1024 * 1024) {
+                showNotification('图片大小不能超过2MB', 'error');
+                this.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                thumbnailPreview.innerHTML = `<img src="${e.target.result}" alt="封面预览">`;
+                thumbnailPreview.classList.remove('no-image');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // 支持拖放上传
+    thumbnailPreview.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.borderColor = 'var(--primary-color)';
+    });
+    
+    thumbnailPreview.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.borderColor = 'var(--border-color)';
+    });
+    
+    thumbnailPreview.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.borderColor = 'var(--border-color)';
+        
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            thumbnailUpload.files = e.dataTransfer.files;
+            const event = new Event('change');
+            thumbnailUpload.dispatchEvent(event);
+        }
+    });
+}
+
+// 添加标签函数 - 完善版
+function addTag(tagValue) {
+    const tagsContainer = document.getElementById('tagsContainer');
+    const tagsInput = document.getElementById('tagsInput');
+    const existingTags = document.querySelectorAll('.tag');
+    
+    // 检查是否已存在相同标签
+    const isDuplicate = Array.from(existingTags).some(tag => 
+        tag.textContent.trim() === tagValue
+    );
+    
+    if (isDuplicate) {
+        showNotification('该标签已存在', 'error');
+        return;
+    }
+    
+    if (existingTags.length >= 5) {
+        showNotification('最多添加5个标签', 'error');
+        return;
+    }
+    
+    const tagElement = document.createElement('span');
+    tagElement.className = 'tag';
+    tagElement.innerHTML = `${tagValue} <span class="remove-tag">&times;</span>`;
+    
+    const removeBtn = tagElement.querySelector('.remove-tag');
+    removeBtn.addEventListener('click', function() {
+        tagElement.remove();
+    });
+    
+    tagsContainer.insertBefore(tagElement, tagsInput);
+}
+
+// 保存博客编辑
+async function saveBlogEdit(blogId, closeModal) {
+    try {
+        const title = document.getElementById('blogTitle').value;
+        const content = document.querySelector('.ql-editor').innerHTML;
+        const category = document.getElementById('blogCategory').value;
+        const tags = Array.from(document.querySelectorAll('.tag')).map(tag => tag.textContent.trim());
+        
+        if (!title) {
+            showNotification('请输入文章标题', 'error');
+            return;
+        }
+        
+        // 显示保存中状态
+        const saveBtn = document.getElementById('saveEditBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        
+        // 准备表单数据
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', content);
+        formData.append('category', category);
+        formData.append('tags', JSON.stringify(tags));
+        
+        // 如果有新的封面图片
+        const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
+        if (thumbnailFile) {
+            formData.append('thumbnail', thumbnailFile);
+        }
+        
+        // 发送更新请求
+        const response = await fetch(`/api/blogs/${blogId}`, {
+            method: 'PATCH',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('更新博客失败');
+        }
+        
+        const result = await response.json();
+        
+        showNotification('博客更新成功', 'success');
+        closeModal();
+        
+        // 刷新博客列表
+        fetchUserBlogs('', 'postTime', 1, 10);
+        
+    } catch (error) {
+        console.error('保存博客失败:', error);
+        showNotification('保存失败，请重试', 'error');
+        
+        // 恢复保存按钮状态
+        const saveBtn = document.getElementById('saveEditBtn');
+        saveBtn.disabled = false;
+        saveBtn.textContent = '保存更改';
+    }
 }
 
 // 确认删除博客 - 新增函数
@@ -1960,4 +2356,52 @@ function debounce(func, wait) {
             func.apply(context, args);
         }, wait);
     };
+}
+
+// 加载分类列表
+async function loadCategories(selectedCategory) {
+    try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) {
+            throw new Error('获取分类列表失败');
+        }
+        
+        const result = await response.json();
+        const categorySelect = document.getElementById('blogCategory');
+        categorySelect.innerHTML = '<option value="">选择分类</option>';
+        
+        // 添加默认分类
+        const defaultCategories = [
+            { id: 'tech', name: '技术' },
+            { id: 'life', name: '生活' },
+            { id: 'thoughts', name: '随想' },
+            { id: 'other', name: '其他' }
+        ];
+        
+        defaultCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            if (selectedCategory === category.id) {
+                option.selected = true;
+            }
+            categorySelect.appendChild(option);
+        });
+        
+        // 如果API返回了分类列表，则使用API返回的数据
+        if (result.data && result.data.categories) {
+            result.data.categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                if (selectedCategory === category.id) {
+                    option.selected = true;
+                }
+                categorySelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('加载分类失败:', error);
+        showNotification('加载分类失败，使用默认分类', 'warning');
+    }
 }

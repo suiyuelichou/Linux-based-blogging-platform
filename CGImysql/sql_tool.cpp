@@ -6619,6 +6619,90 @@ int sql_blog_tool::add_blog(string title, string content, int userid, int catego
     return blog_id;
 }
 
+// 更新博客
+int sql_blog_tool::update_blog(int userid, int blogid, string title, string content, int categoryid, string thumbnail_path)
+{
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+
+    connectionRAII mysqlcon(&mysql, connpool);
+
+    // 设置字符集，防止中文乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+    
+    // 预处理SQL语句
+    const char* query = "UPDATE blog SET title = ?, content = ?, category_id = ?, thumbnail = ?, updatedAt = NOW() WHERE userId = ? AND blogId = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return -1;
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind[6];
+    memset(bind, 0, sizeof(bind));
+
+    // 绑定标题
+    bind[0].buffer_type = MYSQL_TYPE_STRING;
+    bind[0].buffer = (char*)title.c_str();
+    bind[0].buffer_length = title.length();
+
+    // 绑定内容
+    bind[1].buffer_type = MYSQL_TYPE_STRING;
+    bind[1].buffer = (char*)content.c_str();
+    bind[1].buffer_length = content.length();
+
+    // 绑定分类ID
+    bind[2].buffer_type = MYSQL_TYPE_LONG;
+    bind[2].buffer = (char*)&categoryid;    
+
+    // 绑定缩略图路径
+    bind[3].buffer_type = MYSQL_TYPE_STRING;
+    bind[3].buffer = (char*)thumbnail_path.c_str();
+    bind[3].buffer_length = thumbnail_path.length();
+
+    // 绑定用户ID（WHERE条件）
+    bind[4].buffer_type = MYSQL_TYPE_LONG;
+    bind[4].buffer = (char*)&userid;
+
+    // 绑定博客ID（WHERE条件）
+    bind[5].buffer_type = MYSQL_TYPE_LONG;
+    bind[5].buffer = (char*)&blogid;
+
+    // 绑定参数到语句
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 执行语句
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return -1;
+    }
+
+    // 获取受影响的行数
+    int affected_rows = mysql_stmt_affected_rows(stmt);
+    
+    // 清理
+    mysql_stmt_close(stmt);
+
+    // 如果没有行受影响，可能是因为博客不存在或不属于该用户
+    if (affected_rows == 0) {
+        return -2; // 表示没有找到匹配的博客
+    }
+
+    return blogid; // 返回更新的博客ID
+}
+
 // 通过用户名获取用户id
 int sql_blog_tool::get_userid(string username)
 {

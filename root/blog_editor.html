@@ -299,49 +299,223 @@
                 }
             });
             
-            // 添加图片粘贴处理
-            quill.clipboard.addMatcher('img', (node, delta) => {
-                // 获取图片URL
-                const url = node.src;
-                // 如果是base64图片，需要先上传到服务器
-                if (url.startsWith('data:image')) {
-                    uploadBase64Image(url).then(newUrl => {
-                        const range = quill.getSelection(true);
-                        quill.insertEmbed(range.index, 'image', newUrl);
-                    }).catch(error => {
-                        console.error('粘贴图片上传失败:', error);
-                        showNotification('粘贴图片上传失败', 'error');
-                    });
-                    return false; // 阻止默认粘贴行为
+            // 检查是否是编辑模式
+            const urlParams = new URLSearchParams(window.location.search);
+            const isEditMode = urlParams.get('mode') === 'edit';
+            const blogId = urlParams.get('id');
+            
+            // 更新页面标题和按钮文本
+            const editorTitle = document.querySelector('.editor-title');
+            const publishBtn = document.getElementById('publishBtn');
+            
+            if (isEditMode) {
+                editorTitle.textContent = '编辑博客';
+                publishBtn.innerHTML = '<i class="fas fa-save"></i> 保存更改';
+                
+                // 从 sessionStorage 获取博客数据
+                const blogDataJson = sessionStorage.getItem('editBlogData');
+                if (blogDataJson) {
+                    try {
+                        const blogData = JSON.parse(blogDataJson);
+                        console.log('从sessionStorage获取的博客数据:', blogData); // 调试日志
+                        
+                        // 填充博客数据
+                        fillBlogData(blogData);
+                        
+                        // 清除 sessionStorage 中的数据
+                        sessionStorage.removeItem('editBlogData');
+                    } catch (error) {
+                        console.error('解析博客数据失败:', error);
+                        showNotification('解析博客数据失败', 'error');
+                    }
+                } else {
+                    console.warn('未找到sessionStorage中的博客数据');
+                    showNotification('未找到博客数据', 'warning');
                 }
-                return delta;
-            });
-
-            // 上传base64图片的函数
-            async function uploadBase64Image(base64Url) {
-                try {
-                    const response = await fetch('/api/upload/base64', {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ image: base64Url })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('图片上传失败');
-                    }
-
-                    const data = await response.json();
-                    if (data.success) {
-                        return data.url;
+            }
+            
+            // 填充博客数据的函数
+            function fillBlogData(blogData) {
+                console.log('开始填充博客数据'); // 调试日志
+                
+                // 设置标题
+                document.getElementById('blogTitle').value = blogData.title || '';
+                console.log('已设置标题:', blogData.title); // 调试日志
+                
+                // 设置内容
+                if (blogData.content) {
+                    console.log('设置内容，格式:', blogData.content_format); // 调试日志
+                    if (blogData.content_format === 'markdown') {
+                        // 如果是 Markdown 格式，先转换为 HTML
+                        try {
+                            const html = marked.parse(blogData.content);
+                            quill.root.innerHTML = html;
+                            console.log('Markdown已转换为HTML并设置'); // 调试日志
+                        } catch (error) {
+                            console.error('Markdown转换失败:', error);
+                            quill.root.innerHTML = blogData.content;
+                        }
                     } else {
-                        throw new Error(data.message || '图片上传失败');
+                        quill.root.innerHTML = blogData.content;
+                        console.log('已设置HTML内容'); // 调试日志
                     }
+                }
+                
+                // 展开高级选项面板
+                const advancedOptionsPanel = document.getElementById('advancedOptionsPanel');
+                const advancedOptionsBtn = document.getElementById('advancedOptionsBtn');
+                if (advancedOptionsPanel.classList.contains('hidden')) {
+                    advancedOptionsPanel.classList.remove('hidden');
+                    advancedOptionsBtn.innerHTML = '<i class="fas fa-times"></i> 收起设置面板';
+                    console.log('已展开高级选项面板'); // 调试日志
+                    
+                    // 加载分类
+                    loadCategories();
+                }
+                
+                // 设置分类
+                if (blogData.category) {
+                    console.log('设置分类:', blogData.category); // 调试日志
+                    setTimeout(() => {
+                        const categorySelect = document.getElementById('blogCategory');
+                        // 等待分类加载完成后设置
+                        const checkCategoryInterval = setInterval(() => {
+                            if (categorySelect.options.length > 1) {
+                                for (let i = 0; i < categorySelect.options.length; i++) {
+                                    if (categorySelect.options[i].value === blogData.category) {
+                                        categorySelect.selectedIndex = i;
+                                        console.log('已选择分类:', categorySelect.options[i].text); // 调试日志
+                                        break;
+                                    }
+                                }
+                                clearInterval(checkCategoryInterval);
+                            }
+                        }, 100);
+                    }, 500); // 给分类加载一些时间
+                }
+                
+                // 设置标签
+                if (blogData.tags && Array.isArray(blogData.tags)) {
+                    console.log('设置标签:', blogData.tags); // 调试日志
+                    blogData.tags.forEach(tag => {
+                        addTag(tag);
+                    });
+                }
+                
+                // 设置封面图片
+                if (blogData.coverImage) {
+                    console.log('设置封面图片:', blogData.coverImage); // 调试日志
+                    const thumbnailPreview = document.getElementById('thumbnailPreview');
+                    thumbnailPreview.innerHTML = `<img src="${blogData.coverImage}" alt="封面预览">`;
+                    thumbnailPreview.classList.remove('no-image');
+                }
+                
+                console.log('博客数据填充完成'); // 调试日志
+            }
+            
+            // 修改发布/保存按钮的处理逻辑
+            publishBtn.addEventListener('click', function() {
+                // 表单验证
+                const title = document.getElementById('blogTitle').value;
+                const content = quill.root.innerHTML;
+                
+                if (!title) {
+                    showNotification('请输入文章标题', 'error');
+                    return;
+                }
+                
+                if (quill.getText().trim().length < 10) {
+                    showNotification('文章内容太短，请至少输入10个字', 'error');
+                    return;
+                }
+                
+                // 显示确认对话框
+                const modalTitle = document.getElementById('modalTitle');
+                const modalBody = document.getElementById('modalBody');
+                const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+                
+                modalTitle.textContent = isEditMode ? '确认保存' : '确认发布';
+                modalBody.innerHTML = isEditMode ? 
+                    '<p>确定要保存这些更改吗？</p>' :
+                    '<p>确定要发布这篇文章吗？发布后可以在个人中心编辑。</p>';
+                modalConfirmBtn.textContent = isEditMode ? '保存' : '发布';
+                
+                // 显示确认对话框
+                const confirmModal = document.getElementById('confirmModal');
+                confirmModal.style.display = 'block';
+                setTimeout(() => {
+                    confirmModal.classList.add('show');
+                }, 10);
+            });
+            
+            // 修改确认按钮的处理逻辑
+            document.getElementById('modalConfirmBtn').addEventListener('click', function() {
+                if (isEditMode) {
+                    updateArticle(blogId);
+                } else {
+                    publishArticle();
+                }
+            });
+            
+            // 更新文章的函数
+            async function updateArticle(blogId) {
+                const title = document.getElementById('blogTitle').value;
+                const content = quill.root.innerHTML;
+                const category = document.getElementById('blogCategory').value;
+                const tags = Array.from(document.querySelectorAll('.tag'))
+                    .map(tag => tag.textContent.trim());
+                
+                try {
+                    // 显示保存中状态
+                    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+                    modalConfirmBtn.disabled = true;
+                    modalConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+                    
+                    // 准备表单数据
+                    const formData = new FormData();
+                    formData.append('title', title);
+                    formData.append('content', content);
+                    formData.append('category', category);
+                    formData.append('tags', JSON.stringify(tags));
+                    
+                    // 如果有新的封面图片
+                    const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
+                    if (thumbnailFile) {
+                        formData.append('thumbnail', thumbnailFile);
+                    }
+                    
+                    console.log('发送更新请求:', blogId); // 调试日志
+                    
+                    // 发送更新请求
+                    const response = await fetch(`/api/blogs/${blogId}`, {
+                        method: 'PATCH',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('更新博客失败');
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // 关闭确认对话框
+                    document.getElementById('confirmModal').style.display = 'none';
+                    
+                    showNotification('博客更新成功', 'success');
+                    
+                    // 延迟跳转到博客详情页
+                    setTimeout(() => {
+                        window.location.href = `blog_detail.html?id=${blogId}`;
+                    }, 1500);
+                    
                 } catch (error) {
-                    console.error('Base64图片上传失败:', error);
-                    throw error;
+                    console.error('保存博客失败:', error);
+                    showNotification('保存失败，请重试', 'error');
+                    
+                    // 恢复按钮状态
+                    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+                    modalConfirmBtn.disabled = false;
+                    modalConfirmBtn.textContent = '保存';
                 }
             }
             
@@ -510,269 +684,6 @@
                 wordCountEl.textContent = wordCount;
                 readTimeEl.textContent = readTime;
             });
-            
-            // 发布文章按钮
-            const publishBtn = document.getElementById('publishBtn');
-            const confirmModal = document.getElementById('confirmModal');
-            const modalCancelBtn = document.getElementById('modalCancelBtn');
-            const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-            const closeModal = document.querySelector('.close-modal');
-            
-            publishBtn.addEventListener('click', function() {
-                // 表单验证
-                const title = document.getElementById('blogTitle').value;
-                const content = quill.root.innerHTML;
-                
-                // 添加控制台日志帮助调试
-                console.log('发布按钮被点击');
-                console.log('标题:', title);
-                console.log('内容长度:', content.length);
-                
-                if (!title) {
-                    showNotification('请输入文章标题', 'error');
-                    return;
-                }
-                
-                if (quill.getText().trim().length < 10) {
-                    showNotification('文章内容太短，请至少输入10个字', 'error');
-                    return;
-                }
-                
-                // 高级选项验证
-                if (!advancedOptionsPanel.classList.contains('hidden')) {
-                    const category = document.getElementById('blogCategory').value;
-                    if (!category) {
-                        showNotification('请选择文章分类', 'warning');
-                        // 不阻止发布，只是提示
-                    }
-                }
-                
-                // 显示确认对话框
-                confirmModal.style.display = 'block';
-                setTimeout(() => {
-                    confirmModal.classList.add('show');
-                }, 10);
-                console.log('确认对话框应该已显示');
-            });
-            
-            // 关闭模态窗口
-            function closeModalFunction() {
-                confirmModal.classList.remove('show');
-                setTimeout(() => {
-                    confirmModal.style.display = 'none';
-                }, 300);
-            }
-            
-            closeModal.onclick = closeModalFunction;
-            modalCancelBtn.onclick = closeModalFunction;
-            
-            // 点击模态窗口外部关闭
-            window.onclick = function(event) {
-                if (event.target == confirmModal) {
-                    closeModalFunction();
-                }
-            };
-            
-            // 确认发布文章
-            modalConfirmBtn.onclick = function() {
-                publishArticle();
-            };
-            
-            // 发布文章函数
-            function publishArticle() {
-                const title = document.getElementById('blogTitle').value;
-                const htmlContent = quill.root.innerHTML;
-                
-                // 显示上传进度提示
-                modalConfirmBtn.disabled = true;
-                modalConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
-                
-                // 转换 HTML 为 Markdown
-                convertHtmlToMarkdown(htmlContent).then(markdownContent => {
-                    console.log('转换为 Markdown 成功');
-                    
-                    // 准备表单数据
-                    const formData = new FormData();
-                    formData.append('title', title);
-                    formData.append('content', markdownContent);  // 存储 Markdown 内容
-                    formData.append('content_format', 'markdown'); // 标记内容格式
-                    
-                    // 可选：同时保存HTML用于快速渲染
-                    formData.append('content_html', htmlContent);
-                    
-                    // 添加高级设置（如果有）
-                    if (!advancedOptionsPanel.classList.contains('hidden')) {
-                        const category = document.getElementById('blogCategory').value;
-                        if (category) {
-                            formData.append('category', category);
-                        }
-                        
-                        if (tags.length > 0) {
-                            formData.append('tags', JSON.stringify(tags));
-                        }
-                        
-                        // 添加封面图片
-                        const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
-                        if (thumbnailFile) {
-                            formData.append('thumbnail', thumbnailFile);
-                        }
-                    }
-                    
-                    // 发送请求
-                    sendArticleData(formData);
-                }).catch(error => {
-                    console.error('转换为 Markdown 失败:', error);
-                    showNotification('内容处理失败，请重试', 'error');
-                    
-                    // 恢复按钮状态
-                    modalConfirmBtn.disabled = false;
-                    modalConfirmBtn.innerHTML = '确认';
-                });
-            }
-            
-            // HTML 转 Markdown 函数，处理图片和内容
-            async function convertHtmlToMarkdown(html) {
-                try {
-                    // 处理内容中的图片（上传base64图片等）
-                    const processedHtml = await processImagesInContent(html);
-                    
-                    // 使用 TurndownService 转换为 Markdown
-                    const turndownService = new TurndownService({
-                        headingStyle: 'atx',
-                        codeBlockStyle: 'fenced',
-                        bulletListMarker: '-',
-                        emDelimiter: '*'
-                    });
-                    
-                    // 自定义规则：更好地处理代码块
-                    turndownService.addRule('codeBlocks', {
-                        filter: function(node) {
-                            return node.nodeName === 'PRE' && 
-                                   node.firstChild && 
-                                   node.firstChild.nodeName === 'CODE';
-                        },
-                        replacement: function(content, node) {
-                            const code = node.firstChild.textContent;
-                            const lang = node.firstChild.className.replace('language-', '');
-                            return '\n\n```' + lang + '\n' + code + '\n```\n\n';
-                        }
-                    });
-                    
-                    // 转换为 Markdown
-                    const markdown = turndownService.turndown(processedHtml);
-                    return markdown;
-                } catch (error) {
-                    console.error('转换过程出错:', error);
-                    throw error;
-                }
-            }
-            
-            // 处理内容中的图片
-            async function processImagesInContent(html) {
-                const tempDOM = document.createElement('div');
-                tempDOM.innerHTML = html;
-                
-                // 查找所有的图片元素
-                const images = tempDOM.querySelectorAll('img');
-                
-                // 处理每一个图片
-                for (let img of images) {
-                    // 处理base64图片
-                    if (img.src.startsWith('data:image')) {
-                        try {
-                            showNotification('正在处理内容中的图片...', 'info');
-                            const imageUrl = await uploadBase64Image(img.src);
-                            img.src = imageUrl;
-                        } catch (error) {
-                            console.error('图片处理失败:', error);
-                            // 继续处理其他图片
-                        }
-                    }
-                }
-                
-                return tempDOM.innerHTML;
-            }
-            
-            // 发送文章数据到服务器
-            function sendArticleData(formData) {
-                // 使用原生XHR发送请求
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', '/api/articles', true);
-                xhr.withCredentials = true;
-                
-                xhr.onload = function() {
-                    console.log('响应状态:', xhr.status);
-                    console.log('响应内容:', xhr.responseText);
-                    
-                    let response;
-                    try {
-                        response = JSON.parse(xhr.responseText);
-                    } catch (e) {
-                        console.error('解析响应失败:', e);
-                        response = { success: false, message: '服务器响应格式错误' };
-                    }
-                    
-                    // 关闭模态窗口
-                    closeModalFunction();
-                    
-                    if (xhr.status === 200 && response.success) {
-                        showNotification('文章发布成功！', 'success');
-                        
-                        // 跳转到文章页面
-                        setTimeout(() => {
-                            window.location.href = `blog_detail.html?id=${response.articleId}`;
-                        }, 1500);
-                    } else if (xhr.status === 401) {
-                        let errorMessage = '请先登录后再发布文章';
-                        showNotification(errorMessage, 'error');
-                        
-                        // 可以选择跳转到登录页面
-                        setTimeout(() => {
-                            window.location.href = 'blog_login.html';
-                        }, 1500);
-                    } else {
-                        // 恢复按钮状态
-                        modalConfirmBtn.disabled = false;
-                        modalConfirmBtn.innerHTML = '确认';
-                        
-                        // 显示错误
-                        let errorMessage = response.message || '发布失败，请稍后重试';
-                        showNotification(errorMessage, 'error');
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    console.error('请求错误');
-                    
-                    // 恢复按钮状态
-                    modalConfirmBtn.disabled = false;
-                    modalConfirmBtn.innerHTML = '确认';
-                    
-                    showNotification('网络错误，请检查网络连接', 'error');
-                };
-                
-                // 监听上传进度
-                xhr.upload.onprogress = function(event) {
-                    if (event.lengthComputable) {
-                        const percentComplete = (event.loaded / event.total) * 100;
-                        console.log(`上传进度: ${percentComplete.toFixed(2)}%`);
-                    }
-                };
-                
-                // 发送请求
-                console.log('正在发送请求...');
-                try {
-                    xhr.send(formData);
-                } catch (e) {
-                    console.error('发送请求出错:', e);
-                    
-                    // 恢复按钮状态
-                    modalConfirmBtn.disabled = false;
-                    modalConfirmBtn.innerHTML = '确认';
-                    
-                    showNotification('发送请求失败: ' + e.message, 'error');
-                }
-            }
             
             // 回到顶部按钮
             const backToTopBtn = document.getElementById('backToTop');
