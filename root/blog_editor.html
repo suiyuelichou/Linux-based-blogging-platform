@@ -227,6 +227,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // 定义全局变量
+            let tags = []; // 将tags变量提前声明，避免ReferenceError
+            
             // 初始化编辑器
             const quill = new Quill('#editor', {
                 theme: 'snow',
@@ -345,6 +348,37 @@
                     console.log('统一封面图片字段:', blogData.coverImage); // 调试日志
                 }
                 
+                // 确保统一标签字段名
+                if (!blogData.tags || !Array.isArray(blogData.tags)) {
+                    // 尝试其他可能的字段名
+                    let foundTags = null;
+                    if (blogData.tag_list && Array.isArray(blogData.tag_list)) {
+                        foundTags = blogData.tag_list;
+                    } else if (blogData.tag && Array.isArray(blogData.tag)) {
+                        foundTags = blogData.tag;
+                    } else if (blogData.tagList && Array.isArray(blogData.tagList)) {
+                        foundTags = blogData.tagList;
+                    } else if (typeof blogData.tags === 'string') {
+                        // 如果是JSON字符串，尝试解析
+                        try {
+                            foundTags = JSON.parse(blogData.tags);
+                        } catch(e) {
+                            // 如果不是有效的JSON，可能是逗号分隔的标签字符串
+                            foundTags = blogData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+                        }
+                    }
+                    
+                    // 如果找到了标签，更新字段
+                    if (foundTags) {
+                        blogData.tags = foundTags;
+                        console.log('统一标签字段:', foundTags); // 调试日志
+                    } else {
+                        // 默认为空数组
+                        blogData.tags = [];
+                        console.log('未找到标签数据，使用空数组'); // 调试日志
+                    }
+                }
+                
                 // 设置标题
                 document.getElementById('blogTitle').value = blogData.title || '';
                 console.log('已设置标题:', blogData.title); // 调试日志
@@ -401,11 +435,20 @@
                     }, 500); // 给分类加载一些时间
                 }
                 
-                // 设置标签
+                // 设置标签 - 先重置全局tags数组和清空标签容器
+                tags = []; // 重置全局tags数组
+                
+                // 获取标签容器并清空现有标签元素
+                const tagElements = document.querySelectorAll('#tagsContainer .tag');
+                tagElements.forEach(tag => tag.remove());
+                
+                // 然后添加标签
                 if (blogData.tags && Array.isArray(blogData.tags)) {
                     console.log('设置标签:', blogData.tags); // 调试日志
                     blogData.tags.forEach(tag => {
-                        addTag(tag);
+                        if (tag && typeof tag === 'string' && !tags.includes(tag)) {
+                            addTag(tag);
+                        }
                     });
                 }
                 
@@ -469,8 +512,16 @@
                 const title = document.getElementById('blogTitle').value;
                 const content = quill.root.innerHTML;
                 const category = document.getElementById('blogCategory').value;
-                const tags = Array.from(document.querySelectorAll('.tag'))
-                    .map(tag => tag.textContent.trim());
+                
+                // 安全获取标签
+                let tagsList = [];
+                try {
+                    tagsList = Array.from(document.querySelectorAll('#tagsContainer .tag'))
+                        .map(tag => tag.textContent.trim().replace(/×$/, '').trim());
+                    console.log('获取到的标签:', tagsList);
+                } catch (error) {
+                    console.error('获取标签失败:', error);
+                }
                 
                 try {
                     // 显示保存中状态
@@ -483,7 +534,7 @@
                     formData.append('title', title);
                     formData.append('content', content);
                     formData.append('category', category);
-                    formData.append('tags', JSON.stringify(tags));
+                    formData.append('tags', JSON.stringify(tagsList));
                     
                     // 处理封面图片
                     const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
@@ -567,6 +618,78 @@
                 }
             }
             
+            // 发布文章的函数
+            async function publishArticle() {
+                const title = document.getElementById('blogTitle').value;
+                const content = quill.root.innerHTML;
+                const category = document.getElementById('blogCategory').value;
+                
+                // 安全获取标签
+                let tagsList = [];
+                try {
+                    tagsList = Array.from(document.querySelectorAll('#tagsContainer .tag'))
+                        .map(tag => tag.textContent.trim().replace(/×$/, '').trim());
+                    console.log('获取到的标签:', tagsList);
+                } catch (error) {
+                    console.error('获取标签失败:', error);
+                }
+                
+                try {
+                    // 显示发布中状态
+                    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+                    modalConfirmBtn.disabled = true;
+                    modalConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发布中...';
+                    
+                    // 准备表单数据
+                    const formData = new FormData();
+                    formData.append('title', title);
+                    formData.append('content', content);
+                    formData.append('category', category);
+                    formData.append('tags', JSON.stringify(tagsList));
+                    
+                    // 处理封面图片
+                    const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
+                    if (thumbnailFile) {
+                        formData.append('thumbnail', thumbnailFile);
+                    }
+                    
+                    // 发送发布请求
+                    const response = await fetch('/api/blogs', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('发布博客失败');
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // 关闭确认对话框
+                    document.getElementById('confirmModal').style.display = 'none';
+                    
+                    showNotification('博客发布成功', 'success');
+                    
+                    // 延迟跳转到博客详情页
+                    setTimeout(() => {
+                        if (result && result.id) {
+                            window.location.href = `blog_detail.html?id=${result.id}`;
+                        } else {
+                            window.location.href = 'blog_home.html';
+                        }
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error('发布博客失败:', error);
+                    showNotification('发布失败，请重试', 'error');
+                    
+                    // 恢复按钮状态
+                    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+                    modalConfirmBtn.disabled = false;
+                    modalConfirmBtn.textContent = '发布';
+                }
+            }
+            
             // 设置暗黑模式
             setupDarkMode();
             
@@ -582,26 +705,44 @@
             }
             
             // 标签添加功能
-            const tagsInput = document.getElementById('tagsInput');
-            const tagsContainer = document.getElementById('tagsContainer');
-            let tags = [];
-            
-            tagsInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    const tagValue = this.value.trim();
-                    if (tagValue && tags.length < 5 && !tags.includes(tagValue)) {
-                        addTag(tagValue);
-                        this.value = '';
-                    } else if (tags.length >= 5) {
-                        showNotification('最多添加5个标签', 'error');
-                    } else if (tags.includes(tagValue)) {
-                        showNotification('标签已存在', 'error');
+            const tagsInputElement = document.getElementById('tagsInput');
+            if (tagsInputElement) {
+                tagsInputElement.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        const tagValue = this.value.trim();
+                        if (tagValue && tags.length < 5 && !tags.includes(tagValue)) {
+                            addTag(tagValue);
+                            this.value = '';
+                        } else if (tags.length >= 5) {
+                            showNotification('最多添加5个标签', 'error');
+                        } else if (tags.includes(tagValue)) {
+                            showNotification('标签已存在', 'error');
+                        }
                     }
-                }
-            });
+                });
+            }
             
             function addTag(tagValue) {
+                // 确保tags数组已初始化
+                if (!Array.isArray(tags)) {
+                    tags = [];
+                }
+                
+                // 检查是否已存在相同标签
+                if (tags.includes(tagValue)) {
+                    return; // 如果标签已存在，则直接返回
+                }
+                
+                // 在函数内部获取DOM元素，而不是依赖外部变量
+                const tagsContainer = document.getElementById('tagsContainer');
+                const tagsInput = document.getElementById('tagsInput');
+                
+                if (!tagsContainer || !tagsInput) {
+                    console.error('找不到标签容器或输入框元素');
+                    return;
+                }
+                
                 tags.push(tagValue);
                 
                 const tagElement = document.createElement('span');

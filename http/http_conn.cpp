@@ -2806,7 +2806,7 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         return BLOG_DATA;
     }
-    // 个人中心-博客管理-编辑博客
+    // 个人中心-博客管理-修改博客
     else if (m_method == PATCH && strstr(m_url, "/api/blogs/") != nullptr) {
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
@@ -2919,6 +2919,9 @@ http_conn::HTTP_CODE http_conn::do_request()
             tags = form_data["tags"];
         }
         if(!tags.empty()){
+            // 先删除博客所有现有标签关联
+            tool.delete_blog_tags(blogId);
+            
             // 解析tags
             json tags_json = json::parse(tags);
             for(const auto& tag : tags_json.items()){
@@ -2931,6 +2934,9 @@ http_conn::HTTP_CODE http_conn::do_request()
                     tool.add_blog_tag(blogId, newTagId);
                 }
             }
+        }else {
+            // 如果没有提供标签或标签为空，则删除所有标签关联
+            tool.delete_blog_tags(blogId);
         }
 
         json response = {
@@ -2944,6 +2950,40 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         return BLOG_DATA;
     }
+    // 个人中心-博客管理-删除博客
+    else if (m_method == DELETE && strstr(m_url, "/api/blogs/") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析请求参数
+        int blogId = 0;
+        char* blogIdStart = strstr(m_url, "/api/blogs/");
+        if(blogIdStart == nullptr){
+            jsonData = "{\"success\": false, \"message\": \"无效的博客ID\"}";
+            return BAD_REQUEST;
+        }
+        blogId = atoi(blogIdStart + 11);
+        if(blogId <= 0){
+            jsonData = "{\"success\": false, \"message\": \"无效的博客ID\"}";
+            return BAD_REQUEST;
+        }
+
+        sql_blog_tool tool;
+        bool result = tool.delete_blog_by_blogid(blogId);
+        if(!result){
+            jsonData = "{\"success\": false, \"message\": \"删除失败\"}";
+            return BAD_REQUEST;
+        }
+
+        jsonData = "{\"success\": true, \"message\": \"删除成功\"}";
+        return BLOG_DATA;
+    }
+
     // 处理访问 blog_detail.html 的情况
     else if (strstr(m_url, "/blog_detail.html") != nullptr) {
         // 直接返回 blog_detail.html 页面
