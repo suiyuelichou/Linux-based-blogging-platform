@@ -357,6 +357,7 @@ public:
 	bool update_comment_by_commentid(int commentid, Comments comment);
 	int add_comment_to_article(string username, int articleid, string content);	// 添加评论到文章
 	int get_blog_comments_count_by_userid(string username);	// 获取用户博客被评论总数
+	bool update_blog_comment_username(string username, string new_username);	// 更新博客评论用户名
 
 	bool increase_blog_view_count(int blogid);		// 增加博客的浏览量（+1）
 	bool increase_article_count(int user_id);		// 增加文章总数（+1）

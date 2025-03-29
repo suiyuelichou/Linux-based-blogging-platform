@@ -8243,6 +8243,66 @@ int sql_blog_tool::get_blog_comments_count_by_userid(string username)
     return comment_count;
 }
 
+// 更新博客评论用户名
+bool sql_blog_tool::update_blog_comment_username(string username, string new_username)
+{
+    // 获取数据库连接池实例
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlconn(&mysql, connpool);
+
+    // 设置连接字符集，防止乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理SQL语句
+    const char* query = "UPDATE blog_comments SET username = ? WHERE username = ?";
+
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return false;
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind[2];
+    memset(bind, 0, sizeof(bind));
+
+    // 绑定新用户名
+    bind[0].buffer_type = MYSQL_TYPE_STRING;
+    bind[0].buffer = (char*)new_username.c_str();
+    bind[0].buffer_length = new_username.length();
+    bind[0].is_null = 0;
+
+    // 绑定旧用户名
+    bind[1].buffer_type = MYSQL_TYPE_STRING;
+    bind[1].buffer = (char*)username.c_str();
+    bind[1].buffer_length = username.length();
+    bind[1].is_null = 0;
+
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 执行更新操作
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 关闭语句
+    mysql_stmt_close(stmt);
+    return true;
+}
+
 // 增加博客的浏览量
 bool sql_blog_tool::increase_blog_view_count(int blogid)
 {

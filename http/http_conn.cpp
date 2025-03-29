@@ -2984,6 +2984,50 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData = "{\"success\": true, \"message\": \"删除成功\"}";
         return BLOG_DATA;
     }
+    // 个人中心-账号设置-修改信息
+    else if (m_method == PATCH && strstr(m_url, "/api/user/update") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析请求参数
+        // string new_username = "";
+        string email = "";
+        string bio = "";
+
+        sql_blog_tool tool;
+        json request_body = json::parse(m_string);
+        // new_username = request_body["username"];
+        email = request_body["email"];
+        bio = request_body["bio"];
+
+        // if(new_username.empty() || !is_valid_username(new_username.c_str())){
+        //     jsonData = "{\"success\": false, \"message\": \"用户名格式不正确\"}";
+        //     return BLOG_DATA;
+        // }
+        if(email.empty() || !is_valid_email(email.c_str())){
+            jsonData = "{\"success\": false, \"message\": \"邮箱格式不正确\"}";
+            return BLOG_DATA;
+        }
+        
+        User user;  
+        // user.set_username(new_username);
+        user.set_email(email);
+        user.set_description(bio);
+        int userid = tool.get_userid(username);
+        bool result = tool.update_user_by_userid(userid, user);
+        if(!result){
+            jsonData = "{\"success\": false, \"message\": \"修改失败\"}";
+            return BLOG_DATA;
+        }
+        // tool.update_blog_comment_username(username, new_username);
+        jsonData = "{\"success\": true, \"message\": \"修改成功\"}";
+        return BLOG_DATA;
+    }
 
     // 处理访问 blog_detail.html 的情况
     else if (strstr(m_url, "/blog_detail.html") != nullptr) {

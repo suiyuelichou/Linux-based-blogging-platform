@@ -327,6 +327,22 @@ function loadPageData(page) {
                 contentArea.innerHTML = generateSettingsHTML();
                 // 绑定设置表单事件
                 bindSettingsEvents();
+                // 获取用户数据填充表单
+                fetch('/api/user/info')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('获取用户信息失败');
+                        }
+                        return response.json();
+                    })
+                    .then(userData => {
+                        console.log('设置页面获取的用户数据:', userData); // 添加调试信息
+                        updateSettingsForm(userData);
+                    })
+                    .catch(error => {
+                        console.error('获取用户信息失败:', error);
+                        showNotification('获取用户详细信息失败', 'error');
+                    });
                 break;
             case 'messages':
                 contentArea.innerHTML = generateMessagesHTML();
@@ -423,37 +439,26 @@ function generateSettingsHTML() {
             <form id="settingsForm">
                 <div class="form-group">
                     <label for="username">用户名</label>
-                    <input type="text" id="username" value="云中杉木" placeholder="请输入用户名">
+                    <div class="input-with-note">
+                        <input type="text" id="username" value="" placeholder="请输入用户名" disabled>
+                        <span class="note-text" style="color: #f39c12; margin-left: 10px;"><i class="fas fa-info-circle"></i> 暂无法修改用户名</span>
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="email">邮箱</label>
-                    <input type="email" id="email" value="example@email.com" placeholder="请输入邮箱">
+                    <input type="email" id="email" value="" placeholder="请输入邮箱">
+                    <small class="form-hint">请输入有效的电子邮箱地址</small>
                 </div>
                 
                 <div class="form-group">
                     <label for="bio">个人简介</label>
-                    <textarea id="bio" rows="5" placeholder="请输入个人简介">热爱编程和技术分享的开发者，喜欢探索新技术，分享学习心得。</textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>主题设置</label>
-                    <div class="theme-options">
-                        <label>
-                            <input type="radio" name="theme" value="light" checked> 浅色主题
-                        </label>
-                        <label>
-                            <input type="radio" name="theme" value="dark"> 深色主题
-                        </label>
-                        <label>
-                            <input type="radio" name="theme" value="auto"> 跟随系统
-                        </label>
-                    </div>
+                    <textarea id="bio" rows="5" placeholder="请输入个人简介" maxlength="200"></textarea>
+                    <small class="form-hint">个人简介最多200字</small>
                 </div>
                 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-secondary" id="resetBtn">重置</button>
-                    <button type="submit" class="btn btn-primary">保存更改</button>
+                    <button type="submit" class="btn btn-primary" id="saveSettingsBtn">保存更改</button>
                 </div>
             </form>
         </div>
@@ -515,32 +520,36 @@ function setupThemeToggle() {
     const body = document.body;
     
     themeToggle.addEventListener('click', function() {
-        if (body.classList.contains('dark-theme')) {
-            body.classList.remove('dark-theme');
-            themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-            localStorage.setItem('theme', 'light');
-        } else {
-            body.classList.add('dark-theme');
-            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-            localStorage.setItem('theme', 'dark');
-        }
+        toggleDarkMode();
     });
 }
 
 // 检查主题设置
 function checkThemeSetting() {
-    const savedTheme = localStorage.getItem('theme');
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
     const themeToggle = document.getElementById('themeToggle');
     
-    if (savedTheme === 'dark') {
+    if (isDarkMode) {
         document.body.classList.add('dark-theme');
-        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-    } else if (savedTheme === null) {
-        // 检查系统主题偏好
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.body.classList.add('dark-theme');
-            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-        }
+        updateDarkModeIcon(true);
+    }
+}
+
+// 切换暗黑模式 - 新增函数
+function toggleDarkMode() {
+    const isDarkMode = document.body.classList.toggle('dark-theme');
+    localStorage.setItem('darkMode', isDarkMode);
+    updateDarkModeIcon(isDarkMode);
+    showNotification(`已切换到${isDarkMode ? '暗色' : '亮色'}模式`, 'success');
+}
+
+// 更新暗黑模式图标 - 新增函数
+function updateDarkModeIcon(isDarkMode) {
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.innerHTML = isDarkMode ? 
+            '<i class="fas fa-sun"></i>' : 
+            '<i class="fas fa-moon"></i>';
     }
 }
 
@@ -670,56 +679,92 @@ function getSortDisplayName(sortValue) {
 // 绑定设置表单事件
 function bindSettingsEvents() {
     const settingsForm = document.getElementById('settingsForm');
-    const resetBtn = document.getElementById('resetBtn');
+    const saveBtn = document.getElementById('saveSettingsBtn');
     
     // 保存设置
     settingsForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
+        const email = document.getElementById('email').value;
+        const bio = document.getElementById('bio').value;
+        
+        // 表单验证
+        if (!email) {
+            showNotification('请输入电子邮箱', 'error');
+            return;
+        }
+        
+        if (!validateEmail(email)) {
+            showNotification('请输入有效的电子邮箱地址', 'error');
+            return;
+        }
+        
+        if (bio && bio.length > 200) {
+            showNotification('个人简介不能超过200字', 'error');
+            return;
+        }
+        
+        // 显示保存中状态
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        
         const formData = {
-            username: document.getElementById('username').value,
-            email: document.getElementById('email').value,
-            bio: document.getElementById('bio').value,
-            theme: document.querySelector('input[name="theme"]:checked').value
+            // 不包含用户名，因为不允许修改
+            email: email,
+            bio: bio
         };
         
         // 发送更新请求
         updateUserSettings(formData);
     });
+}
+
+// 邮箱验证函数
+function validateEmail(email) {
+    const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+}
+
+// 更新updateUserSettings函数以恢复按钮状态
+function updateUserSettings(formData) {
+    // 显示保存中提示
+    showNotification('保存中...', 'info');
+    const saveBtn = document.getElementById('saveSettingsBtn');
     
-    // 重置表单
-    resetBtn.addEventListener('click', function() {
-        settingsForm.reset();
-    });
-    
-    // 主题切换
-    const themeOptions = document.querySelectorAll('input[name="theme"]');
-    themeOptions.forEach(option => {
-        option.addEventListener('change', function() {
-            const themeValue = this.value;
-            const body = document.body;
-            const themeToggle = document.getElementById('themeToggle');
-            
-            if (themeValue === 'light') {
-                body.classList.remove('dark-theme');
-                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-                localStorage.setItem('theme', 'light');
-            } else if (themeValue === 'dark') {
-                body.classList.add('dark-theme');
-                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-                localStorage.setItem('theme', 'dark');
-            } else if (themeValue === 'auto') {
-                // 检查系统偏好
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    body.classList.add('dark-theme');
-                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-                } else {
-                    body.classList.remove('dark-theme');
-                    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-                }
-                localStorage.removeItem('theme');
-            }
-        });
+    // 发送请求
+    fetch('/api/user/update', {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('保存失败');
+        }
+        return response.json();
+    })
+    .then(data => {
+        showNotification('设置已保存', 'success');
+        
+        // 更新用户信息显示
+        document.getElementById('userName').textContent = formData.username;
+        
+        // 恢复按钮状态
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '保存更改';
+        }
+    })
+    .catch(error => {
+        showNotification('保存失败：' + error.message, 'error');
+        
+        // 恢复按钮状态
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '保存更改';
+        }
     });
 }
 
@@ -833,36 +878,6 @@ function uploadAvatarToServer(file) {
     })
     .catch(error => {
         showNotification('头像上传失败：' + error.message, 'error');
-    });
-}
-
-// 更新用户设置
-function updateUserSettings(formData) {
-    // 显示保存中提示
-    showNotification('保存中...', 'info');
-    
-    // 发送请求
-    fetch('/api/user/settings', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('保存失败');
-        }
-        return response.json();
-    })
-    .then(data => {
-        showNotification('设置已保存', 'success');
-        
-        // 更新用户信息显示
-        document.getElementById('userName').textContent = formData.username;
-    })
-    .catch(error => {
-        showNotification('保存失败：' + error.message, 'error');
     });
 }
 
@@ -1743,21 +1758,6 @@ function addPagination(total, pageSize) {
     
     // 跳转到指定页面
     function goToPage(pageNum) {
-        // 检查是否已经在加载中
-        const contentArea = document.querySelector('.manage-list');
-        if (contentArea && contentArea.getAttribute('data-loading') === 'true') {
-            return; // 避免重复加载
-        }
-        
-        // 获取当前页码
-        const currentUrlParams = new URLSearchParams(window.location.search);
-        const currentPage = currentUrlParams.has('page') ? parseInt(currentUrlParams.get('page')) : 1;
-        
-        // 如果请求的页码与当前页码相同，则不执行任何操作
-        if (pageNum === currentPage) {
-            return;
-        }
-        
         // 获取当前的搜索和排序参数
         const searchInput = document.querySelector('.search-input');
         const sortSelect = document.querySelector('.sort-select');
@@ -2714,4 +2714,18 @@ async function editBlog(blogId) {
         console.error('加载博客数据失败:', error);
         showNotification('加载博客数据失败，请重试', 'error');
     }
+}
+
+// 更新设置表单内容 - 新增函数
+function updateSettingsForm(userData) {
+    if (!userData) return;
+    
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const bioInput = document.getElementById('bio');
+    
+    // 填充表单字段
+    if (usernameInput) usernameInput.value = userData.username || '';
+    if (emailInput) emailInput.value = userData.email || '';
+    if (bioInput) bioInput.value = userData.bio || '';
 }
