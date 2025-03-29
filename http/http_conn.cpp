@@ -2724,11 +2724,12 @@ http_conn::HTTP_CODE http_conn::do_request()
             
             // 获取分类名称
             string categoryName = tool.get_cotegoriename_by_cotegorieid(blog.get_category_id());
+            string escapedTitle = escapeJsonString(blog.get_blog_title());
             string escapedSummary = escapeJsonString((blog.get_blog_content().length() > 100 ? blog.get_blog_content().substr(0, 100) + "..." : blog.get_blog_content()) + "\",");
 
             jsonData += "{";
             jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
-            jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
+            jsonData += "\"title\": \"" + escapedTitle + "\",";
             jsonData += "\"summary\": \"" + escapedSummary + "\",";
             jsonData += "\"coverImage\": \"" + blog.get_thumbnail() + "\",";
             jsonData += "\"publishDate\": \"" + blog.get_blog_postTime() + "\",";

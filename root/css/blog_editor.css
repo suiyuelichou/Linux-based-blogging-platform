@@ -312,6 +312,11 @@ body.dark-theme .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
     overflow: auto;
     backdrop-filter: blur(3px);
     transition: all 0.3s ease;
+    opacity: 0;
+}
+
+.modal.show {
+    opacity: 1;
 }
 
 .modal-content {
@@ -324,7 +329,6 @@ body.dark-theme .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
     box-shadow: 0 5px 20px rgba(0,0,0,0.2);
     transform: translateY(20px);
     transition: transform 0.3s ease;
-    overflow: hidden;
 }
 
 .modal.show .modal-content {
@@ -352,6 +356,16 @@ body.dark-theme .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
     color: var(--text-secondary);
     cursor: pointer;
     transition: var(--transition);
+    background: none;
+    border: none;
+    line-height: 1;
+    padding: 0;
+    margin: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .close-modal:hover {

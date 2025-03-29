@@ -592,7 +592,35 @@ function bindManageEvents() {
         searchInput.addEventListener('input', debounce(function() {
             const keyword = this.value.trim();
             const sort = sortSelect ? sortSelect.value : 'postTime';
-            fetchUserBlogs(keyword, sort, 1, 10); // 搜索时重置到第一页
+            
+            // 请求数据，重置到第一页
+            fetchUserBlogs(keyword, sort, 1, 6); // 搜索时重置到第一页
+            
+            // 更新URL参数，确保页码为1
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', 1); // 确保页码重置为1
+            
+            // 只有当关键词非空时添加到URL
+            if (keyword) {
+                url.searchParams.set('keyword', keyword);
+                // 搜索关键词变更时显示通知
+                showNotification(`正在搜索: "${keyword}"`, 'info');
+            } else {
+                url.searchParams.delete('keyword');
+                if (url.searchParams.has('keyword')) {
+                    // 清空搜索时显示通知
+                    showNotification('已清空搜索条件', 'info');
+                }
+            }
+            
+            // 保持排序参数
+            if (sort !== 'postTime') {
+                url.searchParams.set('sort', sort);
+            } else {
+                url.searchParams.delete('sort');
+            }
+            
+            window.history.pushState({}, '', url);
         }, 500));
     }
     
@@ -601,12 +629,42 @@ function bindManageEvents() {
         sortSelect.addEventListener('change', function() {
             const keyword = searchInput ? searchInput.value.trim() : '';
             const sort = this.value;
-            fetchUserBlogs(keyword, sort, 1, 10); // 排序时重置到第一页
+            
+            // 显示排序方式变更通知
+            showNotification(`排序方式已更改为: ${getSortDisplayName(sort)}`, 'info');
+            
+            // 请求数据，重置到第一页
+            fetchUserBlogs(keyword, sort, 1, 6);
+            
+            // 更新URL参数，确保页码为1
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', 1); // 确保页码重置为1
+            url.searchParams.set('sort', sort);
+            if (keyword) {
+                url.searchParams.set('keyword', keyword);
+            } else {
+                url.searchParams.delete('keyword');
+            }
+            window.history.pushState({}, '', url);
         });
     }
     
     // 加载博客列表
-    fetchUserBlogs(keyword, sort, page, 10);
+    fetchUserBlogs(keyword, sort, page, 6);
+}
+
+// 获取排序方式的显示名称
+function getSortDisplayName(sortValue) {
+    switch(sortValue) {
+        case 'postTime':
+            return '最新发布';
+        case 'view_count':
+            return '最多浏览';
+        case 'like_count':
+            return '最多点赞';
+        default:
+            return sortValue;
+    }
 }
 
 // 绑定设置表单事件
@@ -809,7 +867,7 @@ function updateUserSettings(formData) {
 }
 
 // 获取用户博客列表 - 新增函数
-function fetchUserBlogs(keyword = '', sort = 'postTime', page = 1, pageSize = 10) {
+function fetchUserBlogs(keyword = '', sort = 'postTime', page = 1, pageSize = 6) {
     // 构建查询参数
     const params = new URLSearchParams({
         keyword: keyword,
@@ -821,7 +879,21 @@ function fetchUserBlogs(keyword = '', sort = 'postTime', page = 1, pageSize = 10
     // 显示加载状态
     const contentArea = document.querySelector('.manage-list');
     if (contentArea) {
-        contentArea.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+        // 先添加淡出效果
+        contentArea.classList.add('content-fading');
+        
+        // 在同一次事件循环中标记正在加载，避免重复调用
+        contentArea.setAttribute('data-loading', 'true');
+        
+        // 短暂延迟后再显示加载状态
+        setTimeout(() => {
+            // 检查是否仍在加载中（避免快速切换导致的闪烁）
+            if (contentArea.getAttribute('data-loading') === 'true') {
+                contentArea.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+                contentArea.classList.remove('content-fading');
+                contentArea.classList.add('content-loading');
+            }
+        }, 300);
     }
     
     // 发送请求
@@ -830,15 +902,64 @@ function fetchUserBlogs(keyword = '', sort = 'postTime', page = 1, pageSize = 10
             if (!response.ok) {
                 throw new Error('获取博客列表失败');
             }
-            return response.json();
+            return response.text(); // 先获取文本响应
+        })
+        .then(text => {
+            try {
+                // 尝试解析JSON并处理可能的控制字符
+                // 移除不可打印字符
+                const cleanText = text.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+                return JSON.parse(cleanText);
+            } catch (error) {
+                console.error('JSON解析失败:', error);
+                console.log('原始响应文本:', text);
+                throw new Error('解析博客数据失败');
+            }
         })
         .then(data => {
+            // 移除加载标记
+            if (contentArea) {
+                contentArea.removeAttribute('data-loading');
+                contentArea.classList.remove('content-loading');
+                contentArea.classList.remove('content-fading');
+            }
+            
             // 更新UI
             updateBlogList(data.data.blogs, data.data.total);
+            
+            // 如果当前URL中的页码超出了实际页数，修正URL
+            const totalPages = Math.ceil(data.data.total / pageSize);
+            const currentUrlParams = new URLSearchParams(window.location.search);
+            const currentPage = currentUrlParams.has('page') ? parseInt(currentUrlParams.get('page')) : 1;
+            
+            if (currentPage > totalPages && totalPages > 0) {
+                // 更新URL参数为最后一页
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', totalPages);
+                window.history.replaceState({}, '', url);
+                
+                // 如果不是搜索导致的自动跳转，显示通知
+                if (!keyword) {
+                    showNotification(`已自动跳转到最后一页: ${totalPages}`, 'info');
+                }
+            }
+            
+            // 添加内容进入动画
+            setTimeout(() => {
+                const blogCards = document.querySelectorAll('.manage-card');
+                blogCards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('card-visible');
+                    }, index * 100); // 每个卡片错开显示
+                });
+            }, 100);
         })
         .catch(error => {
             console.error('获取博客列表失败:', error);
             if (contentArea) {
+                contentArea.removeAttribute('data-loading');
+                contentArea.classList.remove('content-loading');
+                contentArea.classList.remove('content-fading');
                 contentArea.innerHTML = '<div class="empty-message"><i class="fas fa-exclamation-circle"></i><p>加载失败，请稍后重试</p></div>';
             }
             showNotification('获取博客列表失败，请稍后重试', 'error');
@@ -849,6 +970,11 @@ function fetchUserBlogs(keyword = '', sort = 'postTime', page = 1, pageSize = 10
 function updateBlogList(blogs, total) {
     const contentArea = document.querySelector('.manage-list');
     if (!contentArea) return;
+    
+    // 确保不在已加载页面上重新显示加载状态
+    if (contentArea.getAttribute('data-loading') === 'true') {
+        return;
+    }
     
     // 清空内容区域
     contentArea.innerHTML = '';
@@ -864,6 +990,9 @@ function updateBlogList(blogs, total) {
     contentArea.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
     contentArea.style.gap = '20px';
     
+    // 创建一个文档片段来批量添加DOM元素，提高性能
+    const fragment = document.createDocumentFragment();
+    
     // 渲染博客列表
     blogs.forEach(blog => {
         try {
@@ -874,7 +1003,7 @@ function updateBlogList(blogs, total) {
             let hasCoverImage = blog.coverImage && blog.coverImage.trim() !== '';
             
             const blogCard = document.createElement('div');
-            blogCard.className = 'manage-card';
+            blogCard.className = 'manage-card'; // 初始无可见性类，由动画添加
             blogCard.dataset.blogId = blog.id;
             
             blogCard.innerHTML = `
@@ -896,87 +1025,33 @@ function updateBlogList(blogs, total) {
                 </div>
             `;
             
-            contentArea.appendChild(blogCard);
+            fragment.appendChild(blogCard);
         } catch (error) {
             console.error('渲染博客卡片出错:', error, blog);
         }
     });
     
+    // 一次性将所有卡片添加到DOM中
+    contentArea.appendChild(fragment);
+    
     // 绑定博客卡片事件
     bindBlogCardEvents();
     
     // 添加分页
-    addPagination(total, 10);
+    addPagination(total, 6);
 }
 
 // 绑定博客卡片事件
 function bindBlogCardEvents() {
     // 绑定编辑按钮事件
     document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
+        btn.addEventListener('click', function() {
             const blogId = this.dataset.blogId;
-            try {
-                showNotification('正在加载博客数据...', 'info');
-                
-                // 获取博客数据的API调用
-                const response = await fetch(`/api/blogs/${blogId}`);
-                if (!response.ok) {
-                    throw new Error('获取博客数据失败');
-                }
-                
-                let blogData;
-                try {
-                    blogData = await response.json();
-                    console.log('获取到的博客数据:', blogData); // 调试日志
-                } catch (parseError) {
-                    console.error('解析博客数据失败:', parseError);
-                    throw new Error('解析博客数据失败');
-                }
-                
-                if (!blogData) {
-                    throw new Error('未获取到有效的博客数据');
-                }
-                
-                // 检查博客数据结构
-                if (blogData.code && blogData.data) {
-                    // API返回了标准格式的数据
-                    if (blogData.code === 200) {
-                        blogData = blogData.data; // 使用data字段中的博客数据
-                        console.log('使用标准API响应中的数据字段');
-                    } else {
-                        throw new Error(blogData.message || '获取博客数据失败');
-                    }
-                }
-                
-                // 确保数据包含必要的字段
-                if (!blogData.title || !blogData.content) {
-                    console.warn('博客数据缺少必要字段:', blogData);
-                    showNotification('博客数据不完整，编辑可能受影响', 'warning');
-                }
-                
-                // 确保统一封面图片字段名
-                if (!blogData.coverImage) {
-                    // 尝试其他可能的字段名
-                    blogData.coverImage = blogData.cover_image || blogData.thumbnail || blogData.cover || '';
-                    console.log('统一封面图片字段:', blogData.coverImage);
-                }
-                
-                // 将博客数据存储到 sessionStorage
-                try {
-                    sessionStorage.setItem('editBlogData', JSON.stringify(blogData));
-                    console.log('博客数据已存储到sessionStorage');
-                } catch (storageError) {
-                    console.error('存储博客数据失败:', storageError);
-                    showNotification('存储博客数据失败，编辑可能受影响', 'warning');
-                }
-                
-                // 跳转到博客编辑页面
-                console.log('准备跳转到编辑页面，博客ID:', blogId);
-                window.location.href = `blog_editor.html?mode=edit&id=${blogId}`;
-                
-            } catch (error) {
-                console.error('加载博客数据失败:', error);
-                showNotification('加载博客数据失败，请重试', 'error');
+            if (blogId) {
+                // 直接调用editBlog函数处理
+                editBlog(blogId);
+            } else {
+                showNotification('无效的博客ID', 'error');
             }
         });
     });
@@ -1165,6 +1240,19 @@ function initTagsInput(existingTags = []) {
     // 添加已有标签
     if (Array.isArray(existingTags)) {
         existingTags.forEach(tag => addTag(tag));
+    } else if (typeof existingTags === 'string') {
+        // 处理字符串格式的标签 - 可能是JSON字符串或逗号分隔的字符串
+        try {
+            // 尝试解析JSON
+            const tagsArray = JSON.parse(existingTags);
+            if (Array.isArray(tagsArray)) {
+                tagsArray.forEach(tag => addTag(tag));
+            }
+        } catch (e) {
+            // 如果不是有效的JSON，假设是逗号分隔的字符串
+            const tagsArray = existingTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+            tagsArray.forEach(tag => addTag(tag));
+        }
     }
     
     // 绑定标签输入事件
@@ -1263,10 +1351,15 @@ function addTag(tagValue) {
     const tagsInput = document.getElementById('tagsInput');
     const existingTags = document.querySelectorAll('.tag');
     
+    // 去除可能存在的×符号
+    let cleanTagValue = tagValue.replace(/\s*×\s*$/, '').trim();
+    
     // 检查是否已存在相同标签
-    const isDuplicate = Array.from(existingTags).some(tag => 
-        tag.textContent.trim() === tagValue
-    );
+    const isDuplicate = Array.from(existingTags).some(tag => {
+        // 清除标签中的×符号再进行比较
+        let existingTagText = tag.textContent.replace(/\s*×\s*$/, '').trim();
+        return existingTagText === cleanTagValue;
+    });
     
     if (isDuplicate) {
         showNotification('该标签已存在', 'error');
@@ -1280,7 +1373,7 @@ function addTag(tagValue) {
     
     const tagElement = document.createElement('span');
     tagElement.className = 'tag';
-    tagElement.innerHTML = `${tagValue} <span class="remove-tag">&times;</span>`;
+    tagElement.innerHTML = `${cleanTagValue} <span class="remove-tag">&times;</span>`;
     
     const removeBtn = tagElement.querySelector('.remove-tag');
     removeBtn.addEventListener('click', function() {
@@ -1296,7 +1389,11 @@ async function saveBlogEdit(blogId, closeModal) {
         const title = document.getElementById('blogTitle').value;
         const content = document.querySelector('.ql-editor').innerHTML;
         const category = document.getElementById('blogCategory').value;
-        const tags = Array.from(document.querySelectorAll('.tag')).map(tag => tag.textContent.trim());
+        
+        // 获取标签并清理×符号
+        const tags = Array.from(document.querySelectorAll('.tag')).map(tag => {
+            return tag.textContent.replace(/\s*×\s*$/, '').trim();
+        }).filter(tag => tag); // 过滤掉空标签
         
         if (!title) {
             showNotification('请输入文章标题', 'error');
@@ -1314,6 +1411,8 @@ async function saveBlogEdit(blogId, closeModal) {
         formData.append('content', content);
         formData.append('category', category);
         formData.append('tags', JSON.stringify(tags));
+        
+        console.log('保存的标签:', tags); // 调试日志
         
         // 处理封面图片
         const thumbnailFile = document.getElementById('thumbnailUpload').files[0];
@@ -1376,7 +1475,7 @@ async function saveBlogEdit(blogId, closeModal) {
         closeModal();
         
         // 刷新博客列表
-        fetchUserBlogs('', 'postTime', 1, 10);
+        fetchUserBlogs('', 'postTime', 1, 6);
         
     } catch (error) {
         console.error('保存博客失败:', error);
@@ -1508,7 +1607,6 @@ function deleteBlog(blogId, modal) {
 // 添加分页功能
 function addPagination(total, pageSize) {
     const totalPages = Math.ceil(total / pageSize);
-    if (totalPages <= 1) return;
     
     // 移除旧的分页容器
     const oldPagination = document.querySelector('.pagination-container');
@@ -1516,15 +1614,25 @@ function addPagination(total, pageSize) {
         oldPagination.remove();
     }
     
+    // 如果总页数小于等于1，不显示分页
+    if (totalPages <= 1) return;
+    
     // 创建新的分页容器
     const paginationContainer = document.createElement('div');
     paginationContainer.className = 'pagination-container';
+    // 存储总数据量用于页面切换时计算总页数
+    paginationContainer.dataset.total = total.toString();
     
     // 获取当前页码
     let currentPage = 1;
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.has('page')) {
         currentPage = parseInt(searchParams.get('page'));
+    }
+    
+    // 确保当前页码不超过总页数
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
     }
     
     // 创建分页HTML
@@ -1575,6 +1683,14 @@ function addPagination(total, pageSize) {
         </button>
     </div>`;
     
+    // 显示页面信息
+    paginationHTML += `
+        <div class="pagination-info">
+            共 <span class="total-count">${total}</span> 篇博客，
+            <span class="current-page">${currentPage}</span> / <span class="total-pages">${totalPages}</span> 页
+        </div>
+    `;
+    
     // 添加分页HTML到容器
     paginationContainer.innerHTML = paginationHTML;
     
@@ -1582,13 +1698,23 @@ function addPagination(total, pageSize) {
     const contentArea = document.querySelector('.user-content');
     contentArea.appendChild(paginationContainer);
     
+    // 为分页容器添加淡入动画
+    setTimeout(() => {
+        paginationContainer.classList.add('pagination-visible');
+    }, 300);
+    
     // 绑定分页事件
     const pageButtons = paginationContainer.querySelectorAll('.page-btn:not(.page-ellipsis)');
     pageButtons.forEach(btn => {
         btn.addEventListener('click', function() {
+            // 添加点击反馈动画
+            this.classList.add('btn-pulse');
+            
             const page = this.dataset.page;
             if (page) {
-                goToPage(parseInt(page));
+                setTimeout(() => {
+                    goToPage(parseInt(page));
+                }, 150); // 短暂延迟，让按钮动画有时间显示
             }
         });
     });
@@ -1599,18 +1725,39 @@ function addPagination(total, pageSize) {
     
     if (prevBtn && !prevBtn.disabled) {
         prevBtn.addEventListener('click', () => {
-            goToPage(currentPage - 1);
+            prevBtn.classList.add('btn-pulse');
+            setTimeout(() => {
+                goToPage(currentPage - 1);
+            }, 150);
         });
     }
     
     if (nextBtn && !nextBtn.disabled) {
         nextBtn.addEventListener('click', () => {
-            goToPage(currentPage + 1);
+            nextBtn.classList.add('btn-pulse');
+            setTimeout(() => {
+                goToPage(currentPage + 1);
+            }, 150);
         });
     }
     
     // 跳转到指定页面
     function goToPage(pageNum) {
+        // 检查是否已经在加载中
+        const contentArea = document.querySelector('.manage-list');
+        if (contentArea && contentArea.getAttribute('data-loading') === 'true') {
+            return; // 避免重复加载
+        }
+        
+        // 获取当前页码
+        const currentUrlParams = new URLSearchParams(window.location.search);
+        const currentPage = currentUrlParams.has('page') ? parseInt(currentUrlParams.get('page')) : 1;
+        
+        // 如果请求的页码与当前页码相同，则不执行任何操作
+        if (pageNum === currentPage) {
+            return;
+        }
+        
         // 获取当前的搜索和排序参数
         const searchInput = document.querySelector('.search-input');
         const sortSelect = document.querySelector('.sort-select');
@@ -1626,8 +1773,43 @@ function addPagination(total, pageSize) {
             sort = sortSelect.value;
         }
         
+        // 更新分页激活状态
+        const paginationContainer = document.querySelector('.pagination-container');
+        if (paginationContainer) {
+            // 移除当前活动页
+            const activeBtn = paginationContainer.querySelector('.page-btn.active');
+            if (activeBtn) {
+                activeBtn.classList.remove('active');
+            }
+            
+            // 添加新的活动页
+            const newActiveBtn = paginationContainer.querySelector(`.page-btn[data-page="${pageNum}"]`);
+            if (newActiveBtn) {
+                newActiveBtn.classList.add('active');
+            }
+            
+            // 更新上一页/下一页按钮状态
+            const prevBtn = paginationContainer.querySelector('.prev-btn');
+            const nextBtn = paginationContainer.querySelector('.next-btn');
+            
+            if (prevBtn) {
+                prevBtn.disabled = pageNum <= 1;
+            }
+            
+            if (nextBtn) {
+                const totalPages = Math.ceil(parseInt(paginationContainer.dataset.total || '0') / 6);
+                nextBtn.disabled = pageNum >= totalPages;
+            }
+        }
+        
+        // 平滑滚动到内容区顶部
+        const userContent = document.querySelector('.user-content');
+        if (userContent) {
+            userContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
         // 获取用户博客并更新页面
-        fetchUserBlogs(keyword, sort, pageNum, pageSize);
+        fetchUserBlogs(keyword, sort, pageNum, 6);
         
         // 更新URL参数
         const url = new URL(window.location.href);
@@ -2468,5 +2650,68 @@ async function loadCategories(selectedCategory) {
     } catch (error) {
         console.error('加载分类失败:', error);
         showNotification('加载分类失败，使用默认分类', 'warning');
+    }
+}
+
+// 编辑博客
+async function editBlog(blogId) {
+    if (!blogId) {
+        showNotification('无效的博客ID', 'error');
+        return;
+    }
+    
+    try {
+        // 显示加载状态
+        showNotification('正在加载博客数据...', 'info');
+        
+        // 获取博客详情
+        const response = await fetch(`/api/blogs/${blogId}`);
+        
+        if (!response.ok) {
+            throw new Error('获取博客数据失败');
+        }
+        
+        let blogData = await response.json();
+        
+        // 处理不同格式的API响应
+        if (blogData.code && blogData.data) {
+            blogData = blogData.data;
+        }
+        
+        // 确保统一封面图片字段名
+        if (!blogData.coverImage) {
+            // 尝试其他可能的字段名
+            blogData.coverImage = blogData.cover_image || blogData.thumbnail || blogData.cover || '';
+            console.log('统一封面图片字段:', blogData.coverImage);
+        }
+        
+        // 确保标签字段格式正确
+        if (typeof blogData.tags === 'string') {
+            try {
+                // 尝试解析JSON字符串
+                const parsedTags = JSON.parse(blogData.tags);
+                if (Array.isArray(parsedTags)) {
+                    blogData.tags = parsedTags;
+                } else {
+                    // 如果解析结果不是数组，假设是逗号分隔的字符串
+                    blogData.tags = blogData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+                }
+            } catch (e) {
+                // 如果解析失败，假设是逗号分隔的字符串
+                blogData.tags = blogData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+            }
+        } else if (!Array.isArray(blogData.tags)) {
+            // 如果不是字符串也不是数组，设为空数组
+            blogData.tags = [];
+        }
+        
+        // 将博客数据存储到sessionStorage
+        sessionStorage.setItem('editBlogData', JSON.stringify(blogData));
+        
+        // 跳转到博客编辑页面
+        window.location.href = `blog_editor.html?mode=edit&id=${blogId}`;
+    } catch (error) {
+        console.error('加载博客数据失败:', error);
+        showNotification('加载博客数据失败，请重试', 'error');
     }
 }

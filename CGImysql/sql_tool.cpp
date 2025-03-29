@@ -4182,10 +4182,10 @@ int sql_blog_tool::get_total_blog_count_by_user(int userid, const string &keywor
     string query;
     if (keyword.empty()) {
         // 如果关键词为空，只按用户ID查询
-        query = "SELECT COUNT(*) FROM blog WHERE user_id = ?";
+        query = "SELECT COUNT(*) FROM blog WHERE userId = ?";
     } else {
         // 如果有关键词，则进行模糊匹配
-        query = "SELECT COUNT(*) FROM blog WHERE user_id = ? AND (title LIKE ? OR content LIKE ?)";
+        query = "SELECT COUNT(*) FROM blog WHERE userId = ? AND (title LIKE ? OR content LIKE ?)";
     }
     const char* query_cstr = query.c_str();
 
@@ -4259,71 +4259,88 @@ int sql_blog_tool::get_total_blog_count_by_user_by_like_count(int userid, const 
     MYSQL* mysql = nullptr;
     connectionRAII mysqlcon(&mysql, connpool);
 
+    // 设置字符集为utf8mb4以支持完整的Unicode字符集
     mysql_query(mysql, "SET NAMES 'utf8mb4'");
 
-    string query;
-    if (keyword.empty()) {
-        query = "SELECT COUNT(*) FROM blog WHERE user_id = ? AND (title LIKE ? OR content LIKE ?) ORDER BY likes DESC";
-    } else {
-        query = "SELECT COUNT(*) FROM blog WHERE user_id = ? AND (title LIKE ? OR content LIKE ?) ORDER BY likes DESC";
+    // 构建SQL查询语句 - 无论是否有关键词，查询语句结构相同
+    string query = "SELECT COUNT(*) FROM blog WHERE userId = ?";
+    
+    // 只有在有关键词时才添加LIKE条件
+    if (!keyword.empty()) {
+        query += " AND (title LIKE ? OR content LIKE ?)";
     }
+    
     const char* query_cstr = query.c_str();
 
+    // 初始化预处理语句
     MYSQL_STMT* stmt = mysql_stmt_init(mysql);
     if (!stmt) {
-        cerr << "mysql_stmt_init() failed" << endl;
+        cerr << "mysql_stmt_init() 失败" << endl;
         return count;
     }
 
+    // 准备SQL语句
     if (mysql_stmt_prepare(stmt, query_cstr, strlen(query_cstr)) != 0) {
+        cerr << "mysql_stmt_prepare() 失败: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         return count;
     }
 
-    MYSQL_BIND bind_params[3];
+    // 绑定参数
+    MYSQL_BIND bind_params[3]; // 最多3个参数
     memset(bind_params, 0, sizeof(bind_params));
 
+    // 绑定用户ID参数
     bind_params[0].buffer_type = MYSQL_TYPE_LONG;
-    bind_params[0].buffer = (char*)&userid;
+    bind_params[0].buffer = &userid;
 
+    // 如果有关键词，绑定搜索模式参数
+    string searchPattern;
     if (!keyword.empty()) {
-        string searchPattern = "%" + keyword + "%";
+        searchPattern = "%" + keyword + "%";
         
-        bind_params[1].buffer_type = MYSQL_TYPE_STRING;
-        bind_params[1].buffer = (char*)searchPattern.c_str();
-        bind_params[1].buffer_length = searchPattern.length();
-
-        bind_params[2].buffer_type = MYSQL_TYPE_STRING;
-        bind_params[2].buffer = (char*)searchPattern.c_str();
-        bind_params[2].buffer_length = searchPattern.length();
+        for (int i = 1; i <= 2; i++) {
+            bind_params[i].buffer_type = MYSQL_TYPE_STRING;
+            bind_params[i].buffer = (char*)searchPattern.c_str();
+            bind_params[i].buffer_length = searchPattern.length();
+        }
     }
 
+    // 确定参数数量并绑定
     int param_count = keyword.empty() ? 1 : 3;
     if (mysql_stmt_bind_param(stmt, bind_params)) {
+        cerr << "mysql_stmt_bind_param() 失败: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         return count;
     }
 
+    // 执行查询
     if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() 失败: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         return count;
     }
 
+    // 绑定结果
     MYSQL_BIND bind_result;
     memset(&bind_result, 0, sizeof(bind_result));
     bind_result.buffer_type = MYSQL_TYPE_LONG;
     bind_result.buffer = &count;
 
     if (mysql_stmt_bind_result(stmt, &bind_result)) {
+        cerr << "mysql_stmt_bind_result() 失败: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         return count;
     }
 
+    // 获取结果
     if (mysql_stmt_fetch(stmt) != 0) {
+        cerr << "mysql_stmt_fetch() 失败: " << mysql_stmt_error(stmt) << endl;
         mysql_stmt_close(stmt);
         return count;
     }
 
+    // 清理资源
     mysql_stmt_close(stmt);
     return count;
 }
