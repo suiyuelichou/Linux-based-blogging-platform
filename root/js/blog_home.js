@@ -213,7 +213,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 html += `
                 <article class="article-card fade-in" style="animation-delay: ${index * 0.1}s">
                     <div class="thumbnail">
-                        <img src="${thumbnail}" alt="${article.title}">
+                        <a href="blog_detail.html?id=${article.id}">
+                            <img src="${thumbnail}" alt="${article.title}">
+                        </a>
                     </div>
                     <div class="content">
                         <span class="category">${article.category}</span>
@@ -439,7 +441,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     html += `
                     <li class="popular-post">
-                        <img src="${thumbnail}" alt="${title}">
+                        <a href="blog_detail.html?id=${post.id}">
+                            <img src="${thumbnail}" alt="${title}">
+                        </a>
                         <div class="popular-post-info">
                             <h4><a href="blog_detail.html?id=${post.id}">${title}</a></h4>
                             <div class="meta">
@@ -462,7 +466,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 posts.forEach(post => {
                     html += `
                     <li class="popular-post">
-                        <img src="${post.thumbnail}" alt="${post.title}">
+                        <a href="blog_detail.html?id=${post.id}">
+                            <img src="${post.thumbnail}" alt="${post.title}">
+                        </a>
                         <div class="popular-post-info">
                             <h4><a href="blog_detail.html?id=${post.id}">${post.title}</a></h4>
                             <div class="meta">

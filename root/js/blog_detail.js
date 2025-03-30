@@ -544,7 +544,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             html += `
             <li class="popular-post">
-                <img src="${thumbnail}" alt="${post.title}">
+                <a href="blog_detail.html?id=${post.id}">
+                    <img src="${thumbnail}" alt="${post.title}">
+                </a>
                 <div class="popular-post-info">
                     <h4><a href="blog_detail.html?id=${post.id}">${post.title}</a></h4>
                     <div class="meta">
@@ -1443,10 +1445,11 @@ Web开发是一个不断发展的领域，需要持续学习和实践。希望�
         const articles = [];
         
         for (let i = 1; i <= articleCount; i++) {
+            const id = Math.floor(Math.random() * 100) + 1;
             articles.push({
-                id: Math.floor(Math.random() * 100) + 1,
+                id: id,
                 title: `相关文章 ${i}: 这是一个相关的博客文章标题`,
-                thumbnail: `https://picsum.photos/300/200?random=${Math.random()}`,
+                thumbnail: `https://picsum.photos/300/200?random=${id}`,
                 views: Math.floor(Math.random() * 500),
                 likes: Math.floor(Math.random() * 100)
             });

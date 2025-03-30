@@ -50,6 +50,8 @@
     color: var(--text-primary);
     font-size: 1rem;
     transition: var(--transition);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .form-group input:focus, 
@@ -65,6 +67,15 @@
     font-size: 0.8rem;
     color: var(--text-secondary);
     margin-top: 5px;
+}
+
+/* 专门针对标题输入框的样式 */
+#blogTitle {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    max-width: 100%;
 }
 
 /* 文章编辑器 */
@@ -90,6 +101,32 @@
     min-height: 350px;
     font-family: var(--body-font);
     color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+}
+
+/* 编辑器中的段落和标题样式 */
+.ql-editor p,
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.ql-editor h4,
+.ql-editor h5,
+.ql-editor h6 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+}
+
+/* 长字符串和长URL的处理 */
+.ql-editor a {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    max-width: 100%;
 }
 
 /* 编辑器图片样式 */
@@ -98,6 +135,34 @@
     height: auto;
     display: block;
     margin: 1em auto;
+}
+
+/* 编辑器代码块样式 */
+.ql-editor pre {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    padding: 10px;
+    margin: 1em 0;
+}
+
+.ql-editor pre code {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: break-all;
+}
+
+.ql-editor code {
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    background-color: var(--bg-secondary);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    overflow-wrap: break-word;
+    word-break: break-all;
 }
 
 /* 图片上传进度提示 */
@@ -257,6 +322,37 @@
     .publish-btn {
         width: 100%;
         text-align: center;
+    }
+    
+    /* 移动设备上的文本换行处理 */
+    #blogTitle {
+        font-size: 0.95rem;
+    }
+    
+    .ql-editor {
+        font-size: 0.95rem;
+    }
+    
+    .ql-editor h1 {
+        font-size: 1.5rem;
+        word-break: break-word;
+    }
+    
+    .ql-editor h2 {
+        font-size: 1.3rem;
+        word-break: break-word;
+    }
+    
+    .ql-editor p, 
+    .ql-editor li,
+    .ql-editor blockquote {
+        word-break: break-word;
+    }
+    
+    .ql-editor pre,
+    .ql-editor code {
+        max-width: 100%;
+        overflow-x: auto;
     }
 }
 

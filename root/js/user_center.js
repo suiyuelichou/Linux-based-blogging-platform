@@ -487,7 +487,7 @@ function generateMessagesHTML() {
                 <i class="fas fa-spinner fa-spin"></i>
                 <p>正在加载消息...</p>
             </div>
-        </div>
+                    </div>
         <div class="pagination-container" id="messagesPagination" style="display:none;"></div>
     `;
 }
@@ -933,7 +933,7 @@ function renderMessages(messages, total, type, currentPage, pageSize) {
         // 添加点击事件标记为已读
         messageItem.addEventListener('click', function() {
             if (!msg.read) {
-                this.classList.remove('unread');
+            this.classList.remove('unread');
                 markMessageAsRead(msg.id);
             }
         });

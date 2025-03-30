@@ -2,6 +2,8 @@
 .post-header {
     position: relative;
     margin-bottom: 2rem;
+    max-width: 100%;
+    width: 100%;
 }
 
 .post-header-image {
@@ -92,6 +94,20 @@
     font-size: 2.2rem;
     margin-top: 1rem;
     color: var(--text-primary);
+    
+    /* 加强换行处理 */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word; /* 添加此属性确保在任何位置都能断词 */
+    hyphens: auto;
+    max-width: 100%;
+    
+    /* 确保文本不会溢出容器 */
+    display: block;
+    overflow: hidden;
+    
+    /* 增加行高以提高可读性 */
+    line-height: 1.3;
 }
 
 .post-category {
@@ -113,6 +129,10 @@
     line-height: 1.8;
     margin-bottom: 2rem;
     color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    max-width: 100%;
 }
 
 .post-content h1, 
@@ -126,6 +146,10 @@
     font-weight: 600;
     line-height: 1.4;
     color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
 }
 
 .post-content h1 {
@@ -154,6 +178,16 @@
 
 .post-content h6 {
     font-size: 1rem;
+}
+
+.post-content p,
+.post-content li,
+.post-content blockquote,
+.post-content code,
+.post-content a {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .post-content p {
@@ -185,6 +219,8 @@
     border-radius: 8px;
     overflow-x: auto;
     margin: 1.5em 0;
+    white-space: pre-wrap;
+    max-width: 100%;
 }
 
 .post-content pre code {
@@ -212,6 +248,7 @@
     text-decoration: none;
     border-bottom: 1px solid transparent;
     transition: border-color 0.3s;
+    word-break: break-all;
 }
 
 .post-content a:hover {
@@ -223,6 +260,7 @@
     border-radius: 8px;
     margin: 1.5em 0;
     display: block;
+    height: auto;
 }
 
 .post-content table {
@@ -232,12 +270,14 @@
     overflow-x: auto;
     display: block;
     max-width: 100%;
+    table-layout: fixed;
 }
 
 .post-content table th,
 .post-content table td {
     padding: 0.75em 1em;
     border: 1px solid var(--border-color);
+    word-break: break-word;
 }
 
 .post-content table th {
@@ -338,6 +378,8 @@ body.dark-theme .hljs {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .comments-section {
@@ -348,6 +390,9 @@ body.dark-theme .hljs {
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
     color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .comment-form {
@@ -422,6 +467,9 @@ body.dark-theme .hljs {
 .comment-author {
     font-weight: bold;
     color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .comment-date {
@@ -491,6 +539,9 @@ body.dark-theme .hljs {
     font-size: 1.1rem;
     margin-bottom: 1rem;
     color: var(--text-primary);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .toc-list {
@@ -520,6 +571,8 @@ body.dark-theme .hljs {
     transition: color 0.3s;
     display: block;
     line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .toc-item a:hover {
@@ -536,7 +589,8 @@ body.dark-theme .hljs {
 
 @media (max-width: 768px) {
     .post-title {
-        font-size: 1.8rem;
+        /* 确保移动端换行正常 */
+        word-break: break-word;
     }
     
     .post-header-image {
@@ -625,6 +679,14 @@ body.dark-theme .hljs {
     .post-section {
         overflow: hidden;
     }
+    
+    .post-title {
+        font-size: 1.6rem;
+    }
+    
+    .post-navigation-title {
+        -webkit-line-clamp: 3;
+    }
 }
 
 /* 针对没有头图的文章调整样式 */
@@ -666,4 +728,81 @@ body.dark-theme .hljs {
     overflow-x: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+/* 侧边栏相关文章标题自动换行 */
+.popular-post-info h4 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word; /* 确保在任何位置都能断词 */
+    max-width: 100%;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* 限制最多显示两行 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+}
+
+/* 相关文章链接样式优化 */
+.popular-post-info h4 a {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    display: block;
+}
+
+/* 相关文章容器限制 */
+.popular-post {
+    max-width: 100%;
+    display: flex;
+    overflow: hidden;
+}
+
+.popular-post-info {
+    flex: 1;
+    min-width: 0; /* 确保弹性项目可以收缩 */
+    overflow: hidden;
+}
+
+/* 移动设备上的增强处理 */
+@media (max-width: 576px) {
+    .popular-post-info h4 {
+        font-size: 0.9rem;
+        line-height: 1.3;
+    }
+}
+
+/* 评论区标题和作者名称 */
+.comments-section h3,
+.comment-author {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+/* 侧边栏相关文章中的标题 */
+.sidebar-card h3,
+.sidebar-title {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+/* 目录标题 */
+.toc-title {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+/* 针对极长单词的特殊处理 */
+.post-title:has(> span.long-word) {
+    word-break: break-all;
+}
+
+/* 针对可能的浏览器兼容性问题 */
+@supports not (hyphens: auto) {
+    .post-title {
+        word-break: break-all;
+    }
 }
