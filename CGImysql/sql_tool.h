@@ -323,6 +323,8 @@ public:
 	vector<Blog> get_blogs_by_userid(int userid);		// 通过用户id获取该用户的所有博客
 	int get_article_count_by_userid(int userid);		// 通过用户id获取该用户的文章总数
 	vector<Messages> get_messages_by_userid(int userid);// 通过用户id获取该用户收到的所有信息
+	vector<Messages> get_messages_by_page(int userid, int page, int pageSize, string type);	// 通过用户id获取该用户收到的所有信息
+	int get_message_count_by_userid(int userid);	// 通过用户id获取该用户收到的所有信息总数
 	bool insert_blog(Blog blog);						// 将用户post过来的博客内容存储数据库
 	int add_blog(string title, string content, int userid, int categoryid, string thumbnail_path);	// 添加博客
 	int update_blog(int userid, int blogid, string title, string content, int categoryid, string thumbnail_path);	// 更新博客

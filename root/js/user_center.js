@@ -346,6 +346,8 @@ function loadPageData(page) {
                 break;
             case 'messages':
                 contentArea.innerHTML = generateMessagesHTML();
+                // 加载消息数据
+                fetchMessages();
                 // 绑定消息中心相关事件
                 bindMessagesEvents();
                 break;
@@ -467,51 +469,27 @@ function generateSettingsHTML() {
 
 // 生成消息中心HTML
 function generateMessagesHTML() {
-    // 模拟消息数据
-    const messages = [
-        { id: 1, sender: '系统通知', content: '您的账号已成功注册，欢迎加入云中杉木博客平台！', time: '2023-10-15 14:30', read: true },
-        { id: 2, sender: '评论通知', content: '用户"技术爱好者"评论了您的博客《JavaScript高级编程技巧》: "写得太好了，学到很多!"', time: '2023-10-14 09:15', read: false },
-        { id: 3, sender: '点赞通知', content: '用户"前端达人"给您的博客《CSS Grid布局完全指南》点了赞', time: '2023-10-12 18:45', read: false },
-        { id: 4, sender: '系统通知', content: '您的博客《Vue3和React18的异同点分析》已被推荐到首页', time: '2023-10-10 11:20', read: true },
-    ];
-    
-    let html = `
+    return `
         <h2>消息中心</h2>
         <div class="message-tabs">
             <div class="message-tab active" data-type="all">全部消息</div>
             <div class="message-tab" data-type="unread">未读消息</div>
             <div class="message-tab" data-type="system">系统通知</div>
             <div class="message-tab" data-type="comment">评论通知</div>
+            <div class="message-tab" data-type="like">点赞通知</div>
+        </div>
+        <div class="message-actions">
+            <button id="markAllReadBtn" class="btn btn-secondary"><i class="fas fa-check-double"></i> 全部标为已读</button>
+            <button id="refreshMessagesBtn" class="btn btn-primary"><i class="fas fa-sync-alt"></i> 刷新</button>
         </div>
         <div class="message-list">
-    `;
-    
-    if (messages.length === 0) {
-        html += `
-            <div class="empty-message">
-                <i class="far fa-bell"></i>
-                <p>暂无消息</p>
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>正在加载消息...</p>
             </div>
-        `;
-    } else {
-        messages.forEach(msg => {
-            html += `
-                <div class="message-item ${msg.read ? '' : 'unread'}" data-id="${msg.id}">
-                    <div class="message-header">
-                        <div class="message-sender">${msg.sender}</div>
-                        <div class="message-time">${msg.time}</div>
-                    </div>
-                    <div class="message-content">${msg.content}</div>
-                </div>
-            `;
-        });
-    }
-    
-    html += `
         </div>
+        <div class="pagination-container" id="messagesPagination" style="display:none;"></div>
     `;
-    
-    return html;
 }
 
 // 设置主题切换
@@ -778,24 +756,398 @@ function bindMessagesEvents() {
             this.classList.add('active');
             
             const type = this.getAttribute('data-type');
-            filterMessages(type);
+            fetchMessages(type);
         });
     });
     
-    // 点击消息标记为已读
-    const messageItems = document.querySelectorAll('.message-item');
-    messageItems.forEach(item => {
-        item.addEventListener('click', function() {
-            const messageId = this.getAttribute('data-id');
-            this.classList.remove('unread');
-            
-            // 发送标记已读请求
-            markMessageAsRead(messageId);
+    // 全部标为已读按钮
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function() {
+            markAllMessagesAsRead();
         });
+    }
+    
+    // 刷新按钮
+    const refreshBtn = document.getElementById('refreshMessagesBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            const activeTab = document.querySelector('.message-tab.active');
+            const type = activeTab ? activeTab.getAttribute('data-type') : 'all';
+            fetchMessages(type);
+        });
+    }
+}
+
+// 获取消息数据
+function fetchMessages(type = 'all', page = 1, pageSize = 10) {
+    const messageList = document.querySelector('.message-list');
+    if (!messageList) return;
+    
+    // 显示加载中
+    messageList.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>正在加载消息...</p></div>';
+    
+    // 构建查询参数
+    const params = new URLSearchParams({
+        type: type,
+        page: page,
+        pageSize: pageSize
+    });
+    
+    // 发送请求获取消息数据
+    fetch(`/api/messages?${params.toString()}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('获取消息失败');
+            }
+            return response.json();
+        })
+        .then(data => {
+            renderMessages(data.messages, data.total, type, page, pageSize);
+        })
+        .catch(error => {
+            console.error('获取消息失败:', error);
+            
+            // 显示错误信息
+            messageList.innerHTML = `
+                <div class="empty-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>获取消息失败，请稍后重试</p>
+                </div>
+            `;
+            
+            showNotification('获取消息失败，请稍后重试', 'error');
+            
+            // 使用模拟数据（开发阶段）
+            console.log('使用模拟数据...');
+            const mockData = getMockMessages(type);
+            renderMessages(mockData.messages, mockData.total, type, page, pageSize);
+        });
+}
+
+// 标记单条消息为已读
+function markMessageAsRead(messageId) {
+    if (!messageId) return;
+    
+    // 发送请求标记消息为已读
+    fetch(`/api/messages/read/${messageId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('标记消息已读失败');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('标记消息已读成功:', data);
+    })
+    .catch(error => {
+        console.error('标记消息已读失败:', error);
     });
 }
 
-// 过滤消息
+// 标记所有消息为已读
+function markAllMessagesAsRead() {
+    // 显示确认
+    if (!confirm('确定要将所有消息标记为已读吗？')) {
+        return;
+    }
+    
+    const markAllReadBtn = document.getElementById('markAllReadBtn');
+    if (markAllReadBtn) {
+        markAllReadBtn.disabled = true;
+        markAllReadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+    }
+    
+    // 发送请求标记所有消息为已读
+    fetch('/api/messages/read-all', {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('标记全部已读失败');
+        }
+        return response.json();
+    })
+    .then(data => {
+        showNotification('已将所有消息标记为已读', 'success');
+        
+        // 刷新消息列表
+        const activeTab = document.querySelector('.message-tab.active');
+        const type = activeTab ? activeTab.getAttribute('data-type') : 'all';
+        fetchMessages(type);
+    })
+    .catch(error => {
+        console.error('标记全部已读失败:', error);
+        showNotification('标记全部已读失败，请重试', 'error');
+    })
+    .finally(() => {
+        // 恢复按钮状态
+        if (markAllReadBtn) {
+            markAllReadBtn.disabled = false;
+            markAllReadBtn.innerHTML = '<i class="fas fa-check-double"></i> 全部标为已读';
+        }
+    });
+}
+
+// 渲染消息列表
+function renderMessages(messages, total, type, currentPage, pageSize) {
+    const messageList = document.querySelector('.message-list');
+    if (!messageList) return;
+    
+    // 清空消息列表
+    messageList.innerHTML = '';
+    
+    // 检查是否有消息
+    if (!messages || messages.length === 0) {
+        messageList.innerHTML = `
+            <div class="empty-message">
+                <i class="far fa-bell"></i>
+                <p>暂无${getMessageTypeText(type)}消息</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // 渲染消息列表
+    messages.forEach(msg => {
+        const messageItem = document.createElement('div');
+        messageItem.className = `message-item ${msg.read ? '' : 'unread'}`;
+        messageItem.dataset.id = msg.id;
+        
+        messageItem.innerHTML = `
+            <div class="message-header">
+                <div class="message-sender">${msg.sender || '系统通知'}</div>
+                <div class="message-time">${formatMessageTime(msg.time || msg.created_at)}</div>
+            </div>
+            <div class="message-content">${msg.content}</div>
+        `;
+        
+        // 添加点击事件标记为已读
+        messageItem.addEventListener('click', function() {
+            if (!msg.read) {
+                this.classList.remove('unread');
+                markMessageAsRead(msg.id);
+            }
+        });
+        
+        messageList.appendChild(messageItem);
+    });
+    
+    // 添加分页
+    renderMessagesPagination(total, pageSize, currentPage, type);
+}
+
+// 渲染消息分页
+function renderMessagesPagination(total, pageSize, currentPage, type) {
+    const paginationContainer = document.getElementById('messagesPagination');
+    if (!paginationContainer) return;
+    
+    // 计算总页数
+    const totalPages = Math.ceil(total / pageSize);
+    
+    // 如果只有一页，不显示分页
+    if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+    }
+    
+    // 显示分页容器
+    paginationContainer.style.display = 'block';
+    
+    // 构建分页HTML
+    let paginationHTML = '<div class="pagination">';
+    
+    // 上一页按钮
+    paginationHTML += `
+        <button class="pagination-btn prev-btn" ${currentPage <= 1 ? 'disabled' : ''}>
+            <i class="fas fa-chevron-left"></i> 上一页
+        </button>
+    `;
+    
+    // 页码
+    paginationHTML += '<div class="page-numbers">';
+    
+    // 显示页码范围
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // 调整起始页码
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // 第一页
+    if (startPage > 1) {
+        paginationHTML += `<button class="page-btn" data-page="1">1</button>`;
+        if (startPage > 2) {
+            paginationHTML += '<span class="page-ellipsis">...</span>';
+        }
+    }
+    
+    // 页码按钮
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    }
+    
+    // 最后一页
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += '<span class="page-ellipsis">...</span>';
+        }
+        paginationHTML += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
+    }
+    
+    paginationHTML += '</div>';
+    
+    // 下一页按钮
+    paginationHTML += `
+        <button class="pagination-btn next-btn" ${currentPage >= totalPages ? 'disabled' : ''}>
+            下一页 <i class="fas fa-chevron-right"></i>
+        </button>
+    `;
+    
+    paginationHTML += '</div>';
+    
+    // 添加分页信息
+    paginationHTML += `
+        <div class="pagination-info">
+            共 <span class="total-count">${total}</span> 条消息，
+            第 <span class="current-page">${currentPage}</span> / <span class="total-pages">${totalPages}</span> 页
+        </div>
+    `;
+    
+    // 更新分页容器
+    paginationContainer.innerHTML = paginationHTML;
+    
+    // 添加页码点击事件
+    const pageButtons = paginationContainer.querySelectorAll('.page-btn');
+    pageButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const page = parseInt(this.dataset.page);
+            fetchMessages(type, page, pageSize);
+        });
+    });
+    
+    // 添加上一页、下一页点击事件
+    const prevBtn = paginationContainer.querySelector('.prev-btn');
+    if (prevBtn && !prevBtn.disabled) {
+        prevBtn.addEventListener('click', function() {
+            fetchMessages(type, currentPage - 1, pageSize);
+        });
+    }
+    
+    const nextBtn = paginationContainer.querySelector('.next-btn');
+    if (nextBtn && !nextBtn.disabled) {
+        nextBtn.addEventListener('click', function() {
+            fetchMessages(type, currentPage + 1, pageSize);
+        });
+    }
+}
+
+// 获取消息类型显示文本
+function getMessageTypeText(type) {
+    switch (type) {
+        case 'unread':
+            return '未读';
+        case 'system':
+            return '系统';
+        case 'comment':
+            return '评论';
+        case 'like':
+            return '点赞';
+        default:
+            return '';
+    }
+}
+
+// 格式化消息时间
+function formatMessageTime(timeStr) {
+    if (!timeStr) return '';
+    
+    // 将时间字符串转换为日期对象
+    const messageTime = new Date(timeStr);
+    const now = new Date();
+    
+    // 检查时间是否有效
+    if (isNaN(messageTime.getTime())) {
+        return timeStr; // 如果无法解析，直接返回原始字符串
+    }
+    
+    // 计算时间差（毫秒）
+    const timeDiff = now - messageTime;
+    
+    // 不同时间格式
+    if (timeDiff < 60 * 1000) { // 1分钟内
+        return '刚刚';
+    } else if (timeDiff < 60 * 60 * 1000) { // 1小时内
+        return `${Math.floor(timeDiff / (60 * 1000))}分钟前`;
+    } else if (timeDiff < 24 * 60 * 60 * 1000) { // 24小时内
+        return `${Math.floor(timeDiff / (60 * 60 * 1000))}小时前`;
+    } else if (timeDiff < 30 * 24 * 60 * 60 * 1000) { // 30天内
+        return `${Math.floor(timeDiff / (24 * 60 * 60 * 1000))}天前`;
+    } else {
+        // 日期格式化: yyyy-MM-dd
+        const year = messageTime.getFullYear();
+        const month = String(messageTime.getMonth() + 1).padStart(2, '0');
+        const day = String(messageTime.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+}
+
+// 生成模拟消息数据（开发阶段使用）
+function getMockMessages(type = 'all') {
+    // 模拟消息数据
+    const allMessages = [
+        { id: 1, sender: '系统通知', content: '您的账号已成功注册，欢迎加入云中杉木博客平台！', time: '2023-10-15 14:30', read: true, type: 'system' },
+        { id: 2, sender: '评论通知', content: '用户"技术爱好者"评论了您的博客《JavaScript高级编程技巧》: "写得太好了，学到很多!"', time: '2023-10-14 09:15', read: false, type: 'comment' },
+        { id: 3, sender: '点赞通知', content: '用户"前端达人"给您的博客《CSS Grid布局完全指南》点了赞', time: '2023-10-12 18:45', read: false, type: 'like' },
+        { id: 4, sender: '系统通知', content: '您的博客《Vue3和React18的异同点分析》已被推荐到首页', time: '2023-10-10 11:20', read: true, type: 'system' },
+        { id: 5, sender: '评论通知', content: '用户"编程爱好者"回复了您在《前端性能优化最佳实践》下的评论: "谢谢分享，受益匪浅！"', time: '2023-10-09 15:30', read: false, type: 'comment' },
+        { id: 6, sender: '点赞通知', content: '用户"Vue大师"给您的博客《Vue3组件通信详解》点了赞', time: '2023-10-08 09:45', read: true, type: 'like' },
+        { id: 7, sender: '系统通知', content: '您的账号已成功升级为高级会员，可以使用更多高级功能', time: '2023-10-07 10:20', read: false, type: 'system' },
+        { id: 8, sender: '评论通知', content: '用户"设计专家"评论了您的博客《CSS动画实战指南》: "动画效果很流畅，代码也很简洁！"', time: '2023-10-06 14:15', read: true, type: 'comment' },
+        { id: 9, sender: '点赞通知', content: '用户"React爱好者"给您的博客《React Hooks深入解析》点了赞', time: '2023-10-05 18:30', read: false, type: 'like' },
+        { id: 10, sender: '系统通知', content: '您的博客《Web安全最佳实践》已被编辑推荐，浏览量大幅提升', time: '2023-10-04 11:45', read: true, type: 'system' },
+        { id: 11, sender: '评论通知', content: '用户"全栈工程师"评论了您的博客《Node.js性能调优指南》: "太实用了，解决了我的很多问题！"', time: '2023-10-03 09:15', read: false, type: 'comment' },
+        { id: 12, sender: '点赞通知', content: '用户"后端专家"给您的博客《MySQL索引优化完全指南》点了赞', time: '2023-10-02 16:20', read: true, type: 'like' }
+    ];
+    
+    // 根据类型筛选消息
+    let filteredMessages;
+    
+    switch (type) {
+        case 'unread':
+            filteredMessages = allMessages.filter(msg => !msg.read);
+            break;
+        case 'system':
+            filteredMessages = allMessages.filter(msg => msg.type === 'system');
+            break;
+        case 'comment':
+            filteredMessages = allMessages.filter(msg => msg.type === 'comment');
+            break;
+        case 'like':
+            filteredMessages = allMessages.filter(msg => msg.type === 'like');
+            break;
+        default:
+            filteredMessages = allMessages;
+    }
+    
+    return {
+        messages: filteredMessages.slice(0, 10), // 分页，假设每页10条
+        total: filteredMessages.length
+    };
+}
+
+// 过滤消息 - 废弃，改用fetchMessages从服务器获取
 function filterMessages(type) {
     const messageItems = document.querySelectorAll('.message-item');
     

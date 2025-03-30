@@ -3028,7 +3028,182 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData = "{\"success\": true, \"message\": \"修改成功\"}";
         return BLOG_DATA;
     }
+    // 个人中心-消息中心-获取消息列表
+    else if (m_method == GET && strstr(m_url, "/api/messages") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
 
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析请求参数
+        int page = 1;
+        int pageSize = 10;
+        string type = "";
+
+        // 使用更安全的方式解析URL参数
+        const char* pageParam = strstr(m_url, "page=");
+        if(pageParam != nullptr) {
+            char* endPtr = nullptr;
+            long pageValue = strtol(pageParam + 5, &endPtr, 10);
+            if(pageValue > 0 && (endPtr == nullptr || *endPtr == '&' || *endPtr == '\0')) {
+                page = static_cast<int>(pageValue);
+            } else {
+                jsonData = "{\"success\": false, \"message\": \"无效的页码\"}";
+                return BLOG_DATA;
+            }
+        }
+
+        const char* pageSizeParam = strstr(m_url, "pageSize=");
+        if(pageSizeParam != nullptr) {
+            char* endPtr = nullptr;
+            long pageSizeValue = strtol(pageSizeParam + 9, &endPtr, 10);
+            if(pageSizeValue > 0 && (endPtr == nullptr || *endPtr == '&' || *endPtr == '\0')) {
+                pageSize = static_cast<int>(pageSizeValue);
+            } else {
+                jsonData = "{\"success\": false, \"message\": \"无效的页面大小\"}";
+                return BLOG_DATA;
+            }
+        }
+
+        const char* typeParam = strstr(m_url, "type=");
+        if(typeParam != nullptr) {
+            const char* typeStart = typeParam + 5;
+            const char* typeEnd = strchr(typeStart, '&');
+            if(typeEnd == nullptr) {
+                type = string(typeStart);
+            } else {
+                type = string(typeStart, typeEnd - typeStart);
+            }
+        }
+        
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+        vector<Messages> messages = tool.get_messages_by_page(userid, page, pageSize, type);
+
+        // 修改这里：直接构建前端需要的响应格式
+        json responseJson;
+        json messagesArray = json::array();
+        for(int i = 0; i < messages.size(); i++){
+            json messageObj;
+            messageObj["id"] = messages[i].get_message_id();
+            
+            // 根据消息类型设置发送者
+            string type = messages[i].get_type();
+            if(type == "system") {
+                messageObj["sender"] = "系统通知";
+            } else if(type == "comment") {
+                messageObj["sender"] = "评论通知";
+            } else if(type == "like") {
+                messageObj["sender"] = "点赞通知";
+            } else {
+                messageObj["sender"] = "通知";
+            }
+            
+            messageObj["content"] = messages[i].get_content();
+            messageObj["time"] = messages[i].get_post_time();
+            messageObj["read"] = messages[i].get_is_read() == 1;
+            messageObj["type"] = type;
+            messagesArray.push_back(messageObj);
+        }
+        
+        // 获取消息总数
+        int total = tool.get_message_count_by_userid(userid);
+        
+        // 直接返回前端期望的格式
+        responseJson["messages"] = messagesArray;
+        responseJson["total"] = total;
+        responseJson["code"] = 0;
+        responseJson["message"] = "获取消息成功";
+        
+        jsonData = responseJson.dump();
+
+        return BLOG_DATA;
+    }
+    // 个人中心-消息中心-标记消息为已读
+    else if (m_method == PATCH && strstr(m_url, "/api/messages/read/") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"code\": 1, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析消息ID
+        int messageId = 0;
+        const char* messageIdPath = "/api/messages/read/";
+        char* messageIdStart = strstr(m_url, messageIdPath);
+        if(messageIdStart == nullptr){
+            jsonData = "{\"code\": 1, \"message\": \"无效的消息ID\"}";
+            return BLOG_DATA;
+        }
+        
+        // 计算偏移量，避免硬编码数字
+        size_t offset = strlen(messageIdPath);
+        messageId = atoi(messageIdStart + offset);
+        
+        if(messageId <= 0){
+            jsonData = "{\"code\": 1, \"message\": \"无效的消息ID\"}";
+            return BLOG_DATA;
+        }
+
+        sql_blog_tool tool;
+        bool result = tool.mark_message_as_read(messageId);
+        if(!result){
+            jsonData = "{\"code\": 1, \"message\": \"标记消息已读失败\"}";
+            return BLOG_DATA;
+        }
+
+        // 构建新的响应格式
+        json responseJson;
+        json dataJson;
+        
+        dataJson["id"] = messageId;
+        dataJson["read"] = true;
+        
+        responseJson["code"] = 0;
+        responseJson["message"] = "标记消息已读成功";
+        responseJson["data"] = dataJson;
+        
+        jsonData = responseJson.dump();
+        return BLOG_DATA;
+    }
+    // 个人中心-消息中心-标记所有消息为已读
+    else if (m_method == PATCH && strstr(m_url, "/api/messages/read-all") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"code\": 1, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        sql_blog_tool tool;
+        int userid = tool.get_userid(username);
+        int updatedCount = 0;
+        bool result = tool.mark_all_message_as_read(userid);
+        if(!result){
+            jsonData = "{\"code\": 1, \"message\": \"标记所有消息已读失败\"}";
+            return BAD_REQUEST;
+        }
+
+        // 构建新的响应格式
+        json responseJson;
+        json dataJson;
+        
+        dataJson["updatedCount"] = updatedCount;
+        
+        responseJson["code"] = 0;
+        responseJson["message"] = "全部消息已标记为已读";
+        responseJson["data"] = dataJson;
+        
+        jsonData = responseJson.dump();
+        return BLOG_DATA;
+    }
+    
     // 处理访问 blog_detail.html 的情况
     else if (strstr(m_url, "/blog_detail.html") != nullptr) {
         // 直接返回 blog_detail.html 页面
