@@ -266,6 +266,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const postTitle = document.getElementById('postTitle');
         postTitle.textContent = article.title;
         
+        // 处理可能的超长标题
+        handleLongText(postTitle);
+        
         // 设置日期
         const postDate = document.getElementById('postDate');
         postDate.textContent = formatDate(article.date);
@@ -323,6 +326,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 postContent.innerHTML = article.content;
             }
         }
+        
+        // 处理文章内容中的长文本
+        handleLongContentText(postContent);
         
         // 处理代码高亮
         if (window.hljs) {
@@ -542,13 +548,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // 检查缩略图是否为空，如果为空则使用随机图片
             const thumbnail = post.thumbnail ? post.thumbnail : `https://picsum.photos/300/200?random=${post.id || index}`;
             
+            // 确保标题不会太长
+            const truncatedTitle = post.title.length > 50 ? post.title.substring(0, 50) + '...' : post.title;
+            
             html += `
             <li class="popular-post">
-                <a href="blog_detail.html?id=${post.id}">
-                    <img src="${thumbnail}" alt="${post.title}">
+                <a href="blog_detail.html?id=${post.id}" class="popular-post-image">
+                    <img src="${thumbnail}" alt="${truncatedTitle}">
                 </a>
                 <div class="popular-post-info">
-                    <h4><a href="blog_detail.html?id=${post.id}">${post.title}</a></h4>
+                    <h4><a href="blog_detail.html?id=${post.id}" title="${post.title}" class="related-article-link">${post.title}</a></h4>
                     <div class="meta">
                         <span><i class="fas fa-eye"></i> ${post.views}</span>
                         <span><i class="fas fa-heart"></i> ${post.likes}</span>
@@ -559,6 +568,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         relatedPosts.innerHTML = html;
+        
+        // 处理相关文章中的长标题
+        document.querySelectorAll('.popular-post-info h4 a').forEach(titleLink => {
+            handleLongText(titleLink);
+            
+            // 添加title属性，以便鼠标悬停时显示完整标题
+            if (!titleLink.hasAttribute('title')) {
+                titleLink.setAttribute('title', titleLink.textContent);
+            }
+            
+            // 检查是否需要省略号
+            const titleHeight = titleLink.offsetHeight;
+            const lineHeight = parseInt(window.getComputedStyle(titleLink).lineHeight);
+            const maxLines = 2;
+            
+            if (titleHeight > lineHeight * maxLines) {
+                titleLink.classList.add('truncated');
+            }
+        });
     }
     
     // 生成文章目录
@@ -1523,5 +1551,158 @@ Web开发是一个不断发展的领域，需要持续学习和实践。希望�
             .finally(() => {
                 postContainer.classList.remove('loading');
             });
+    }
+
+    // 添加新的函数：处理长文本，为超长单词添加特殊处理
+    function handleLongText(element) {
+        if (!element) return;
+        
+        const text = element.textContent;
+        
+        // 检查总长度
+        if (text.length > 50) {
+            element.classList.add('long-word-container');
+        }
+        
+        // 检查是否有超长单词（超过20个字符）
+        const words = text.split(/\s+/);
+        const hasLongWord = words.some(word => word.length > 20);
+        
+        if (hasLongWord) {
+            // 为元素添加特殊类
+            element.classList.add('has-long-word');
+            
+            // 处理超长单词，为它们包裹特殊的span
+            const newContent = words.map(word => {
+                if (word.length > 20) {
+                    return `<span class="long-word">${word}</span>`;
+                }
+                return word;
+            }).join(' ');
+            
+            element.innerHTML = newContent;
+        }
+        
+        // 检查中文内容是否过长（无空格的长内容）
+        if (text.length > 30 && /[\u4e00-\u9fa5]/.test(text) && words.length <= 5) {
+            // 为中文长文本添加特殊处理
+            element.classList.add('long-word-container');
+            element.classList.add('cn-text');
+            
+            // 处理过长的中文内容，每隔30个字符截断一次
+            if (text.length > 60 && element.tagName.toLowerCase() === 'h1') {
+                const segments = [];
+                for (let i = 0; i < text.length; i += 30) {
+                    segments.push(text.substring(i, i + 30));
+                }
+                element.innerHTML = segments.map(seg => `<span class="cn-segment">${seg}</span>`).join('');
+            }
+        }
+    }
+    
+    // 处理文章内容中的长文本
+    function handleLongContentText(contentElement) {
+        if (!contentElement) return;
+        
+        // 添加容器标记
+        contentElement.classList.add('content-processed');
+        
+        // 处理段落中的长单词和中文
+        const textElements = contentElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, a, td, th');
+        textElements.forEach(el => {
+            const text = el.textContent;
+            const words = text.split(/\s+/);
+            
+            // 检查是否有超长单词
+            const hasLongWord = words.some(word => word.length > 30);
+            
+            if (hasLongWord) {
+                // 标记包含长单词的元素
+                el.classList.add('has-long-word');
+                
+                // 处理超长单词
+                if (el.tagName.toLowerCase() !== 'a') { // 不处理链接内部
+                    // 替换超长单词为带特殊类的span
+                    const newContent = words.map(word => {
+                        if (word.length > 30) {
+                            return `<span class="long-word">${word}</span>`;
+                        }
+                        return word;
+                    }).join(' ');
+                    
+                    // 仅当元素没有内嵌元素时才更新innerHTML
+                    if (!el.querySelector('*')) {
+                        el.innerHTML = newContent;
+                    }
+                }
+            }
+            
+            // 处理中文长句
+            if (text.length > 50 && /[\u4e00-\u9fa5]/.test(text) && words.length <= 5) {
+                el.classList.add('cn-text');
+                el.classList.add('long-word-container');
+            }
+        });
+        
+        // 处理代码块，确保长代码能够换行
+        const codeBlocks = contentElement.querySelectorAll('pre code');
+        codeBlocks.forEach(code => {
+            code.classList.add('wrap-code');
+        });
+        
+        // 处理表格，确保能够滚动
+        const tables = contentElement.querySelectorAll('table');
+        tables.forEach(table => {
+            // 检查表格宽度
+            if (table.offsetWidth > contentElement.offsetWidth) {
+                table.classList.add('wide-table');
+            }
+            
+            // 如果表格不在div中，则包裹一个div
+            if (table.parentElement.tagName !== 'DIV' || !table.parentElement.classList.contains('table-wrapper')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'table-wrapper';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+            }
+        });
+        
+        // 处理图片
+        const images = contentElement.querySelectorAll('img');
+        images.forEach(img => {
+            img.classList.add('responsive-img');
+            img.setAttribute('loading', 'lazy');
+            
+            // 确保图片不会超出容器
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            
+            // 检查图片是否有父容器
+            if (img.parentElement.tagName !== 'DIV' || !img.parentElement.classList.contains('img-wrapper')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'img-wrapper';
+                img.parentNode.insertBefore(wrapper, img);
+                wrapper.appendChild(img);
+            }
+        });
+        
+        // 处理长链接
+        const links = contentElement.querySelectorAll('a');
+        links.forEach(link => {
+            link.classList.add('processed-link');
+            
+            if (link.textContent.length > 30) {
+                link.classList.add('long-link');
+            }
+            
+            // 如果链接文本是链接本身，并且很长
+            if (link.textContent === link.href && link.textContent.length > 30) {
+                link.classList.add('url-link');
+                // 截断显示的URL (保留前15个字符和后15个字符)
+                const url = link.textContent;
+                link.setAttribute('title', url);
+                link.innerHTML = `${url.substring(0, 15)}...${url.substring(url.length - 15)}`;
+            }
+        });
     }
 });
