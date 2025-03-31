@@ -128,12 +128,12 @@ public:
 
 private:
 	int m_message_id;
-	int m_sender_id;
-	int m_recipient_id;
-	int m_blog_id;
-	string m_type;		// 消息类型
-	string m_content;
-	string m_post_time;
+	int m_sender_id;		// 发送者id(1为系统消息)
+	int m_recipient_id;	// 接收者id
+	int m_blog_id;		// 博客id
+	string m_type;		// 消息类型(点赞、评论、系统消息)
+	string m_content;	// 消息内容
+	string m_post_time;	// 消息发布时间
 	bool m_is_read;		// 1:read	0：unread 默认为0
 };
 
@@ -315,6 +315,7 @@ public:
 	Blog get_next_blog_by_id(int blogid);				// 通过博客id获取下一篇博客
 	vector<Blog> get_related_blogs(int category, int excludeId, int size);	// 获取相关文章
 	int get_userid_by_blogid(int blogid);				// 通过博客id获取对应的用户id
+	string get_blog_title_by_blogid(int blogid);		// 通过博客id获取对应的博客标题
 	void modify_blog_by_blogid(Blog blog);				// 通过博客id修改博客的标题和内容
 	bool delete_blog_by_blogid(int blogid);				// 通过博客id删除指定博客
 	vector<Comments> get_comments_by_blogid(int blogid);	// 通过博客id获取对应的评论内容
@@ -342,6 +343,8 @@ public:
 	bool mark_all_message_as_read(int userid);			// 标记所有消息为已读
 	bool delete_message(int messageid);					// 删除指定消息
 	bool insert_new_message(Messages message);			// 插入新消息
+	bool insert_new_message(int sender_id, int recipient_id, int blog_id, string type, string content);
+	bool check_message_is_exist(int sender_id, int recipient_id, int blog_id, string type);	// 检查消息是否存在
 
 	// 博客点赞相关
 	

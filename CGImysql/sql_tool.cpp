@@ -5756,6 +5756,81 @@ int sql_blog_tool::get_userid_by_blogid(int blogid)
     }
 }
 
+// 通过博客id获取对应的博客标题
+string sql_blog_tool::get_blog_title_by_blogid(int blogid)
+{
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlcon(&mysql, connpool);
+
+    // 设置连接字符集
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理SQL语句
+    const char* query = "SELECT title FROM blog WHERE blogId = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return string();
+    }
+
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return string();
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind_param[1];
+    memset(bind_param, 0, sizeof(bind_param));
+
+    bind_param[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_param[0].buffer = (char*)&blogid;
+
+    if (mysql_stmt_bind_param(stmt, bind_param)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return string();
+    }
+
+    // 执行查询
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return string();
+    }
+
+    // 绑定结果
+    MYSQL_BIND bind_result[1];
+    memset(bind_result, 0, sizeof(bind_result));    
+
+    char title[200];
+    unsigned long title_length;
+
+    bind_result[0].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[0].buffer = title;  
+    bind_result[0].buffer_length = sizeof(title);
+    bind_result[0].length = &title_length;
+
+    if (mysql_stmt_bind_result(stmt, bind_result)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return string();
+    }
+
+    // 获取结果
+    if (mysql_stmt_fetch(stmt) == 0) {
+        string result(title, title_length);
+        mysql_stmt_close(stmt);
+        return result;
+    } else {
+        cerr << "mysql_stmt_fetch() failed or no result found" << endl;
+        mysql_stmt_close(stmt);
+        return string();
+    }
+}
+
 // 更新博客内容
 void sql_blog_tool::modify_blog_by_blogid(Blog blog)
 {
@@ -7568,6 +7643,190 @@ bool sql_blog_tool::insert_new_message(Messages message)
     mysql_stmt_close(stmt);
 
     return true;
+}
+
+// 插入新的消息(sender_id为1时，为系统消息)
+bool sql_blog_tool::insert_new_message(int sender_id, int recipient_id, int blog_id, string type, string content)
+{
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+
+    // 从数据库连接池中获取一个连接
+    connectionRAII mysqlconn(&mysql, connpool);
+    
+    // 设置连接字符集，防止乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 默认消息为未读状态
+    my_bool is_read = 0;
+
+    // 预处理SQL语句 - 直接使用NOW()函数获取当前时间
+    const char* query = "INSERT INTO messages (sender_id, blog_id, type, content, post_time, is_read, recipient_id) VALUES (?, ?, ?, ?, NOW(), ?, ?)";
+
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return false;
+    }
+
+    // 准备SQL语句
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind[6]; // 减少为6个参数，因为使用NOW()
+    memset(bind, 0, sizeof(bind));
+
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = (char*)&sender_id; 
+    bind[0].is_null = 0;
+    bind[0].length = 0;
+
+    bind[1].buffer_type = MYSQL_TYPE_LONG;
+    bind[1].buffer = (char*)&blog_id;
+    bind[1].is_null = 0;
+    bind[1].length = 0;
+
+    bind[2].buffer_type = MYSQL_TYPE_STRING;
+    bind[2].buffer = (char*)type.c_str();
+    bind[2].buffer_length = type.length();
+    bind[2].is_null = 0;
+    bind[2].length = 0;
+
+    bind[3].buffer_type = MYSQL_TYPE_STRING;
+    bind[3].buffer = (char*)content.c_str();
+    bind[3].buffer_length = content.length();
+    bind[3].is_null = 0;
+    bind[3].length = 0;
+
+    bind[4].buffer_type = MYSQL_TYPE_TINY;
+    bind[4].buffer = &is_read;
+    bind[4].is_null = 0;
+    bind[4].length = 0;
+
+    bind[5].buffer_type = MYSQL_TYPE_LONG;
+    bind[5].buffer = (char*)&recipient_id;
+    bind[5].is_null = 0;
+    bind[5].length = 0;
+
+    // 绑定参数到预处理语句
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 执行插入操作
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 清理
+    mysql_stmt_close(stmt);
+
+    return true;
+}
+
+// 检查消息是否存在
+bool sql_blog_tool::check_message_is_exist(int sender_id, int recipient_id, int blog_id, string type)
+{
+    // 获取数据库连接池实例
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII mysqlconn(&mysql, connpool);
+
+    // 设置连接字符集，防止乱码
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理SQL语句
+    const char* query = "SELECT COUNT(*) FROM messages WHERE sender_id = ? AND recipient_id = ? AND blog_id = ? AND type = ?";
+
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return false;
+    }
+
+    // 准备SQL语句
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 绑定参数
+    MYSQL_BIND bind[4];
+    memset(bind, 0, sizeof(bind));
+
+    bind[0].buffer_type = MYSQL_TYPE_LONG;
+    bind[0].buffer = (char*)&sender_id;
+    bind[0].is_null = 0;
+    bind[0].length = 0;
+
+    bind[1].buffer_type = MYSQL_TYPE_LONG;
+    bind[1].buffer = (char*)&recipient_id;
+    bind[1].is_null = 0;
+    bind[1].length = 0;
+
+    bind[2].buffer_type = MYSQL_TYPE_LONG;
+    bind[2].buffer = (char*)&blog_id;
+    bind[2].is_null = 0;
+    bind[2].length = 0;
+
+    bind[3].buffer_type = MYSQL_TYPE_STRING;
+    bind[3].buffer = (char*)type.c_str();
+    bind[3].buffer_length = type.length();
+    bind[3].is_null = 0;
+    bind[3].length = 0;
+
+    // 绑定参数到预处理语句
+    if (mysql_stmt_bind_param(stmt, bind)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 执行查询操作
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 绑定结果
+    int message_count = 0;
+    MYSQL_BIND result_bind[1];
+    memset(result_bind, 0, sizeof(result_bind));
+
+    result_bind[0].buffer_type = MYSQL_TYPE_LONG;
+    result_bind[0].buffer = (char*)&message_count;
+    result_bind[0].is_null = 0;
+    result_bind[0].length = 0;
+
+    // 绑定结果集
+    if (mysql_stmt_bind_result(stmt, result_bind)) {
+        cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 获取结果
+    if (mysql_stmt_fetch(stmt)) {
+        cerr << "mysql_stmt_fetch() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 清理
+    mysql_stmt_close(stmt);
+
+    // 如果消息数量大于0，则消息存在
+    return message_count > 0;
 }
 
 // 插入新的博客点赞

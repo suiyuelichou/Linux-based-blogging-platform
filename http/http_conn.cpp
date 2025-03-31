@@ -1516,6 +1516,8 @@ http_conn::HTTP_CODE http_conn::do_request()
                         {"email", email}
                     }}
                 };
+                int userid = tool.get_userid(username);
+                tool.insert_new_message(1, userid, 0, "系统消息", "欢迎来到云中杉木博客平台！");
                 jsonData = response.dump();
                 return BLOG_DATA;
             }else{
@@ -1935,6 +1937,12 @@ http_conn::HTTP_CODE http_conn::do_request()
                     {"likeCount", tool.get_blog_likes_count(blogId)}
                 };
                 jsonData = response.dump();
+                // 新增点赞消息
+                int recipient_id = tool.get_userid_by_blogid(blogId);
+                string message = "用户" + username + "点赞了您的博客《" + tool.get_blog_title_by_blogid(blogId) + "》，快去看看吧！";
+                if(!tool.check_message_is_exist(userid, recipient_id, blogId, "like")){
+                    tool.insert_new_message(userid, recipient_id, blogId, "like", message);
+                }
             }
         }else{
             if(tool.is_user_liked_blog(userid, blogId)){
@@ -2023,6 +2031,13 @@ http_conn::HTTP_CODE http_conn::do_request()
                 {"date", postTime}
             };
             jsonData = response.dump();
+            // 新增评论消息
+            int recipient_id = tool.get_userid_by_blogid(stoi(articleId));
+            int userid = tool.get_userid(username);
+            string message = "用户" + username + "评论了您的博客《" + tool.get_blog_title_by_blogid(stoi(articleId)) + "》：" + content;
+            if(!tool.check_message_is_exist(userid, recipient_id, stoi(articleId), "comment")){
+                tool.insert_new_message(userid, recipient_id, stoi(articleId), "comment", message);
+            }
             return BLOG_DATA;
         }
 
@@ -2144,6 +2159,9 @@ http_conn::HTTP_CODE http_conn::do_request()
             {"articleId", blogId}
         };
         jsonData = response.dump();
+        // 新增系统博客消息
+        string message = "您有一篇新的博客《" + title + "》成功发布，请前往查看！";
+        tool.insert_new_message(1, userid, 0, "system", message);
 
         return BLOG_DATA;
     }
@@ -2643,7 +2661,9 @@ http_conn::HTTP_CODE http_conn::do_request()
         sql_blog_tool tool;
         if(users[username] == oldPassword || BCrypt::validatePassword(oldPassword, users[username])){
             tool.modify_password_by_username(username, hash_password);
+            m_lock.lock();
             users.insert(pair<string, string>(username, hash_password));
+            m_lock.unlock();
             jsonData = "{\"success\": true, \"message\": \"密码修改成功\"}";
         }else{
             jsonData = "{\"success\": false, \"message\": \"原密码不正确\"}";
@@ -4819,7 +4839,9 @@ http_conn::HTTP_CODE http_conn::do_request()
 
             // 将该用户插入用户表
             if(tool.add_user_from_admin(user)){
+                m_lock.lock();
                 users.insert(pair<string, string>(username, hashed_password)); // 数据插入成功后，存入users中
+                m_lock.unlock();
                 jsonData = "{";
                         jsonData += "\"success\":" + string("true") + ",";
                         jsonData += "\"message\":\"" + string("用户创建成功") + "\",";
@@ -4892,14 +4914,18 @@ http_conn::HTTP_CODE http_conn::do_request()
 
                     // 如果 username 变更，则删除旧的键值对，插入新的
                     if (!newusername.empty() && newusername != olduser.get_username()) {
+                        m_lock.lock();
                         users.erase(it);
                         users.insert({newusername, newpassword}); // 保持旧密码
+                        m_lock.unlock();
                     }
 
                     // 如果都变，则删除旧的键值对，插入新的
                     if (!newusername.empty() && newusername != olduser.get_username() && !newpassword.empty() && newpassword != olduser.get_password()) {
+                        m_lock.lock();
                         users.erase(it);
                         users.insert({newusername, newpassword}); // 保持旧密码
+                        m_lock.unlock();
                     }
                 } else {
                     // 如果旧用户名不存在
