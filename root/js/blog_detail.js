@@ -175,6 +175,15 @@ document.addEventListener('DOMContentLoaded', function() {
         window.addEventListener('scroll', function() {
             updateTocHighlight();
         });
+        
+        // 添加目录折叠/展开功能
+        const tocTitle = document.querySelector('.toc-title');
+        if (tocTitle) {
+            tocTitle.addEventListener('click', function() {
+                const toc = document.querySelector('.toc');
+                toc.classList.toggle('collapsed');
+            });
+        }
     }
     
     // 加载文章详情
@@ -597,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!content || !tocList) return;
         
         // 获取所有标题元素
-        const headings = content.querySelectorAll('h2, h3, h4');
+        const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
         
         if (headings.length === 0) {
             document.getElementById('tableOfContents').style.display = 'none';
@@ -623,6 +632,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         tocList.innerHTML = tocHTML;
+        
+        // 为目录链接添加点击事件，实现滚动到页面中间的效果
+        const tocLinks = tocList.querySelectorAll('a');
+        tocLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault(); // 阻止默认锚点跳转
+                
+                // 获取目标标题的ID
+                const targetId = this.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+                
+                if (targetElement) {
+                    // 计算滚动位置：使目标元素位于页面中间
+                    const offset = 50; // 顶部导航栏高度的偏移量
+                    const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+                    const offsetPosition = targetPosition - (window.innerHeight / 2) + (targetElement.offsetHeight / 2) - offset;
+                    
+                    // 平滑滚动到目标位置
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
         
         // 初始化目录高亮
         updateTocHighlight();
