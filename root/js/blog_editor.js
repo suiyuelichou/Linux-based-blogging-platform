@@ -1382,94 +1382,195 @@ document.addEventListener('DOMContentLoaded', function() {
             img.style.height = 'auto';
         });
         
-        // 处理代码块的语法高亮
-        const codeBlocks = previewContent.querySelectorAll('pre');
-        codeBlocks.forEach(block => {
-            // 基础样式设置
-            block.style.backgroundColor = 'var(--bg-secondary)';
-            block.style.padding = '15px';
-            block.style.borderRadius = '4px';
-            block.style.overflowX = 'auto';
-            block.style.fontSize = '14px';
-            block.style.fontFamily = 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace';
+        // 处理Quill特殊代码块结构 - 这是关键修复
+        const quillCodeBlocks = previewContent.querySelectorAll('.ql-code-block-container');
+        quillCodeBlocks.forEach(container => {
+            // 获取所有代码行
+            const codeLines = container.querySelectorAll('.ql-code-block');
+            if (!codeLines.length) return;
             
-            // 特别处理 Quill 的代码块
-            if (block.classList.contains('ql-syntax')) {
-                // 直接对 ql-syntax 类的处理
-                block.style.whiteSpace = 'pre';
-                block.style.display = 'block';
-                block.style.overflowX = 'auto';
-                
-                // 确保不丢失原始格式
-                const originalContent = block.innerHTML;
-                const codeElement = document.createElement('code');
-                codeElement.innerHTML = originalContent;
-                
-                // 清空并重新附加保留格式的内容
-                block.innerHTML = '';
-                block.appendChild(codeElement);
-            } else {
-                // 查找嵌套的 ql-syntax 元素
-                const syntaxElement = block.querySelector('.ql-syntax');
-                if (syntaxElement) {
-                    syntaxElement.style.whiteSpace = 'pre';
-                    syntaxElement.style.display = 'block';
-                    syntaxElement.style.overflowX = 'auto';
-                    
-                    // 确保内部内容被正确包装在 code 标签中
-                    if (!syntaxElement.querySelector('code')) {
-                        const originalContent = syntaxElement.innerHTML;
-                        const codeElement = document.createElement('code');
-                        codeElement.innerHTML = originalContent;
-                        
-                        syntaxElement.innerHTML = '';
-                        syntaxElement.appendChild(codeElement);
-                    }
-                } else if (!block.querySelector('code') && block.textContent.trim()) {
-                    // 处理普通代码块
-                    const originalText = block.innerHTML;
-                    block.innerHTML = '';
-                    const codeElement = document.createElement('code');
-                    
-                    // 保留原始格式
-                    codeElement.style.whiteSpace = 'pre';
-                    codeElement.innerHTML = originalText;
-                    
-                    block.appendChild(codeElement);
-                }
-            }
-        });
-
-        // 处理内联代码
-        const inlineCodes = previewContent.querySelectorAll('code:not(pre code)');
-        inlineCodes.forEach(code => {
-            code.style.backgroundColor = 'var(--bg-secondary)';
-            code.style.padding = '2px 4px';
-            code.style.borderRadius = '3px';
-            code.style.fontFamily = 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace';
-            code.style.fontSize = '0.9em';
-        });
-
-        // 特别处理剩余的 .ql-syntax 元素（可能不在 pre 标签内）
-        const remainingQlSyntax = previewContent.querySelectorAll('.ql-syntax:not(pre .ql-syntax):not(pre.ql-syntax)');
-        remainingQlSyntax.forEach(element => {
-            // 添加 pre 包装，确保正确显示
-            const content = element.innerHTML;
+            // 收集所有代码行的文本，使用换行符连接
+            const codeText = Array.from(codeLines)
+                .map(line => line.textContent)
+                .join('\n');
+            
+            // 创建新的pre和code元素
             const preElement = document.createElement('pre');
             const codeElement = document.createElement('code');
             
-            preElement.style.backgroundColor = 'var(--bg-secondary)';
-            preElement.style.padding = '15px';
-            preElement.style.borderRadius = '4px';
+            // 设置样式
+            preElement.style.backgroundColor = '#f6f8fa';
+            preElement.style.padding = '16px';
+            preElement.style.borderRadius = '6px';
             preElement.style.overflowX = 'auto';
-            preElement.style.fontSize = '14px';
-            preElement.style.fontFamily = 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace';
+            preElement.style.margin = '1.5em 0';
+            preElement.style.maxWidth = '100%';
+            preElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            preElement.style.border = '1px solid #e1e4e8';
             
-            codeElement.style.whiteSpace = 'pre';
-            codeElement.innerHTML = content;
+            codeElement.style.fontFamily = 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace';
+            codeElement.style.fontSize = '0.9em';
+            codeElement.style.display = 'block';
+            codeElement.style.lineHeight = '1.6';
+            codeElement.style.whiteSpace = 'pre'; // 保留空格和换行
+            codeElement.style.tabSize = '2';
+            codeElement.style.color = '#24292e';
             
+            // 设置代码内容，保留换行
+            codeElement.textContent = codeText;
+            
+            // 组装元素
             preElement.appendChild(codeElement);
-            element.parentNode.replaceChild(preElement, element);
+            
+            // 替换原容器
+            container.parentNode.replaceChild(preElement, container);
+        });
+        
+        // 继续处理其他可能的代码块形式
+        const qlSyntaxBlocks = previewContent.querySelectorAll('.ql-syntax');
+        qlSyntaxBlocks.forEach(block => {
+            // 跳过已处理的元素
+            if (block.closest('.processed')) return;
+            
+            // 获取原始内容
+            const codeText = block.textContent;
+            
+            // 创建新元素
+            const preElement = document.createElement('pre');
+            const codeElement = document.createElement('code');
+            
+            // 设置样式
+            preElement.style.backgroundColor = '#f6f8fa';
+            preElement.style.padding = '16px';
+            preElement.style.borderRadius = '6px';
+            preElement.style.overflowX = 'auto';
+            preElement.style.margin = '1.5em 0';
+            preElement.style.maxWidth = '100%';
+            preElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            preElement.style.border = '1px solid #e1e4e8';
+            
+            codeElement.style.fontFamily = 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace';
+            codeElement.style.fontSize = '0.9em';
+            codeElement.style.display = 'block';
+            codeElement.style.lineHeight = '1.6';
+            codeElement.style.whiteSpace = 'pre';
+            codeElement.style.color = '#24292e';
+            
+            // 设置内容
+            codeElement.textContent = codeText;
+            
+            // 组装元素
+            preElement.appendChild(codeElement);
+            preElement.classList.add('processed');
+            
+            // 替换原元素
+            if (block.parentNode.tagName === 'PRE') {
+                block.parentNode.parentNode.replaceChild(preElement, block.parentNode);
+            } else {
+                block.parentNode.replaceChild(preElement, block);
+            }
+        });
+        
+        // 处理内联代码
+        const inlineCodes = previewContent.querySelectorAll('code:not(pre code)');
+        inlineCodes.forEach(code => {
+            code.style.backgroundColor = '#f1f1f1';
+            code.style.padding = '3px 6px';
+            code.style.borderRadius = '4px';
+            code.style.fontFamily = 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace';
+            code.style.fontSize = '0.9em';
+            code.style.color = '#e83e8c';
+            code.style.wordBreak = 'break-word';
+        });
+
+        // 处理引用块样式
+        const blockquotes = previewContent.querySelectorAll('blockquote');
+        blockquotes.forEach(quote => {
+            quote.style.borderLeft = '4px solid var(--primary-color, #3498db)';
+            quote.style.padding = '1.2em 1.5em';
+            quote.style.margin = '1.8em 0';
+            quote.style.backgroundColor = 'rgba(52, 152, 219, 0.05)';
+            quote.style.color = 'inherit';
+            quote.style.borderRadius = '0 8px 8px 0';
+            quote.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+            quote.style.position = 'relative';
+            
+            // 添加引用符号
+            if (!quote.querySelector('.quote-mark')) {
+                const quoteMark = document.createElement('span');
+                quoteMark.className = 'quote-mark';
+                quoteMark.textContent = '"';
+                quoteMark.style.position = 'absolute';
+                quoteMark.style.left = '10px';
+                quoteMark.style.top = '-20px';
+                quoteMark.style.fontSize = '4em';
+                quoteMark.style.opacity = '0.15';
+                quoteMark.style.color = 'var(--primary-color, #3498db)';
+                quoteMark.style.fontFamily = 'Georgia, serif';
+                quoteMark.style.pointerEvents = 'none';
+                quote.insertBefore(quoteMark, quote.firstChild);
+            }
+            
+            // 处理引用块内的段落和强调
+            const paragraphs = quote.querySelectorAll('p');
+            paragraphs.forEach(p => {
+                p.style.position = 'relative';
+                p.style.zIndex = '1';
+                p.style.margin = '0.8em 0';
+                p.style.fontStyle = 'italic';
+                
+                if (p === paragraphs[paragraphs.length - 1]) {
+                    p.style.marginBottom = '0';
+                }
+            });
+        });
+
+        // 处理列表样式
+        const allLists = previewContent.querySelectorAll('ol, ul');
+        allLists.forEach(list => {
+            list.style.marginBottom = '1em';
+            list.style.paddingLeft = '2em';
+            list.style.display = 'block';
+            
+            // 标记列表类型
+            const isOrderedList = list.tagName === 'OL';
+            
+            // 获取所有列表项
+            const listItems = list.querySelectorAll('li');
+            listItems.forEach((item, index) => {
+                item.style.display = 'list-item';
+                item.style.marginBottom = '0.5em';
+                
+                // 检查data-list属性 - Quill的特性
+                const listType = item.getAttribute('data-list');
+                
+                // 设置列表样式
+                if (listType === 'bullet') {
+                    item.style.listStyleType = 'disc';
+                } else if (listType === 'ordered') {
+                    item.style.listStyleType = 'decimal';
+                    // 如果是有序列表项，设置value属性
+                    item.setAttribute('value', index + 1);
+                } else {
+                    // 根据容器类型设置默认样式
+                    if (isOrderedList) {
+                        item.style.listStyleType = 'decimal';
+                        item.setAttribute('value', index + 1);
+                    } else {
+                        item.style.listStyleType = 'disc';
+                    }
+                }
+                
+                // 确保没有float和display:inline干扰显示
+                item.style.float = 'none';
+                item.style.display = 'list-item';
+            });
+        });
+
+        // 移除Quill UI元素
+        const qlUiElements = previewContent.querySelectorAll('.ql-ui');
+        qlUiElements.forEach(element => {
+            element.style.display = 'none';
         });
 
         // 处理标题样式
@@ -1479,57 +1580,14 @@ document.addEventListener('DOMContentLoaded', function() {
             heading.style.marginBottom = '0.8em';
             heading.style.fontWeight = '600';
             heading.style.lineHeight = '1.4';
+            heading.style.color = 'var(--text-primary, #333)';
         });
 
         // 处理段落样式
-        const paragraphs = previewContent.querySelectorAll('p');
+        const paragraphs = previewContent.querySelectorAll('p:not(blockquote p)');
         paragraphs.forEach(p => {
             p.style.marginBottom = '1em';
             p.style.lineHeight = '1.8';
         });
-
-        // 处理列表样式 - 基于 data-list 属性正确渲染列表类型
-        const allLists = previewContent.querySelectorAll('ol, ul');
-        allLists.forEach(list => {
-            list.style.marginBottom = '1em';
-            list.style.paddingLeft = '2em';
-            
-            // 获取所有列表项
-            const listItems = list.querySelectorAll('li');
-            listItems.forEach(item => {
-                const listType = item.getAttribute('data-list');
-                
-                // 根据 data-list 属性设置不同的列表样式
-                if (listType === 'bullet') {
-                    // 无序列表项样式
-                    item.style.listStyleType = 'disc';
-                    // 移除可能存在的序号
-                    if (item.hasAttribute('value')) {
-                        item.removeAttribute('value');
-                    }
-                } else if (listType === 'ordered') {
-                    // 有序列表项样式
-                    item.style.listStyleType = 'decimal';
-                }
-            });
-        });
-
-        // 处理引用块样式
-        const blockquotes = previewContent.querySelectorAll('blockquote');
-        blockquotes.forEach(quote => {
-            quote.style.borderLeft = '4px solid var(--primary-color)';
-            quote.style.paddingLeft = '1em';
-            quote.style.marginLeft = '0';
-            quote.style.marginBottom = '1em';
-            quote.style.fontStyle = 'italic';
-            quote.style.color = 'var(--text-secondary)';
-        });
-
-        // 在格式化后触发一次滚动同步
-        const editor = document.querySelector('.ql-editor');
-        if (editor) {
-            const event = new Event('scroll');
-            editor.dispatchEvent(event);
-        }
     }
 });

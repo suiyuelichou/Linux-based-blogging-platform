@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadArticleDetails();
         checkAuthStatus();
         setupDarkMode();
+        reorganizeDOM();
     }
     
     // 设置事件监听器
@@ -251,6 +252,40 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderArticle(article) {
         document.title = `${article.title} - 云中杉木博客`;
         
+        // 获取博客容器并创建包装元素
+        const postContainer = document.getElementById('postContainer');
+        
+        // 检查是否已经存在包装元素
+        let postWrapper = postContainer.querySelector('.post-wrapper');
+        if (!postWrapper) {
+            // 创建博客内容包装器
+            postWrapper = document.createElement('div');
+            postWrapper.className = 'post-wrapper';
+            
+            // 获取所有博客内容相关元素
+            const postElements = Array.from(postContainer.children).filter(el => 
+                !el.classList.contains('comments-section') && 
+                !el.classList.contains('post-navigation'));
+            
+            // 将它们移动到包装器中
+            postElements.forEach(el => {
+                // 克隆元素到新容器
+                postWrapper.appendChild(el);
+            });
+            
+            // 添加包装器到容器的开头
+            postContainer.prepend(postWrapper);
+            
+            // 创建评论包装器
+            const commentsSection = postContainer.querySelector('.comments-section');
+            if (commentsSection) {
+                const commentsWrapper = document.createElement('div');
+                commentsWrapper.className = 'comments-wrapper';
+                commentsSection.parentNode.insertBefore(commentsWrapper, commentsSection);
+                commentsWrapper.appendChild(commentsSection);
+            }
+        }
+        
         // 设置文章头图
         const postImage = document.getElementById('postImage');
         const postHeader = document.querySelector('.post-header');
@@ -313,10 +348,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (postContent) {
             postContent.innerHTML = article.content;
             
+            // 处理Quill生成的代码块
+            processQuillCodeBlocks(postContent);
+            
             // 处理文章中的长文本和特殊格式
             handleLongContentText(postContent);
             
-            // 处理Quill编辑器生成的列表
+            // 处理列表
             processLists(postContent);
             
             // 生成目录
@@ -401,6 +439,110 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             };
         }
+    }
+    
+    // 添加新函数：处理Quill代码块
+    function processQuillCodeBlocks(contentElement) {
+        // 处理Quill特殊代码块结构
+        const quillCodeBlocks = contentElement.querySelectorAll('.ql-code-block-container');
+        quillCodeBlocks.forEach(container => {
+            // 获取所有代码行
+            const codeLines = container.querySelectorAll('.ql-code-block');
+            if (!codeLines.length) return;
+            
+            // 收集所有代码行的文本，使用换行符连接
+            const codeText = Array.from(codeLines)
+                .map(line => line.textContent)
+                .join('\n');
+            
+            // 创建新的pre和code元素
+            const preElement = document.createElement('pre');
+            const codeElement = document.createElement('code');
+            
+            // 设置样式
+            preElement.style.backgroundColor = 'var(--code-bg, #f6f8fa)';
+            preElement.style.padding = '16px';
+            preElement.style.borderRadius = '8px';
+            preElement.style.overflowX = 'auto';
+            preElement.style.margin = '1.5em 0';
+            preElement.style.maxWidth = '100%';
+            preElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            preElement.style.border = '1px solid var(--border-color)';
+            
+            codeElement.style.fontFamily = 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace';
+            codeElement.style.fontSize = '0.9em';
+            codeElement.style.display = 'block';
+            codeElement.style.lineHeight = '1.6';
+            codeElement.style.whiteSpace = 'pre'; // 保留空格和换行
+            codeElement.style.tabSize = '2';
+            codeElement.style.color = 'var(--text-primary)';
+            
+            // 设置代码内容，保留换行
+            codeElement.textContent = codeText;
+            
+            // 组装元素
+            preElement.appendChild(codeElement);
+            
+            // 替换原容器
+            container.parentNode.replaceChild(preElement, container);
+        });
+
+        // 处理可能存在的其他代码块形式
+        const qlSyntaxBlocks = contentElement.querySelectorAll('.ql-syntax');
+        qlSyntaxBlocks.forEach(block => {
+            // 跳过已处理的元素
+            if (block.closest('.processed')) return;
+            
+            // 获取原始内容
+            const codeText = block.textContent;
+            
+            // 创建新元素
+            const preElement = document.createElement('pre');
+            const codeElement = document.createElement('code');
+            
+            // 设置样式
+            preElement.style.backgroundColor = 'var(--code-bg, #f6f8fa)';
+            preElement.style.padding = '16px';
+            preElement.style.borderRadius = '8px';
+            preElement.style.overflowX = 'auto';
+            preElement.style.margin = '1.5em 0';
+            preElement.style.maxWidth = '100%';
+            preElement.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            preElement.style.border = '1px solid var(--border-color)';
+            
+            codeElement.style.fontFamily = 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace';
+            codeElement.style.fontSize = '0.9em';
+            codeElement.style.display = 'block';
+            codeElement.style.lineHeight = '1.6';
+            codeElement.style.whiteSpace = 'pre';
+            codeElement.style.color = 'var(--text-primary)';
+            
+            // 设置内容
+            codeElement.textContent = codeText;
+            
+            // 组装元素
+            preElement.appendChild(codeElement);
+            preElement.classList.add('processed');
+            
+            // 替换原元素
+            if (block.parentNode.tagName === 'PRE') {
+                block.parentNode.parentNode.replaceChild(preElement, block.parentNode);
+            } else {
+                block.parentNode.replaceChild(preElement, block);
+            }
+        });
+
+        // 处理内联代码
+        const inlineCodes = contentElement.querySelectorAll('code:not(pre code)');
+        inlineCodes.forEach(code => {
+            code.style.backgroundColor = 'var(--code-bg, #f1f1f1)';
+            code.style.padding = '3px 6px';
+            code.style.borderRadius = '4px';
+            code.style.fontFamily = 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace';
+            code.style.fontSize = '0.9em';
+            code.style.color = 'var(--inline-code-color, #e83e8c)';
+            code.style.wordBreak = 'break-word';
+        });
     }
     
     // 处理Quill编辑器生成的列表
@@ -1782,5 +1924,55 @@ Web开发是一个不断发展的领域，需要持续学习和实践。希望�
                 link.innerHTML = `${url.substring(0, 15)}...${url.substring(url.length - 15)}`;
             }
         });
+    }
+
+    // 添加一个新函数以重新组织DOM结构
+    function reorganizeDOM() {
+        // 在页面加载后设置超时，确保DOM已完全加载
+        setTimeout(() => {
+            const postContainer = document.getElementById('postContainer');
+            if (!postContainer) return;
+            
+            // 检查是否已经存在包装元素
+            if (postContainer.querySelector('.post-wrapper')) return;
+            
+            // 创建博客内容包装器
+            const postWrapper = document.createElement('div');
+            postWrapper.className = 'post-wrapper';
+            
+            // 获取博客头部和内容
+            const postHeader = postContainer.querySelector('.post-header');
+            const postContent = postContainer.querySelector('.post-content');
+            const postTags = postContainer.querySelector('.post-tags');
+            
+            if (postHeader) postWrapper.appendChild(postHeader.cloneNode(true));
+            if (postContent) postWrapper.appendChild(postContent.cloneNode(true));
+            if (postTags) postWrapper.appendChild(postTags.cloneNode(true));
+            
+            // 删除原始元素
+            if (postHeader) postHeader.remove();
+            if (postContent) postContent.remove();
+            if (postTags) postTags.remove();
+            
+            // 添加包装器到容器的开头
+            postContainer.prepend(postWrapper);
+            
+            // 创建评论包装器
+            const commentsSection = postContainer.querySelector('.comments-section');
+            if (commentsSection) {
+                const commentsWrapper = document.createElement('div');
+                commentsWrapper.className = 'comments-wrapper';
+                commentsSection.parentNode.insertBefore(commentsWrapper, commentsSection);
+                commentsWrapper.appendChild(commentsSection);
+            }
+            
+            // 修复后备方案中的列表样式问题
+            const ol = document.querySelectorAll('.post-content ol');
+            if (ol.length > 0) {
+                ol.forEach(list => {
+                    list.style.counterReset = 'list-counter';
+                });
+            }
+        }, 500);
     }
 });

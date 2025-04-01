@@ -1,3 +1,15 @@
+/* 添加到文件开头的变量声明部分 */
+:root {
+    --code-bg: #f6f8fa;
+    --inline-code-color: #e83e8c;
+}
+
+/* 暗色模式下的代码块样式 */
+body.dark-theme {
+    --code-bg: #282c34;
+    --inline-code-color: #ff6b9d;
+}
+
 /* 博客详情页特定样式 */
 .post-header {
     position: relative;
@@ -91,7 +103,7 @@
 }
 
 .post-title {
-    font-size: 2.2rem;
+    font-size: 2.4rem;
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
     color: var(--text-primary);
@@ -146,6 +158,7 @@
     /* 中文排版优化 */
     text-align: justify;
     text-justify: inter-ideograph;
+    font-size: 1.20rem; /* 可以根据需要调整大小 */
 }
 
 .post-content h1, 
@@ -235,12 +248,13 @@
 
 .post-content pre {
     background-color: var(--code-bg);
-    padding: 1em;
+    padding: 16px;
     border-radius: 8px;
     overflow-x: auto;
     margin: 1.5em 0;
-    white-space: pre-wrap;
     max-width: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
 }
 
 .post-content pre code {
@@ -248,19 +262,90 @@
     padding: 0;
     border-radius: 0;
     font-size: 0.9em;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    line-height: 1.6;
+    color: var(--text-primary);
     white-space: pre;
+}
+
+.post-content code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background-color: var(--code-bg);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: var(--inline-code-color);
 }
 
 .post-content blockquote {
     border-left: 4px solid var(--primary-color);
-    padding: 0.8em 1em;
-    margin: 1.5em 0;
+    padding: 1.2em 1.5em;
+    margin: 1.8em 0;
     background-color: rgba(var(--primary-rgb), 0.05);
-    color: var(--text-secondary);
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    position: relative;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.post-content blockquote::before {
+    content: '"';
+    font-family: Georgia, serif;
+    font-size: 4em;
+    position: absolute;
+    left: 10px;
+    top: -20px;
+    opacity: 0.15;
+    color: var(--primary-color);
+}
+
+.post-content blockquote p {
+    margin-bottom: 0.8em;
+    font-style: italic;
+    position: relative;
+    z-index: 1;
 }
 
 .post-content blockquote p:last-child {
     margin-bottom: 0;
+}
+
+.post-content blockquote a {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+body.dark-theme .post-content blockquote {
+    background-color: rgba(var(--primary-rgb), 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.post-content blockquote cite {
+    display: block;
+    font-size: 0.9em;
+    margin-top: 0.8em;
+    text-align: right;
+    font-style: normal;
+    opacity: 0.8;
+}
+
+.post-content blockquote.short {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .post-content blockquote {
+        padding: 1em 1.2em;
+        font-size: 1rem;
+    }
+    
+    .post-content blockquote::before {
+        font-size: 3em;
+        top: -15px;
+    }
 }
 
 .post-content a {
@@ -1192,10 +1277,9 @@ a {
 /* 使整个博客容器具有更好的溢出控制 */
 .main-content .container {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
     gap: 30px;
     padding: 30px 20px;
-    margin-top: 20px;
     max-width: 1200px;
     margin: 0 auto;
     overflow: hidden;
@@ -1204,7 +1288,8 @@ a {
 .post-section {
     overflow: hidden;
     max-width: 100%;
-    min-width: 0; /* 关键：允许弹性容器缩小 */
+    min-width: 0;
+    width: 100%;
 }
 
 .post-container {
@@ -1339,8 +1424,8 @@ a {
 
 /* 侧边栏容器控制 */
 .sidebar {
-    width: 300px;
-    max-width: 300px;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
     overflow: hidden;
 }
@@ -1476,7 +1561,7 @@ h1.cn-text {
 /* 确保页面主容器使用grid布局 */
 .main-content .container {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
     gap: 30px;
     padding: 30px 20px;
     max-width: 1200px;
@@ -1486,9 +1571,9 @@ h1.cn-text {
 
 /* 完全控制侧边栏宽度 */
 .sidebar {
-    width: 300px;
-    max-width: 300px;
-    min-width: 300px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     overflow: hidden;
 }
 
@@ -1502,7 +1587,6 @@ h1.cn-text {
     .sidebar {
         width: 100%;
         max-width: 100%;
-        min-width: 100%;
     }
 }
 
@@ -1711,6 +1795,41 @@ span.long-word {
     list-style-type: decimal !important;
 }
 
+/* 添加博客内容区包装样式 */
+.post-wrapper {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+/* 调整评论部分样式使其与博客内容分开 */
+.comments-wrapper {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+/* 调整文章导航样式 */
+.post-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin: 0; /* 移除顶部边距 */
+    padding-top: 0; /* 移除顶部内边距 */
+    border-top: none; /* 移除顶部边框 */
+}
+
 /* 后备方案：对不支持::marker的浏览器提供伪元素实现 */
 @supports not (::marker) {
     .post-content li[data-list="bullet"] {
@@ -1736,5 +1855,12 @@ span.long-word {
         position: absolute;
         left: 0;
         top: 0;
+    }
+}
+
+/* 在较大屏幕上设置最大宽度限制 */
+@media (min-width: 1400px) {
+    .main-content .container {
+        max-width: 1400px; /* 在较大屏幕上增加最大宽度 */
     }
 }

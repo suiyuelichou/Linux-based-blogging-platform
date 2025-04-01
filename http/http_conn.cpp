@@ -2812,7 +2812,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
         jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
         jsonData += "\"content\": \"" + content + "\",";
-        jsonData += "\"content_format\": \"" + string("delta") + "\",";
+        // jsonData += "\"content_format\": \"" + string("delta") + "\",";
         jsonData += "\"category\": \"" + categoryName + "\",";
         jsonData += "\"tags\": \"" + tags_str + "\",";
         jsonData += "\"coverImage\": \"" + blog.get_thumbnail() + "\",";
