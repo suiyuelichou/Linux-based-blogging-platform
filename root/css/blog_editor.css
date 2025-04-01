@@ -80,21 +80,46 @@
 
 /* 文章编辑器 */
 .editor-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--border-color);
     border-radius: 5px;
     background-color: var(--card-bg);
     min-height: 400px;
 }
 
+/* 工具栏固定样式 */
 .ql-toolbar.ql-snow {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: var(--card-bg);
     border-color: var(--border-color) !important;
-    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 8px 15px;
+    transition: all 0.3s ease;
 }
 
+/* 工具栏滚动时的样式 */
+.ql-toolbar.ql-snow.scrolled {
+    background-color: #ffffff; /* 纯白背景 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--primary-color) !important;
+}
+
+/* 暗色模式下工具栏滚动时的样式 */
+body.dark-theme .ql-toolbar.ql-snow.scrolled {
+    background-color: #1a1a1a; /* 暗色模式下的深色背景 */
+}
+
+/* 编辑区域样式调整 */
 .ql-container.ql-snow {
     border-color: var(--border-color) !important;
     min-height: 350px;
     background-color: var(--input-bg);
+    flex: 1;
+    border-top: none;
 }
 
 .ql-editor {
@@ -741,4 +766,13 @@ body.dark-theme .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
 body.dark-theme .ql-toolbar.ql-snow button:hover:after {
     background-color: #2a2a2a;
     color: #eee;
+}
+
+/* 添加工具栏悬浮效果 */
+.ql-toolbar.ql-snow {
+    transition: box-shadow 0.3s ease;
+}
+
+.ql-toolbar.ql-snow.scrolled {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }

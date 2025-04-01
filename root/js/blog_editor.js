@@ -1590,4 +1590,56 @@ document.addEventListener('DOMContentLoaded', function() {
             p.style.lineHeight = '1.8';
         });
     }
+
+    // 修改工具栏滚动效果
+    const toolbar = document.querySelector('.ql-toolbar');
+    if (toolbar) {
+        // 获取工具栏的初始位置和页面顶部导航栏
+        const header = document.querySelector('.header');
+        const headerHeight = header.offsetHeight;
+        
+        // 设置工具栏的初始样式
+        toolbar.style.position = 'sticky';
+        toolbar.style.top = headerHeight + 'px';
+        toolbar.style.zIndex = '1000';
+        
+        window.addEventListener('scroll', function() {
+            // 检测滚动位置
+            const scrolled = window.scrollY > 300;
+            
+            if (scrolled) {
+                toolbar.classList.add('scrolled');
+                
+                // 确保工具栏设置了正确的位置
+                toolbar.style.position = 'fixed';
+                toolbar.style.top = headerHeight + 'px';
+                toolbar.style.left = toolbar.parentElement.getBoundingClientRect().left + 'px';
+                toolbar.style.width = toolbar.parentElement.offsetWidth + 'px';
+                
+                // 为父容器添加padding-top以防止内容跳动
+                if (!toolbar.parentElement.style.paddingTop) {
+                    toolbar.parentElement.style.paddingTop = toolbar.offsetHeight + 'px';
+                }
+            } else {
+                toolbar.classList.remove('scrolled');
+                
+                // 重置为sticky定位
+                toolbar.style.position = 'sticky';
+                toolbar.style.top = headerHeight + 'px';
+                toolbar.style.left = '';
+                toolbar.style.width = '';
+                
+                // 重置内容padding
+                toolbar.parentElement.style.paddingTop = '';
+            }
+        });
+        
+        // 监听窗口大小变化，更新工具栏宽度
+        window.addEventListener('resize', function() {
+            if (toolbar.classList.contains('scrolled')) {
+                toolbar.style.left = toolbar.parentElement.getBoundingClientRect().left + 'px';
+                toolbar.style.width = toolbar.parentElement.offsetWidth + 'px';
+            }
+        });
+    }
 });

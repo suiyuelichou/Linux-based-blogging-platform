@@ -1561,10 +1561,10 @@ h1.cn-text {
 /* 确保页面主容器使用grid布局 */
 .main-content .container {
     display: grid;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);   /* 3fr代表博客内容区域 1fr代表侧边栏 */
     gap: 30px;
     padding: 30px 20px;
-    max-width: 1200px;
+    max-width: 1200px;      /*  */
     margin: 0 auto;
     overflow: hidden;
 }
@@ -1800,7 +1800,7 @@ span.long-word {
     background-color: var(--card-bg);
     border-radius: 10px;
     border: 1px solid var(--border-color);
-    padding: 20px;
+    padding: 20px 20px 20px 40px; /* 上 右 下 左 - 左侧增加到40px */
     margin-bottom: 20px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     overflow: hidden;
