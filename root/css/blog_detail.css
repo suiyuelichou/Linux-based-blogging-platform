@@ -1654,3 +1654,87 @@ span.long-word {
     opacity: 0.85;
     text-decoration: underline;
 }
+
+/* 修复Quill编辑器生成的列表标识显示问题 */
+/* 基础列表样式覆盖 */
+.post-content ol, 
+.post-content ul {
+    display: block !important;
+    margin-bottom: 1.2em !important;
+    padding-left: 2em !important;
+}
+
+.post-content ol {
+    list-style-type: decimal !important; /* 有序列表使用数字 */
+}
+
+.post-content ul {
+    list-style-type: disc !important; /* 无序列表使用圆点 */
+}
+
+.post-content li {
+    display: list-item !important;
+    position: relative !important;
+    margin-bottom: 0.5em !important;
+}
+
+/* Quill特殊列表项样式 */
+.post-content li[data-list="bullet"] {
+    list-style-type: disc !important;
+}
+
+.post-content li[data-list="ordered"] {
+    list-style-type: decimal !important;
+}
+
+/* 处理特殊情况 */
+.post-content ol li[data-list="bullet"] {
+    list-style-type: disc !important;
+}
+
+.post-content ul li[data-list="ordered"] {
+    list-style-type: decimal !important;
+}
+
+/* 隐藏Quill UI元素，它们会干扰标识符显示 */
+.post-content .ql-ui,
+.post-content span.ql-ui {
+    display: none !important;
+}
+
+/* 自定义列表样式类 */
+.post-content .quill-unordered-list {
+    list-style-type: disc !important;
+}
+
+.post-content .quill-ordered-list {
+    list-style-type: decimal !important;
+}
+
+/* 后备方案：对不支持::marker的浏览器提供伪元素实现 */
+@supports not (::marker) {
+    .post-content li[data-list="bullet"] {
+        list-style-type: none !important;
+        padding-left: 1.2em !important;
+    }
+    
+    .post-content li[data-list="bullet"]::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+    
+    .post-content li[data-list="ordered"] {
+        list-style-type: none !important;
+        padding-left: 1.5em !important;
+        counter-increment: list-counter;
+    }
+    
+    .post-content li[data-list="ordered"]::before {
+        content: counter(list-counter) ".";
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+}

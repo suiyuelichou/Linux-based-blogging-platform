@@ -1488,11 +1488,30 @@ document.addEventListener('DOMContentLoaded', function() {
             p.style.lineHeight = '1.8';
         });
 
-        // 处理列表样式
-        const lists = previewContent.querySelectorAll('ul, ol');
-        lists.forEach(list => {
+        // 处理列表样式 - 基于 data-list 属性正确渲染列表类型
+        const allLists = previewContent.querySelectorAll('ol, ul');
+        allLists.forEach(list => {
             list.style.marginBottom = '1em';
             list.style.paddingLeft = '2em';
+            
+            // 获取所有列表项
+            const listItems = list.querySelectorAll('li');
+            listItems.forEach(item => {
+                const listType = item.getAttribute('data-list');
+                
+                // 根据 data-list 属性设置不同的列表样式
+                if (listType === 'bullet') {
+                    // 无序列表项样式
+                    item.style.listStyleType = 'disc';
+                    // 移除可能存在的序号
+                    if (item.hasAttribute('value')) {
+                        item.removeAttribute('value');
+                    }
+                } else if (listType === 'ordered') {
+                    // 有序列表项样式
+                    item.style.listStyleType = 'decimal';
+                }
+            });
         });
 
         // 处理引用块样式

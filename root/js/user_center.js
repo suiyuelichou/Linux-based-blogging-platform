@@ -487,8 +487,8 @@ function generateMessagesHTML() {
                 <i class="fas fa-spinner fa-spin"></i>
                 <p>正在加载消息...</p>
             </div>
-                    </div>
-        <div class="pagination-container" id="messagesPagination" style="display:none;"></div>
+        </div>
+        <div class="pagination-container" id="messagesPagination"></div>
     `;
 }
 
@@ -900,6 +900,8 @@ function markAllMessagesAsRead() {
 // 渲染消息列表
 function renderMessages(messages, total, type, currentPage, pageSize) {
     const messageList = document.querySelector('.message-list');
+    const paginationContainer = document.getElementById('messagesPagination');
+    
     if (!messageList) return;
     
     // 清空消息列表
@@ -913,6 +915,11 @@ function renderMessages(messages, total, type, currentPage, pageSize) {
                 <p>暂无${getMessageTypeText(type)}消息</p>
             </div>
         `;
+        
+        // 隐藏分页容器
+        if (paginationContainer) {
+            paginationContainer.style.display = 'none';
+        }
         return;
     }
     
@@ -962,6 +969,9 @@ function renderMessagesPagination(total, pageSize, currentPage, type) {
     // 显示分页容器
     paginationContainer.style.display = 'block';
     
+    // 存储总数据量用于页面切换时计算总页数
+    paginationContainer.dataset.total = total.toString();
+    
     // 构建分页HTML
     let paginationHTML = '<div class="pagination">';
     
@@ -972,7 +982,7 @@ function renderMessagesPagination(total, pageSize, currentPage, type) {
         </button>
     `;
     
-    // 页码
+    // 页码区域
     paginationHTML += '<div class="page-numbers">';
     
     // 显示页码范围
@@ -989,7 +999,7 @@ function renderMessagesPagination(total, pageSize, currentPage, type) {
     if (startPage > 1) {
         paginationHTML += `<button class="page-btn" data-page="1">1</button>`;
         if (startPage > 2) {
-            paginationHTML += '<span class="page-ellipsis">...</span>';
+            paginationHTML += '<span class="page-btn page-ellipsis">...</span>';
         }
     }
     
@@ -1001,7 +1011,7 @@ function renderMessagesPagination(total, pageSize, currentPage, type) {
     // 最后一页
     if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
-            paginationHTML += '<span class="page-ellipsis">...</span>';
+            paginationHTML += '<span class="page-btn page-ellipsis">...</span>';
         }
         paginationHTML += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
     }
@@ -1028,12 +1038,22 @@ function renderMessagesPagination(total, pageSize, currentPage, type) {
     // 更新分页容器
     paginationContainer.innerHTML = paginationHTML;
     
+    // 为分页容器添加淡入动画
+    setTimeout(() => {
+        paginationContainer.classList.add('pagination-visible');
+    }, 300);
+    
     // 添加页码点击事件
-    const pageButtons = paginationContainer.querySelectorAll('.page-btn');
+    const pageButtons = paginationContainer.querySelectorAll('.page-btn:not(.page-ellipsis)');
     pageButtons.forEach(btn => {
         btn.addEventListener('click', function() {
+            // 添加点击反馈动画
+            this.classList.add('btn-pulse');
+            
             const page = parseInt(this.dataset.page);
-            fetchMessages(type, page, pageSize);
+            setTimeout(() => {
+                fetchMessages(type, page, pageSize);
+            }, 150); // 短暂延迟，让按钮动画有时间显示
         });
     });
     
@@ -1041,15 +1061,27 @@ function renderMessagesPagination(total, pageSize, currentPage, type) {
     const prevBtn = paginationContainer.querySelector('.prev-btn');
     if (prevBtn && !prevBtn.disabled) {
         prevBtn.addEventListener('click', function() {
-            fetchMessages(type, currentPage - 1, pageSize);
+            this.classList.add('btn-pulse');
+            setTimeout(() => {
+                fetchMessages(type, currentPage - 1, pageSize);
+            }, 150);
         });
     }
     
     const nextBtn = paginationContainer.querySelector('.next-btn');
     if (nextBtn && !nextBtn.disabled) {
         nextBtn.addEventListener('click', function() {
-            fetchMessages(type, currentPage + 1, pageSize);
+            this.classList.add('btn-pulse');
+            setTimeout(() => {
+                fetchMessages(type, currentPage + 1, pageSize);
+            }, 150);
         });
+    }
+    
+    // 平滑滚动到内容区顶部
+    const messageSection = document.querySelector('.message-list');
+    if (messageSection) {
+        messageSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 }
 
@@ -2077,7 +2109,7 @@ function addPagination(total, pageSize) {
             // 添加点击反馈动画
             this.classList.add('btn-pulse');
             
-            const page = this.dataset.page;
+            const page = parseInt(this.dataset.page);
             if (page) {
                 setTimeout(() => {
                     goToPage(parseInt(page));

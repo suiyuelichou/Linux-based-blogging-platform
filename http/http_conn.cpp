@@ -1758,6 +1758,7 @@ http_conn::HTTP_CODE http_conn::do_request()
             {"id", blog.get_blog_id()},
             {"title", escapedTitle},
             {"content", blog.get_blog_content()},
+            {"content_format", "delta"},
             {"date", blog.get_blog_postTime()},
             {"thumbnail", blog.get_thumbnail()},
             {"category", category},
@@ -2035,9 +2036,7 @@ http_conn::HTTP_CODE http_conn::do_request()
             int recipient_id = tool.get_userid_by_blogid(stoi(articleId));
             int userid = tool.get_userid(username);
             string message = "用户" + username + "评论了您的博客《" + tool.get_blog_title_by_blogid(stoi(articleId)) + "》：" + content;
-            if(!tool.check_message_is_exist(userid, recipient_id, stoi(articleId), "comment")){
-                tool.insert_new_message(userid, recipient_id, stoi(articleId), "comment", message);
-            }
+            tool.insert_new_message(userid, recipient_id, stoi(articleId), "comment", message);
             return BLOG_DATA;
         }
 
@@ -2813,7 +2812,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
         jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
         jsonData += "\"content\": \"" + content + "\",";
-        jsonData += "\"content_format\": \"" + string("markdown") + "\",";
+        jsonData += "\"content_format\": \"" + string("delta") + "\",";
         jsonData += "\"category\": \"" + categoryName + "\",";
         jsonData += "\"tags\": \"" + tags_str + "\",";
         jsonData += "\"coverImage\": \"" + blog.get_thumbnail() + "\",";
@@ -3130,8 +3129,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
         
         // 获取消息总数
-        int total = tool.get_message_count_by_userid(userid);
-        
+        int total = tool.get_message_count_by_userid_and_type(userid, type);
         // 直接返回前端期望的格式
         responseJson["messages"] = messagesArray;
         responseJson["total"] = total;

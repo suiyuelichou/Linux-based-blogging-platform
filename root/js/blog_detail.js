@@ -308,36 +308,20 @@ document.addEventListener('DOMContentLoaded', function() {
         commentCount.textContent = article.comments;
         commentCountDisplay.textContent = article.comments;
         
-        // 设置文章内容 - 根据内容格式正确渲染
+        // 设置文章内容
         const postContent = document.getElementById('postContent');
-        
-        // 根据内容格式决定如何渲染
-        if (article.content_format === 'markdown') {
-            // 使用 Markdown 渲染
-            if (window.marked) {
-                postContent.innerHTML = renderMarkdown(article.content);
-            } else if (article.content_html) {
-                // 如果 marked 库未加载，但有 HTML 版本，使用 HTML
-                postContent.innerHTML = article.content_html;
-            } else {
-                // 无法渲染 Markdown，直接显示
-                postContent.innerHTML = `<pre>${article.content}</pre>`;
-            }
-        } else if (article.content_html) {
-            // 直接使用 HTML 版本
-            postContent.innerHTML = article.content_html;
-        } else {
-            // 尝试判断内容类型
-            if (isLikelyMarkdown(article.content) && window.marked) {
-                postContent.innerHTML = renderMarkdown(article.content);
-            } else {
-                // 默认当作 HTML 处理
-                postContent.innerHTML = article.content;
-            }
+        if (postContent) {
+            postContent.innerHTML = article.content;
+            
+            // 处理文章中的长文本和特殊格式
+            handleLongContentText(postContent);
+            
+            // 处理Quill编辑器生成的列表
+            processLists(postContent);
+            
+            // 生成目录
+            generateTableOfContents();
         }
-        
-        // 处理文章内容中的长文本
-        handleLongContentText(postContent);
         
         // 处理代码高亮
         if (window.hljs) {
@@ -417,6 +401,66 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             };
         }
+    }
+    
+    // 处理Quill编辑器生成的列表
+    function processLists(contentElement) {
+        if (!contentElement) return;
+        
+        // 隐藏Quill UI元素
+        const qlUiElements = contentElement.querySelectorAll('.ql-ui');
+        qlUiElements.forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        // 处理列表
+        const allLists = contentElement.querySelectorAll('ol, ul');
+        allLists.forEach(list => {
+            // 检查列表项类型
+            const listItems = list.querySelectorAll('li');
+            let bulletCount = 0;
+            let orderedCount = 0;
+            
+            // 计算不同类型的列表项数量
+            listItems.forEach(item => {
+                if (item.getAttribute('data-list') === 'bullet') {
+                    bulletCount++;
+                } else if (item.getAttribute('data-list') === 'ordered') {
+                    orderedCount++;
+                }
+            });
+            
+            // 根据主要列表项类型设置列表样式
+            if (bulletCount > 0 && orderedCount === 0) {
+                // 纯无序列表
+                list.classList.add('quill-unordered-list');
+                list.style.listStyleType = 'disc';
+            } else if (orderedCount > 0 && bulletCount === 0) {
+                // 纯有序列表
+                list.classList.add('quill-ordered-list');
+                list.style.listStyleType = 'decimal';
+            }
+            
+            // 确保每个列表项都有正确的样式
+            listItems.forEach(item => {
+                const listType = item.getAttribute('data-list');
+                
+                // 确保列表项正确显示
+                item.style.display = 'list-item';
+                
+                if (listType === 'bullet') {
+                    item.style.listStyleType = 'disc';
+                } else if (listType === 'ordered') {
+                    item.style.listStyleType = 'decimal';
+                }
+                
+                // 确保所有ql-ui元素都被隐藏
+                const uiElements = item.querySelectorAll('.ql-ui');
+                uiElements.forEach(el => {
+                    el.style.display = 'none';
+                });
+            });
+        });
     }
     
     // 渲染 Markdown 内容
