@@ -212,7 +212,7 @@ private:
 
     string current_username;    // 每个连接独立的用户名
     bool islogin;        // 用于标志是否已经登录
-    string jsonData;    // 用于存储json数据
+    string jsonData = "";    // 用于存储json数据
     Cookie cookie;      // 用户Cookie对象
     Cookie_admin cookie_admin;// 管理员Cookie对象
     bool is_admin_request = false;  // 判断是否为管理员请求

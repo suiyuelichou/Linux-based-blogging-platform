@@ -5969,8 +5969,8 @@ vector<Comments> sql_blog_tool::get_comments_by_blogid(int blogid)
     // 设置连接字符集
     mysql_query(mysql, "SET NAMES 'utf8mb4'");
 
-    // 预处理 SQL 查询语句
-    const char* query = "SELECT username, content, comment_time FROM blog_comments WHERE blog_id = ?";
+    // 预处理 SQL 查询语句，添加 comment_id 字段
+    const char* query = "SELECT comment_id, username, content, comment_time FROM blog_comments WHERE blog_id = ?";
     MYSQL_STMT* stmt = mysql_stmt_init(mysql);
 
     if (!stmt) {
@@ -6012,25 +6012,29 @@ vector<Comments> sql_blog_tool::get_comments_by_blogid(int blogid)
         return {};
     }
 
-    // 绑定结果
-    MYSQL_BIND bind_result[3];
+    // 绑定结果，增加 comment_id 字段
+    MYSQL_BIND bind_result[4];
     memset(bind_result, 0, sizeof(bind_result));
 
+    int comment_id = 0;
     char username[256];
     char content[1024];
     char comment_time[20];
 
-    bind_result[0].buffer_type = MYSQL_TYPE_STRING;
-    bind_result[0].buffer = username;
-    bind_result[0].buffer_length = sizeof(username);
+    bind_result[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_result[0].buffer = &comment_id;
 
     bind_result[1].buffer_type = MYSQL_TYPE_STRING;
-    bind_result[1].buffer = content;
-    bind_result[1].buffer_length = sizeof(content);
+    bind_result[1].buffer = username;
+    bind_result[1].buffer_length = sizeof(username);
 
     bind_result[2].buffer_type = MYSQL_TYPE_STRING;
-    bind_result[2].buffer = comment_time;
-    bind_result[2].buffer_length = sizeof(comment_time);
+    bind_result[2].buffer = content;
+    bind_result[2].buffer_length = sizeof(content);
+
+    bind_result[3].buffer_type = MYSQL_TYPE_STRING;
+    bind_result[3].buffer = comment_time;
+    bind_result[3].buffer_length = sizeof(comment_time);
 
     if (mysql_stmt_bind_result(stmt, bind_result)) {
         cerr << "mysql_stmt_bind_result() failed: " << mysql_stmt_error(stmt) << endl;
@@ -6044,6 +6048,7 @@ vector<Comments> sql_blog_tool::get_comments_by_blogid(int blogid)
 
     while (mysql_stmt_fetch(stmt) == 0) {
         Comments comment;
+        comment.set_comment_id(comment_id);
         comment.set_username(string(username));
         comment.set_content(string(content));
         comment.set_comment_time(string(comment_time));
@@ -8425,54 +8430,6 @@ int sql_blog_tool::get_blog_comments_count(int blogid)
     return comment_count;
 }
 
-// 删除指定id的评论
-bool sql_blog_tool::delete_comment_by_commentid(int commentid)
-{
-    // 获取连接池实例并获取 MySQL 连接
-    connection_pool* pool = connection_pool::GetInstance();
-    MYSQL* mysql = nullptr;
-    connectionRAII con(&mysql, pool);
-
-    // 构建SQL删除语句
-    string query = "DELETE FROM blog_comments WHERE comment_id = ?";
-    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
-    if (!stmt) {
-        cerr << "mysql_stmt_init() failed: " << mysql_error(mysql) << endl;
-        return false;
-    }
-
-    // 预处理 SQL 语句
-    if (mysql_stmt_prepare(stmt, query.c_str(), query.length())) {
-        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
-        mysql_stmt_close(stmt);
-        return false;
-    }
-
-    // 准备绑定参数
-    MYSQL_BIND bind_param;
-    memset(&bind_param, 0, sizeof(bind_param));
-    bind_param.buffer_type = MYSQL_TYPE_LONG;
-    bind_param.buffer = (char*)&commentid;
-
-    // 绑定参数到语句
-    if (mysql_stmt_bind_param(stmt, &bind_param)) {
-        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
-        mysql_stmt_close(stmt);
-        return false;
-    }
-
-    // 执行删除语句
-    if (mysql_stmt_execute(stmt)) {
-        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
-        mysql_stmt_close(stmt);
-        return false;
-    }
-
-    // 清理
-    mysql_stmt_close(stmt);
-    return true;
-}
-
 // 批量删除评论
 bool sql_blog_tool::batch_delete_comments(const vector<int> &commentIds) {
     if (commentIds.empty()) return false;
@@ -8786,6 +8743,61 @@ int sql_blog_tool::add_comment_to_article(string username, int articleid, string
     
     mysql_stmt_close(stmt);
     return comment_id;
+}
+
+// 删除博客评论
+bool sql_blog_tool::delete_comment_by_commentid(int commentid)
+{
+    connection_pool* connpool = connection_pool::GetInstance();
+    MYSQL* mysql = nullptr;
+    connectionRAII msqlcon(&mysql, connpool);
+
+    // 设置连接字符集
+    mysql_query(mysql, "SET NAMES 'utf8mb4'");
+
+    // 预处理 SQL 删除语句
+    const char* query = "DELETE FROM blog_comments WHERE comment_id = ?";
+    MYSQL_STMT* stmt = mysql_stmt_init(mysql);
+
+    if (!stmt) {
+        cerr << "mysql_stmt_init() failed" << endl;
+        return false;
+    }
+
+    // 准备 SQL 语句
+    if (mysql_stmt_prepare(stmt, query, strlen(query))) {
+        cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 绑定查询参数
+    MYSQL_BIND bind_param[1];
+    memset(bind_param, 0, sizeof(bind_param));
+
+    bind_param[0].buffer_type = MYSQL_TYPE_LONG;
+    bind_param[0].buffer = (char*)&commentid;
+
+    if (mysql_stmt_bind_param(stmt, bind_param)) {
+        cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 执行 SQL 语句（删除操作）
+    if (mysql_stmt_execute(stmt)) {
+        cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << endl;
+        mysql_stmt_close(stmt);
+        return false;
+    }
+
+    // 判断删除是否成功
+    bool success = (mysql_stmt_affected_rows(stmt) > 0);
+
+    // 关闭 SQL 语句
+    mysql_stmt_close(stmt);
+
+    return success;
 }
 
 // 获取用户博客被评论总数

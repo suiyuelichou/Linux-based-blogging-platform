@@ -1794,7 +1794,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         return BLOG_DATA;
     }
     // 获取评论列表
-    else if (strstr(m_url, "/api/comments?articleId=")) {
+    else if (m_method == GET && strstr(m_url, "/api/comments?articleId=")) { 
         char* articleIdParam = strstr(m_url, "articleId=");
         if(articleIdParam == nullptr){
             return BAD_REQUEST;
@@ -2041,6 +2041,56 @@ http_conn::HTTP_CODE http_conn::do_request()
         }
 
         jsonData = "{\"success\": false, \"message\": \"评论失败\"}";
+        return BLOG_DATA;
+    }
+    // 删除评论
+    else if (m_method == DELETE && strstr(m_url, "/api/comments/") != nullptr) {
+        string username = cookie.getCookie("username");
+        string session_id = cookie.getCookie("session_id");
+
+        if(!cookie.validateSession(username, session_id)){
+            jsonData = "{\"success\": false, \"message\": \"请先登录后再操作\"}";
+            return AUTHENTICATION;
+        }
+
+        // 解析评论ID
+        const char* commentIdStart = strstr(m_url, "/api/comments/");
+        if (commentIdStart == nullptr) {
+            
+            return BAD_REQUEST;
+        }
+
+        int commentId = atoi(commentIdStart + 14); // 修正偏移量
+        if (commentId <= 0) {
+            jsonData = "{\"code\": -1, \"message\": \"无效的评论ID\"}";
+            return BLOG_DATA;
+        }
+
+        sql_blog_tool tool;
+        // 获取评论所属的文章ID
+        Comments comment = tool.get_comment_by_commentId(commentId);
+        if (comment.get_comment_id() <= 0) {
+            jsonData = "{\"code\": -1, \"message\": \"评论不存在\"}";
+            return BLOG_DATA;
+        }
+        
+        int articleId = comment.get_blog_id();
+        
+        bool result = tool.delete_comment_by_commentid(commentId);
+        if(result){
+            json response = {
+                {"code", 0},
+                {"message", "评论已成功删除"},
+                {"data", {
+                    {"id", commentId},
+                    {"articleId", articleId}
+                }}
+            };
+            jsonData = response.dump();
+            return BLOG_DATA;
+        }
+
+        jsonData = "{\"code\": -1, \"message\": \"评论删除失败，请稍后重试\"}";
         return BLOG_DATA;
     }
     // 文章发布

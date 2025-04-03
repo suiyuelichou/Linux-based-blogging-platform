@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkAuthStatus();
         setupDarkMode();
         reorganizeDOM();
+        setupUserData();
     }
     
     // 设置事件监听器
@@ -679,35 +680,159 @@ document.addEventListener('DOMContentLoaded', function() {
     // 渲染评论
     function renderComments(comments) {
         const commentsList = document.getElementById('commentsList');
-        const commentCount = document.getElementById('commentCount');
-        const commentCountDisplay = document.getElementById('commentCountDisplay');
+        commentsList.innerHTML = '';
         
-        if (comments.length === 0) {
-            commentsList.innerHTML = '<div class="no-comments">暂无评论，快来发表第一条评论吧！</div>';
-            commentCount.textContent = '0';
-            commentCountDisplay.textContent = '0';
+        if (!comments || comments.length === 0) {
+            commentsList.innerHTML = '<div class="no-comments-message">暂无评论，来说点什么吧！</div>';
             return;
         }
         
-        let commentsHTML = '';
+        // 获取当前登录用户
+        const currentUsername = getCurrentUsername();
+        
         comments.forEach(comment => {
-            commentsHTML += `
-            <div class="comment" data-id="${comment.id}">
-                <img src="${comment.avatar}" alt="${comment.username}" class="comment-avatar">
+            const isOwnComment = currentUsername && currentUsername === comment.username;
+            
+            const commentElement = document.createElement('div');
+            commentElement.className = `comment ${isOwnComment ? 'own-comment' : ''}`;
+            commentElement.setAttribute('data-comment-id', comment.id);
+            
+            commentElement.innerHTML = `
+                <img src="${comment.avatar || 'img/default_touxiang.jpg'}" alt="${comment.username}" class="comment-avatar">
                 <div class="comment-body">
                     <div class="comment-header">
                         <span class="comment-author">${comment.username}</span>
                         <span class="comment-date">${formatDate(comment.date)}</span>
                     </div>
                     <div class="comment-text">${comment.content}</div>
+                    ${isOwnComment ? `
+                    <div class="comment-actions">
+                        <button class="comment-action delete-action" data-comment-id="${comment.id}">
+                            <i class="far fa-trash-alt"></i> 删除
+                        </button>
+                    </div>
+                    ` : ''}
                 </div>
-            </div>
             `;
+            
+            commentsList.appendChild(commentElement);
         });
         
-        commentsList.innerHTML = commentsHTML;
-        commentCount.textContent = comments.length;
-        commentCountDisplay.textContent = comments.length;
+        // 更新评论计数显示
+        document.getElementById('commentCountDisplay').textContent = comments.length;
+        
+        // 只添加删除按钮的事件监听
+        addCommentEventListeners();
+    }
+    
+    // 获取当前登录用户名
+    function getCurrentUsername() {
+        // 检查是否已登录，从用户头像或其他元素获取用户名
+        const userDropdown = document.querySelector('.user-dropdown');
+        const logoutButton = document.getElementById('logout');
+        
+        if (userDropdown && logoutButton) {
+            // 用户已登录，尝试获取用户名
+            const userAvatar = document.getElementById('userAvatar');
+            // 假设用户头像上有 data-username 属性，或者从其他地方获取
+            return userAvatar.getAttribute('data-username') || localStorage.getItem('username');
+        }
+        
+        return null; // 未登录
+    }
+    
+    // 添加评论的事件监听器
+    function addCommentEventListeners() {
+        // 仅添加删除按钮事件监听
+        document.querySelectorAll('.delete-action').forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-comment-id');
+                showDeleteConfirmation(commentId);
+            });
+        });
+    }
+    
+    // 显示删除确认对话框
+    function showDeleteConfirmation(commentId) {
+        // 创建确认对话框
+        const overlay = document.createElement('div');
+        overlay.className = 'delete-confirmation-overlay';
+        
+        overlay.innerHTML = `
+            <div class="delete-confirmation-dialog">
+                <h4>删除评论</h4>
+                <p>确定要删除这条评论吗？此操作无法撤销。</p>
+                <div class="delete-confirmation-actions">
+                    <button class="cancel-delete">取消</button>
+                    <button class="confirm-delete">确认删除</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // 绑定事件
+        overlay.querySelector('.cancel-delete').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+        });
+        
+        overlay.querySelector('.confirm-delete').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            deleteComment(commentId);
+        });
+        
+        // 点击背景关闭对话框
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+            }
+        });
+    }
+    
+    // 删除评论的函数
+    function deleteComment(commentId) {
+        // 显示加载状态
+        showNotification('正在删除评论...', 'info');
+        
+        // 调用删除评论API
+        fetch(`/api/comments/${commentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include' // 包含cookie以验证用户身份
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('删除评论失败');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 删除成功
+            showNotification('评论已成功删除', 'success');
+            
+            // 从DOM中移除评论
+            const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+            if (commentElement) {
+                commentElement.remove();
+                
+                // 更新评论计数
+                const commentCountDisplay = document.getElementById('commentCountDisplay');
+                const newCount = parseInt(commentCountDisplay.textContent) - 1;
+                commentCountDisplay.textContent = newCount;
+                
+                // 检查是否没有评论了
+                if (newCount === 0) {
+                    document.getElementById('commentsList').innerHTML = 
+                        '<div class="no-comments-message">暂无评论，来说点什么吧！</div>';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('删除评论失败:', error);
+            showNotification('删除评论失败: ' + error.message, 'error');
+        });
     }
     
     // 加载相关文章
@@ -1206,27 +1331,41 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 添加新评论到列表
             const commentsList = document.getElementById('commentsList');
-            const noComments = commentsList.querySelector('.no-comments');
+            const noComments = commentsList.querySelector('.no-comments-message');
             
             if (noComments) {
                 commentsList.innerHTML = '';
             }
             
+            // 创建新评论元素 - 修改此部分添加删除按钮
             const newComment = document.createElement('div');
-            newComment.className = 'comment';
-            newComment.setAttribute('data-id', data.id);
+            newComment.className = 'comment own-comment'; // 添加own-comment类标识这是当前用户的评论
+            newComment.setAttribute('data-comment-id', data.id);
+            
             newComment.innerHTML = `
-            <img src="${user.avatar || 'img/default_touxiang.jpg'}" alt="${user.username}" class="comment-avatar">
-            <div class="comment-body">
-                <div class="comment-header">
-                    <span class="comment-author">${user.username}</span>
-                    <span class="comment-date">刚刚</span>
+                <img src="${user.avatar || 'img/default_touxiang.jpg'}" alt="${user.username}" class="comment-avatar">
+                <div class="comment-body">
+                    <div class="comment-header">
+                        <span class="comment-author">${user.username}</span>
+                        <span class="comment-date">刚刚</span>
+                    </div>
+                    <div class="comment-text">${commentContent}</div>
+                    <div class="comment-actions">
+                        <button class="comment-action delete-action" data-comment-id="${data.id}">
+                            <i class="far fa-trash-alt"></i> 删除
+                        </button>
+                    </div>
                 </div>
-                <div class="comment-text">${commentContent}</div>
-            </div>
             `;
             
             commentsList.prepend(newComment);
+            
+            // 为新添加的删除按钮绑定事件监听器
+            const deleteButton = newComment.querySelector('.delete-action');
+            deleteButton.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-comment-id');
+                showDeleteConfirmation(commentId);
+            });
             
             // 更新评论数量
             const commentCount = document.getElementById('commentCount');
@@ -1974,5 +2113,33 @@ Web开发是一个不断发展的领域，需要持续学习和实践。希望�
                 });
             }
         }, 500);
+    }
+
+    // 在页面加载时，确保设置用户名数据
+    function setupUserData() {
+        // 检查用户是否已登录
+        const userDropdown = document.querySelector('.user-dropdown');
+        const logoutButton = document.getElementById('logout');
+        
+        if (userDropdown && logoutButton) {
+            // 用户已登录，获取用户信息
+            fetch('/api/user/info', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.username) {
+                    // 将用户名存储在头像元素的data属性中
+                    const userAvatar = document.getElementById('userAvatar');
+                    userAvatar.setAttribute('data-username', data.username);
+                    // 也可以存储在localStorage中作为备份
+                    localStorage.setItem('username', data.username);
+                }
+            })
+            .catch(error => {
+                console.error('获取用户信息失败:', error);
+            });
+        }
     }
 });
