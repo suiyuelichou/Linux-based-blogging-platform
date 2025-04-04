@@ -338,56 +338,60 @@ document.addEventListener('DOMContentLoaded', function() {
         const viewCount = document.getElementById('viewCount');
         const likeCount = document.getElementById('likeCount');
         const commentCount = document.getElementById('commentCount');
+        
+        viewCount.textContent = article.views || 0;
+        likeCount.textContent = article.likes || 0;
+        commentCount.textContent = article.comments || 0;
+        
+        // 更新评论区的评论数
         const commentCountDisplay = document.getElementById('commentCountDisplay');
-        viewCount.textContent = article.views;
-        likeCount.textContent = article.likes;
-        commentCount.textContent = article.comments;
-        commentCountDisplay.textContent = article.comments;
+        commentCountDisplay.textContent = article.comments || 0;
         
-        // 设置文章内容
+        // 内容处理
         const postContent = document.getElementById('postContent');
-        if (postContent) {
+        
+        // 判断内容格式并显示
+        if (article.content_format === 'markdown' && typeof article.content === 'string') {
+            // 如果是Markdown格式，使用marked渲染
+            postContent.innerHTML = renderMarkdown(article.content);
+        } else if (article.content_html) {
+            // 如果有预渲染的HTML，直接使用
+            postContent.innerHTML = article.content_html;
+        } else {
+            // 否则使用原始内容
             postContent.innerHTML = article.content;
-            
-            // 处理Quill生成的代码块
-            processQuillCodeBlocks(postContent);
-            
-            // 处理文章中的长文本和特殊格式
-            handleLongContentText(postContent);
-            
-            // 处理列表
-            processLists(postContent);
-            
-            // 生成目录
-            generateTableOfContents();
         }
         
-        // 处理代码高亮
-        if (window.hljs) {
-            document.querySelectorAll('pre code').forEach((block) => {
-                hljs.highlightElement(block);
-            });
-        }
+        // 处理代码块
+        processQuillCodeBlocks(postContent);
         
-        // 设置标签
+        // 处理列表
+        processLists(postContent);
+        
+        // 处理长文本
+        handleLongContentText(postContent);
+        
+        // 更新标签
         const postTags = document.getElementById('postTags');
         if (article.tags && article.tags.length > 0) {
-            let tagsHTML = '';
+            // 清空现有标签
+            postTags.innerHTML = '';
+            
+            // 添加新标签
             article.tags.forEach(tag => {
-                tagsHTML += `<span class="post-tag">${tag}</span>`;
+                const tagLink = document.createElement('a');
+                tagLink.href = `blog_categories.html?tag=${encodeURIComponent(tag)}`;
+                tagLink.className = 'post-tag';
+                tagLink.textContent = tag;
+                postTags.appendChild(tagLink);
             });
-            postTags.innerHTML = tagsHTML;
         } else {
-            postTags.innerHTML = '<span class="post-tag">暂无标签</span>';
+            postTags.innerHTML = '<span class="no-tags">暂无标签</span>';
         }
         
-        // 设置上一篇/下一篇文章
+        // 更新上一篇/下一篇导航
         const prevPost = document.getElementById('prevPost');
         const nextPost = document.getElementById('nextPost');
-        
-        // 移除可能已经绑定的所有点击事件
-        prevPost.onclick = null;
-        nextPost.onclick = null;
         
         // 检查prevPost是否有效（ID大于0）
         if (article.prevPost && article.prevPost.id > 0 && article.prevPost.title) {
@@ -439,6 +443,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 showNotification('已经是最后一篇文章了', 'info');
                 return false;
             };
+        }
+        
+        // 生成目录
+        generateTableOfContents();
+        
+        // 检查用户是否是文章作者
+        checkIfUserIsArticleAuthor(article.author);
+    }
+    
+    // 检查当前登录用户是否为文章作者
+    function checkIfUserIsArticleAuthor(articleAuthor) {
+        if (!articleAuthor) return;
+        
+        // 获取当前登录的用户名
+        const userAvatar = document.getElementById('userAvatar');
+        const username = userAvatar ? userAvatar.getAttribute('data-username') : null;
+        
+        if (username && articleAuthor === username) {
+            // 当前用户是文章作者，显示编辑按钮
+            showEditButton();
+        } else {
+            // 当前用户不是文章作者，隐藏编辑按钮
+            hideEditButton();
         }
     }
     
@@ -1463,6 +1490,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isLoggedIn && userData) {
             // 用户已登录，显示用户信息
             if (userAvatar) userAvatar.src = userData.avatar || 'img/default_touxiang.jpg';
+            if (userAvatar) userAvatar.setAttribute('data-username', userData.username || '');
             
             // 更新下拉菜单
             if (userDropdown) {
@@ -1482,9 +1510,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
             }
+            
+            // 检查是否为文章作者
+            checkIfCurrentUserIsAuthor(userData.username);
         } else {
             // 用户未登录，显示游客信息
             if (userAvatar) userAvatar.src = 'img/default_touxiang.jpg';
+            if (userAvatar) userAvatar.removeAttribute('data-username');
             
             // 更新下拉菜单
             if (userDropdown) {
@@ -1493,6 +1525,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="blog_register.html"><i class="fas fa-user-plus"></i> 注册</a>
                 `;
             }
+            
+            // 隐藏编辑按钮
+            hideEditButton();
+        }
+    }
+    
+    // 检查当前用户是否为文章作者
+    function checkIfCurrentUserIsAuthor(username) {
+        if (!username) return;
+        
+        const authorName = document.getElementById('authorName');
+        if (authorName && authorName.textContent === username) {
+            // 当前用户是文章作者，显示编辑按钮
+            showEditButton();
+        } else {
+            // 当前用户不是文章作者，隐藏编辑按钮
+            hideEditButton();
+        }
+    }
+    
+    // 显示编辑按钮
+    function showEditButton() {
+        const editBtn = document.getElementById('editBtn');
+        if (editBtn) {
+            editBtn.style.display = 'inline-flex';
+            
+            // 添加点击事件
+            editBtn.addEventListener('click', function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const articleId = urlParams.get('id');
+                if (articleId) {
+                    // 执行与用户中心相同的编辑逻辑
+                    editBlog(articleId);
+                } else {
+                    showNotification('无法获取文章ID，请刷新页面后重试', 'error');
+                }
+            });
+        }
+    }
+    
+    // 隐藏编辑按钮
+    function hideEditButton() {
+        const editBtn = document.getElementById('editBtn');
+        if (editBtn) {
+            editBtn.style.display = 'none';
         }
     }
     
@@ -2140,6 +2217,68 @@ Web开发是一个不断发展的领域，需要持续学习和实践。希望�
             .catch(error => {
                 console.error('获取用户信息失败:', error);
             });
+        }
+    }
+
+    // 编辑博客（复用用户中心的逻辑）
+    async function editBlog(blogId) {
+        if (!blogId) {
+            showNotification('无效的博客ID', 'error');
+            return;
+        }
+        
+        try {
+            // 显示加载状态
+            showNotification('正在加载博客数据...', 'info');
+            
+            // 获取博客详情
+            const response = await fetch(`/api/blogs/${blogId}`);
+            
+            if (!response.ok) {
+                throw new Error('获取博客数据失败');
+            }
+            
+            let blogData = await response.json();
+            
+            // 处理不同格式的API响应
+            if (blogData.code && blogData.data) {
+                blogData = blogData.data;
+            }
+            
+            // 确保统一封面图片字段名
+            if (!blogData.coverImage) {
+                // 尝试其他可能的字段名
+                blogData.coverImage = blogData.cover_image || blogData.thumbnail || blogData.cover || '';
+            }
+            
+            // 确保标签字段格式正确
+            if (typeof blogData.tags === 'string') {
+                try {
+                    // 尝试解析JSON字符串
+                    const parsedTags = JSON.parse(blogData.tags);
+                    if (Array.isArray(parsedTags)) {
+                        blogData.tags = parsedTags;
+                    } else {
+                        // 如果解析结果不是数组，假设是逗号分隔的字符串
+                        blogData.tags = blogData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+                    }
+                } catch (e) {
+                    // 如果解析失败，假设是逗号分隔的字符串
+                    blogData.tags = blogData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+                }
+            } else if (!Array.isArray(blogData.tags)) {
+                // 如果不是字符串也不是数组，设为空数组
+                blogData.tags = [];
+            }
+            
+            // 将博客数据存储到sessionStorage
+            sessionStorage.setItem('editBlogData', JSON.stringify(blogData));
+            
+            // 跳转到博客编辑页面
+            window.location.href = `blog_editor.html?mode=edit&id=${blogId}`;
+        } catch (error) {
+            console.error('加载博客数据失败:', error);
+            showNotification('加载博客数据失败，请重试', 'error');
         }
     }
 });
