@@ -146,22 +146,6 @@ html, body {
     display: block;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* 文章管理页面样式 */
 .posts-header {
     display: flex;
@@ -240,6 +224,26 @@ table th, table td {
     border-bottom: 1px solid rgba(125, 125, 125, 0.2);
 }
 
+/* 标题省略和悬停展开效果 */
+table td.post-title {
+    max-width: 300px; /* 控制最大宽度，改为更合理的值 */
+    white-space: normal; /* 修改为normal允许自动换行 */
+    word-break: break-word; /* 确保长单词也能换行 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+}
+
+table td.post-title:hover {
+    white-space: normal;
+    overflow: visible;
+    z-index: 1;
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    padding: 12px 15px;
+    border-radius: 4px;
+}
+
 table th {
     background-color: rgba(0, 0, 0, 0.05);
     font-weight: bold;
@@ -313,114 +317,224 @@ table tbody tr:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* 模态框样式 */
-.post-modal {
-    display: none;
-    position: fixed;
-    z-index: 1001;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.6);
+/* 文章查看模态框样式增强 */
+.post-view-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0.5rem 0 1rem;
+    line-height: 1.3;
 }
 
 .post-modal-content {
-    background-color: var(--card-bg);
-    margin: 5% auto;
-    padding: 25px;
-    border-radius: 8px;
-    width: 80%;
-    max-width: 1000px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    position: relative;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
-.delete-modal {
-    max-width: 500px;
-    text-align: center;
-}
-
-.blog-close {
-    position: absolute;
-    right: 20px;
-    top: 15px;
-    color: #aaa;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.blog-close:hover {
-    color: var(--text-color);
-}
-
-.form-group {
+.post-header {
     margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color-light);
+    padding-bottom: 15px;
 }
 
-.form-row {
-    display: flex;
-    gap: 20px;
+.post-header-image-container {
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-.form-row .form-group {
-    flex: 1;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
-
-.form-group input, 
-.form-group select, 
-.form-group textarea {
+.post-header-image {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: var(--bg-color);
+    max-height: 300px;
+    object-fit: cover;
+    display: none;
+}
+
+.post-header-image.has-image {
+    display: block;
+}
+
+.post-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--secondary-text);
+    margin-bottom: 15px;
+}
+
+.post-details {
+    display: flex;
+    gap: 15px;
+}
+
+.post-details span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.post-details i {
+    font-size: 0.8rem;
+}
+
+.post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.post-tag {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text-color);
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.3s;
+}
+
+.post-tag:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* 博客内容样式 */
+.post-content {
+    font-size: 1rem;
+    line-height: 1.7;
     color: var(--text-color);
 }
 
-.form-group textarea {
-    resize: vertical;
-    min-height: 100px;
+.post-content h1,
+.post-content h2,
+.post-content h3,
+.post-content h4,
+.post-content h5,
+.post-content h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.8em;
+    font-weight: 600;
+    line-height: 1.3;
 }
 
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 20px;
+.post-content h1 {
+    font-size: 1.8em;
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 25px;
+.post-content h2 {
+    font-size: 1.6em;
+    border-bottom: 1px solid var(--border-color-light);
+    padding-bottom: 0.3em;
 }
 
+.post-content h3 {
+    font-size: 1.4em;
+}
 
+.post-content h4 {
+    font-size: 1.2em;
+}
 
+.post-content p {
+    margin-bottom: 1.5em;
+}
 
+.post-content ul,
+.post-content ol {
+    margin-bottom: 1.5em;
+    padding-left: 2em;
+}
 
+.post-content li {
+    margin-bottom: 0.5em;
+}
 
+.post-content blockquote {
+    border-left: 4px solid var(--primary-color);
+    padding: 0.5em 1em;
+    background-color: rgba(0, 0, 0, 0.03);
+    margin: 1.5em 0;
+}
 
+.post-content pre {
+    background-color: rgb(40, 44, 52);
+    color: white;
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1.5em 0;
+}
 
+.post-content code {
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
 
+.post-content pre code {
+    background-color: transparent;
+    padding: 0;
+    font-size: 0.9em;
+    color: #abb2bf;
+}
 
+.post-content a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
 
+.post-content a:hover {
+    text-decoration: underline;
+}
 
+.post-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+    margin: 1.5em 0;
+}
 
+.post-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+}
 
+.post-content table th,
+.post-content table td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+}
 
+.post-content table th {
+    background-color: rgba(0, 0, 0, 0.05);
+}
 
+/* 深色模式适配 */
+[data-theme="dark"] .post-content blockquote {
+    background-color: rgba(255, 255, 255, 0.05);
+}
 
+[data-theme="dark"] .post-content code {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .post-content pre {
+    background-color: #1a1d23;
+}
+
+[data-theme="dark"] .post-tag {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .post-tag:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
 
 /* 评论管理页面样式 */
 .comments-header {
@@ -553,23 +667,6 @@ table tbody tr:hover {
 .delete-comment-btn:hover {
     color: var(--danger-color);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* 用户管理页面样式 */
 .users-header {
@@ -855,23 +952,6 @@ input:invalid {
     border-color: #2ecc71;
 } */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* 分类管理页面样式 */
 .categories-header {
     display: flex;
@@ -988,15 +1068,6 @@ input:invalid {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
-
-
-
-
-
-
-
-
 
 /* 标签管理页面样式 */
 .tags-header {
@@ -1188,6 +1259,58 @@ input:invalid {
 .notification-close {
     cursor: pointer;
     margin-left: 10px;
+}
+
+/* 模态框基本样式 */
+.post-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.post-modal-content {
+    background-color: var(--card-bg);
+    margin: 5% auto;
+    padding: 25px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 900px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.delete-modal {
+    max-width: 500px;
+    text-align: center;
+}
+
+.blog-close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.blog-close:hover {
+    color: var(--text-color);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
 }
 
 

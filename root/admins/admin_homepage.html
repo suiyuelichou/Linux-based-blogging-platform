@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>博客管理后台</title>
     <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body data-theme="light">
 
@@ -85,13 +87,14 @@
                     <div class="filter-group">
                         <label for="blog-sortBy">排序:</label>
                         <select id="blog-sortBy">
-                            <option value="postTime_desc">创建时间 ↓</option>
-                            <option value="postTime_asc">创建时间 ↑</option>
-                            <option value="updatedAt_desc">更新时间 ↓</option>
-                            <option value="updatedAt_asc">更新时间 ↑</option>
-                            <option value="title_asc">标题 (A-Z)</option>
-                            <option value="title_desc">标题 (Z-A)</option>
-                            <option value="view_count_desc">浏览量 ↓</option>
+                            <option value="postTime_DESC">创建时间 ↓</option>
+                            <option value="postTime_ASC">创建时间 ↑</option>
+                            <option value="updatedAt_DESC">更新时间 ↓</option>
+                            <option value="updatedAt_ASC">更新时间 ↑</option>
+                            <option value="title_ASC">标题 (A-Z)</option>
+                            <option value="title_DESC">标题 (Z-A)</option>
+                            <option value="view_count_DESC">浏览量 ↓</option>
+                            <option value="view_count_ASC">浏览量 ↑</option>
                         </select>
                     </div>
                 </div>
@@ -129,30 +132,31 @@
                     <div class="post-modal-content">
                         <span class="blog-close">&times;</span>
                         <h2 id="blog-modalTitle">查看文章</h2>
-                        <form id="blog-postForm">
+                        <div id="blog-postForm">
                             <input type="hidden" id="blog-postId">
-                            <div class="form-group">
-                                <label for="blog-title">标题</label>
-                                <input type="text" id="blog-title" name="title" readonly>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="blog-category">分类</label>
-                                    <select id="blog-category" name="category" disabled>
-                                        <!-- 分类选项将通过JS动态添加 -->
-                                    </select>
+                            <!-- 隐藏的分类下拉框，用于数据填充 -->
+                            <select id="blog-category" style="display: none;"></select>
+                            
+                            <!-- 文章头部信息 -->
+                            <div class="post-header">
+                                <div class="post-header-image-container">
+                                    <img src="" alt="" class="post-header-image" id="blog-postImage">
                                 </div>
+                                <h3 id="blog-title" class="post-view-title"></h3>
+                                <div class="post-info">
+                                    <div class="post-meta">
+                                        <div class="post-details">
+                                            <span class="post-category"><i class="fas fa-folder"></i> <span id="blog-category-text"></span></span>
+                                            <span class="post-date"><i class="fas fa-calendar"></i> <span id="blog-postDate"></span></span>
+                                            <!-- <span class="post-author"><i class="fas fa-user"></i> <span id="blog-author"></span></span> -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="post-tags" id="blog-tagsContainer"></div>
                             </div>
-                            <div class="form-group">
-                                <label for="blog-tags">标签</label>
-                                <input type="text" id="blog-tags" name="tags" readonly>
-                            </div>
-                            <div class="form-group">
-                                <label for="blog-content">内容</label>
-                                <textarea id="blog-content" name="content" rows="15" readonly></textarea>
-                            </div>
-                            <!-- 移除了文章摘要 -->
-                        </form>
+                            <!-- 内容区 -->
+                            <div class="post-content" id="blog-content"></div>
+                        </div>
                     </div>
                 </div>
 

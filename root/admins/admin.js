@@ -216,7 +216,7 @@ const BlogPostManager = (function() {
             const updatedDate = new Date(post.updatedAt).toLocaleDateString('zh-CN');
             
             row.innerHTML = `
-                <td>${post.title}</td>
+                <td class="post-title">${post.title}</td>
                 <td>${post.user}</td>
                 <td>${post.categoryName || '-'}</td>
                 <td>${createdDate}</td>
@@ -249,25 +249,31 @@ const BlogPostManager = (function() {
                 blogCategories = data;
                 
                 // 更新分类筛选下拉框
-                elements.categoryFilter.innerHTML = '<option value="all">全部分类</option>';
+                if (elements.categoryFilter) {
+                    elements.categoryFilter.innerHTML = '<option value="all">全部分类</option>';
+                    
+                    blogCategories.forEach(category => {
+                        // 添加到筛选下拉框
+                        const filterOption = document.createElement('option');
+                        filterOption.value = category.id;
+                        filterOption.textContent = category.name;
+                        elements.categoryFilter.appendChild(filterOption);
+                    });
+                }
                 
                 // 更新文章表单中的分类下拉框
                 const categorySelect = document.getElementById('blog-category');
-                categorySelect.innerHTML = '';
-                
-                blogCategories.forEach(category => {
-                    // 添加到筛选下拉框
-                    const filterOption = document.createElement('option');
-                    filterOption.value = category.id;
-                    filterOption.textContent = category.name;
-                    elements.categoryFilter.appendChild(filterOption);
+                if (categorySelect) {
+                    categorySelect.innerHTML = '';
                     
-                    // 添加到表单下拉框
-                    const formOption = document.createElement('option');
-                    formOption.value = category.id;
-                    formOption.textContent = category.name;
-                    categorySelect.appendChild(formOption);
-                });
+                    blogCategories.forEach(category => {
+                        // 添加到表单下拉框
+                        const formOption = document.createElement('option');
+                        formOption.value = category.id;
+                        formOption.textContent = category.name;
+                        categorySelect.appendChild(formOption);
+                    });
+                }
             })
             .catch(error => {
                 console.error('获取分类列表失败:', error);
@@ -296,19 +302,151 @@ const BlogPostManager = (function() {
         fetch(`/admins/posts/${postId}`)
             .then(response => response.json())
             .then(post => {
-                // 填充表单
-                document.getElementById('blog-title').value = post.title;
-                document.getElementById('blog-category').value = post.categoryId;
-                document.getElementById('blog-tags').value = post.tags ? post.tags.join(',') : '';
-                document.getElementById('blog-content').value = post.content;
+                // 设置标题
+                document.getElementById('blog-title').textContent = post.title;
+                
+                // 处理分类
+                const categoryText = document.getElementById('blog-category-text');
+                // 如果存在categoryId，尝试从blogCategories数组中查找对应的分类名称
+                let categoryName = '未分类';
+                if (post.categoryId) {
+                    // 在下拉框中选中对应的分类
+                    const categorySelect = document.getElementById('blog-category');
+                    if (categorySelect) {
+                        for (let i = 0; i < categorySelect.options.length; i++) {
+                            if (categorySelect.options[i].value == post.categoryId) {
+                                categorySelect.selectedIndex = i;
+                                categoryName = categorySelect.options[i].textContent;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // 如果未能在下拉框中找到，则尝试在blogCategories数组中查找
+                    if (categoryName === '未分类' && blogCategories.length > 0) {
+                        const category = blogCategories.find(c => c.id == post.categoryId);
+                        if (category) {
+                            categoryName = category.name;
+                        }
+                    }
+                }
+                
+                // 如果接口已经返回了categoryName，优先使用它
+                if (post.categoryName) {
+                    categoryName = post.categoryName;
+                }
+                
+                // 设置分类文本
+                categoryText.textContent = categoryName;
+                
+                // 处理作者
+                // document.getElementById('blog-author').textContent = post.user || '未知作者';
+                
+                // 格式化发布日期
+                const postDate = document.getElementById('blog-postDate');
+                const createdDate = new Date(post.createdAt);
+                postDate.textContent = createdDate.toLocaleDateString('zh-CN');
+                
+                // 处理缩略图
+                const postImage = document.getElementById('blog-postImage');
+                if (post.thumbnail && post.thumbnail.trim() !== '') {
+                    postImage.src = post.thumbnail;
+                    postImage.alt = post.title;
+                    postImage.classList.add('has-image');
+                } else {
+                    postImage.classList.remove('has-image');
+                }
+                
+                // 处理标签
+                const tagsContainer = document.getElementById('blog-tagsContainer');
+                tagsContainer.innerHTML = '';
+                
+                if (post.tags && post.tags.length > 0) {
+                    post.tags.forEach(tag => {
+                        const tagElement = document.createElement('span');
+                        tagElement.className = 'post-tag';
+                        tagElement.textContent = tag;
+                        tagsContainer.appendChild(tagElement);
+                    });
+                } else {
+                    tagsContainer.innerHTML = '<span class="no-tags">暂无标签</span>';
+                }
+                
+                // 处理内容
+                const contentElement = document.getElementById('blog-content');
+                
+                // 检查内容格式，适配不同的内容格式
+                if (post.content_format === 'markdown' && typeof post.content === 'string') {
+                    // 如果是Markdown格式
+                    if (window.marked) {
+                        contentElement.innerHTML = marked.parse(post.content);
+                    } else {
+                        contentElement.innerHTML = `<pre>${post.content}</pre>`;
+                    }
+                } else if (post.content_html) {
+                    // 如果有预渲染的HTML
+                    contentElement.innerHTML = post.content_html;
+                } else {
+                    // 普通内容处理，保留换行和格式
+                    const textWithBreaks = post.content.replace(/\n/g, '<br>');
+                    contentElement.innerHTML = textWithBreaks;
+                }
+                
+                // 处理可能的Quill编辑器代码块
+                processContentFormatting(contentElement);
                 
                 // 显示模态框
                 elements.postModal.style.display = 'block';
             })
             .catch(error => {
                 console.error('获取文章详情失败:', error);
-                alert('获取文章详情失败，请稍后重试');
+                showNotification('获取文章详情失败，请稍后重试', 'error');
             });
+    }
+    
+    // 处理内容格式化
+    function processContentFormatting(contentElement) {
+        // 处理代码块
+        const codeBlocks = contentElement.querySelectorAll('pre code');
+        codeBlocks.forEach(codeBlock => {
+            codeBlock.style.fontFamily = 'monospace';
+            codeBlock.style.display = 'block';
+            codeBlock.style.whiteSpace = 'pre';
+            codeBlock.style.overflowX = 'auto';
+        });
+        
+        // 处理内联代码
+        const inlineCodes = contentElement.querySelectorAll('code:not(pre code)');
+        inlineCodes.forEach(code => {
+            code.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+            code.style.padding = '2px 4px';
+            code.style.borderRadius = '3px';
+            code.style.fontFamily = 'monospace';
+            code.style.fontSize = '0.9em';
+        });
+        
+        // 处理图片
+        const images = contentElement.querySelectorAll('img');
+        images.forEach(img => {
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            img.style.borderRadius = '5px';
+            img.style.margin = '10px 0';
+        });
+        
+        // 处理链接
+        const links = contentElement.querySelectorAll('a');
+        links.forEach(link => {
+            link.style.color = 'var(--primary-color, #4e6ef2)';
+            link.style.textDecoration = 'none';
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+        });
+    }
+    
+    // 显示通知
+    function showNotification(message, type = 'info') {
+        alert(message);  // 简单实现，可以替换为更美观的通知
     }
 
     // 关闭文章模态框
@@ -1725,6 +1863,9 @@ let categoryPageSize = 10;
                         throw new Error(err.message || '删除失败');
                     });
                 }
+                return response.json();
+            })
+            .then(() => {
                 closeDeleteModal();
                 fetchCategories(); // 刷新分类列表
                 // alert('分类已成功删除');

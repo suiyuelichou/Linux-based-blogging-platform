@@ -274,6 +274,8 @@ public:
 	vector<Blog> get_blogs_by_category_and_search(int categoryId, const string& keyword, int page, int size, const string& sortField, const string& sortOrder);
 	vector<Blog> get_blogs_by_user(int userid, int page, int size, const string &keyword, const string &order_by);
 	vector<Blog> get_blogs_by_user_by_like_count(int userid, int page, int size, const string &keyword, const string &order_by);	// 按点赞数排序
+	vector<Blog> search_blogs(const string& keyword, const string& sort, const string& page, const string& pageSize);	// 按关键词搜索博客
+	
 	vector<Comments> get_comments_by_search(const string& searchKeyword, int page, int size);// 按关键词搜索评论
 	vector<Comments> get_comments(int page, int size);// 分页获取评论
 	vector<Comments> get_comments_by_page_and_sort(int page, int size, const string& sortField, const string& sortOrder);

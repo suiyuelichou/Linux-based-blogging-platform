@@ -3271,6 +3271,143 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData = responseJson.dump();
         return BLOG_DATA;
     }
+    // 搜索请求
+    else if (m_method == GET && strstr(m_url, "/api/search") != nullptr) {
+        string keyword = "";
+        string sortField = "postTime";  // 默认按日期排序
+        string sortOrder = "DESC";      // 默认降序
+        int page = 1;
+        int pageSize = 10;
+        
+        // 解析关键词参数
+        const char* keywordParam = strstr(m_url, "keyword=");
+        if(keywordParam != nullptr) {
+            const char* start = keywordParam + 8;
+            const char* end = strchr(start, '&');
+            if(end == nullptr) {
+                keyword = string(start);
+            } else {
+                keyword = string(start, end - start);
+            }
+        }
+
+        // 解析排序参数
+        const char* sortParam = strstr(m_url, "sort=");
+        if(sortParam != nullptr) {
+            const char* start = sortParam + 5;
+            const char* end = strchr(start, '&');
+            if(end == nullptr) {
+                string sortValue = string(start);
+                if(sortValue == "views") {
+                    sortField = "view_count";
+                } else {
+                    sortField = "postTime";
+                }
+            } else {
+                string sortValue = string(start, end - start);
+                if(sortValue == "views") {
+                    sortField = "view_count";
+                } else {
+                    sortField = "postTime";
+                }
+            }
+        }
+
+        // 解析页码参数
+        const char* pageParam = strstr(m_url, "page=");
+        if(pageParam != nullptr) {
+            page = atoi(pageParam + 5);
+            if(page <= 0) page = 1;
+        }
+
+        // 处理搜索请求
+        sql_blog_tool tool;
+        vector<Blog> blogs = tool.get_blogs_by_search(page, pageSize, sortField, sortOrder, keyword);
+
+        // 构建响应
+        json responseJson;
+        json resultsArray = json::array();
+        
+        // 获取总数量
+        int total = tool.get_total_blog_count_by_search(keyword);
+        int totalPages = (total + pageSize - 1) / pageSize;
+        
+        // 记录搜索开始时间
+        auto startTime = chrono::high_resolution_clock::now();
+        
+        for(size_t i = 0; i < blogs.size(); i++){
+            json blogObj;
+            blogObj["id"] = blogs[i].get_blog_id();
+            blogObj["title"] = blogs[i].get_blog_title();
+            
+            // 提取摘要，并高亮关键词
+            string content = blogs[i].get_blog_content();
+            string summary = content.substr(0, min(200, (int)content.length()));
+            if (!keyword.empty()) {
+                size_t pos = 0;
+                while ((pos = summary.find(keyword, pos)) != string::npos) {
+                    summary.replace(pos, keyword.length(), "<span class=\"highlight\">" + keyword + "</span>");
+                    pos += 29 + keyword.length(); // 29是添加的HTML标签长度
+                }
+            }
+            blogObj["summary"] = summary;
+            
+            // 使用正确的方法名获取用户ID，然后获取用户名
+            int userId = blogs[i].get_user_id();
+            sql_blog_tool userTool;
+            User user = userTool.get_userdata_by_userid(userId);
+            blogObj["author"] = user.get_username();
+            blogObj["author_avatar"] = user.get_avatar();
+            blogObj["publish_date"] = blogs[i].get_blog_postTime();
+            
+            // 估算阅读时间（假设每分钟阅读300字）
+            int wordCount = content.length() / 3; // 粗略估计中文字数
+            int readTime = max(1, wordCount / 300);
+            blogObj["read_time"] = readTime;
+            
+            blogObj["views"] = blogs[i].get_views();
+
+            // 获取点赞数
+            sql_blog_tool likeTool;
+            int likeCount = likeTool.get_blog_likes_count(blogs[i].get_blog_id());
+            blogObj["likes"] = likeCount;
+            
+            // 获取评论数
+            sql_blog_tool commentTool;
+            vector<Comments> comments = commentTool.get_comments_by_blogid(blogs[i].get_blog_id());
+            blogObj["comments"] = comments.size();
+            
+            // 获取标签
+            vector<string> tags = tool.get_tags_by_blogid(blogs[i].get_blog_id());
+            string tagString = "";
+            for(int j = 0; j < tags.size(); j++){
+                tagString += tags[j] + ",";
+            }
+            blogObj["tags"] = tagString;
+            
+            // 获取缩略图
+            blogObj["thumbnail"] = blogs[i].get_thumbnail();
+            
+            resultsArray.push_back(blogObj);
+        }
+        
+        // 计算搜索耗时
+        auto endTime = chrono::high_resolution_clock::now();
+        double searchTime = chrono::duration<double>(endTime - startTime).count();
+        
+        responseJson["status"] = "success";
+        responseJson["data"] = {
+            {"results", resultsArray},
+            {"total", total},
+            {"page", page},
+            {"page_size", pageSize},
+            {"total_pages", totalPages},
+            {"time", searchTime}
+        };
+        
+        jsonData = responseJson.dump();
+        return BLOG_DATA;
+    }
     
     // 处理访问 blog_detail.html 的情况
     else if (strstr(m_url, "/blog_detail.html") != nullptr) {
@@ -4208,24 +4345,20 @@ http_conn::HTTP_CODE http_conn::do_request()
             if (!searchKeyword.empty()) {
                 if (categoryId != -1) {
                     // 分类 + 关键词搜索
-                    cout << "111" << endl;
                     blogs = tool.get_blogs_by_category_and_search(categoryId, searchKeyword, page, size, sortField, sortOrder);
                     totalCount = tool.get_total_blog_count_by_category_and_search(categoryId, searchKeyword);
                 } else {
                     // 仅搜索
-                    cout << "222" << endl;
                     blogs = tool.get_blogs_by_search(page, size, sortField, sortOrder, searchKeyword);
                     totalCount = tool.get_total_blog_count_by_search(searchKeyword);
                 }
             } else {
                 if (categoryId != -1) {
                     // 仅分类
-                    cout << "333" << endl;
                     blogs = tool.get_blogs_by_category_and_page(categoryId, page, size, sortField, sortOrder);
                     totalCount = tool.get_total_blog_count_by_category(categoryId);
                 } else {
                     // 普通查询
-                    cout << "444" << endl;
                     blogs = tool.get_blogs_by_page_and_sort(page, size, sortField, sortOrder);
                     totalCount = tool.get_total_blog_count();
                 }
