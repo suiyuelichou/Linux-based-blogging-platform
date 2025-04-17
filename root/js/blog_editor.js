@@ -516,7 +516,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const noPreviewImage = document.getElementById('thumbnailPreview').classList.contains('no-image');
             
             if (advancedPanelVisible && !hasCoverImage && noPreviewImage) {
-                formData.append('remove_thumbnail', 'true');
+                formData.append('thumbnail', '');
+                console.log('发送空的thumbnail参数来删除封面图片');
             }
             
             // 发送更新请求
@@ -650,6 +651,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const thumbnailUpload = document.getElementById('thumbnailUpload');
     const thumbnailPreview = document.getElementById('thumbnailPreview');
     
+    // 如果已有封面图片，添加删除按钮
+    if (thumbnailPreview.querySelector('img')) {
+        addRemoveButton(thumbnailPreview);
+    }
+    
     thumbnailUpload.addEventListener('change', async function(e) {
         const file = this.files[0];
         if (file) {
@@ -673,6 +679,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     reader.onload = function(e) {
                         thumbnailPreview.innerHTML = `<img src="${e.target.result}" alt="封面预览">`;
                         thumbnailPreview.classList.remove('no-image');
+                        // 添加删除按钮
+                        addRemoveButton(thumbnailPreview);
                     };
                     reader.readAsDataURL(compressedFile);
                 } catch (error) {
@@ -686,11 +694,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 reader.onload = function(e) {
                     thumbnailPreview.innerHTML = `<img src="${e.target.result}" alt="封面预览">`;
                     thumbnailPreview.classList.remove('no-image');
+                    // 添加删除按钮
+                    addRemoveButton(thumbnailPreview);
                 };
                 reader.readAsDataURL(file);
             }
         }
     });
+    
+    // 添加删除封面图片的按钮函数
+    function addRemoveButton(container) {
+        // 确保不重复添加
+        if (container.querySelector('.remove-thumbnail')) {
+            return;
+        }
+        
+        const removeBtn = document.createElement('div');
+        removeBtn.className = 'remove-thumbnail';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = '删除封面图片';
+        
+        // 设置按钮点击事件
+        removeBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // 阻止事件冒泡
+            // 清空预览
+            container.innerHTML = `<span>尚未上传封面图片</span>`;
+            container.classList.add('no-image');
+            // 清空文件输入
+            thumbnailUpload.value = '';
+            console.log('封面图片已删除');
+        });
+        
+        container.appendChild(removeBtn);
+    }
     
     // 图片压缩函数
     function compressImage(file) {
@@ -1642,4 +1678,154 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // 添加格式刷功能到Quill编辑器
+    function addFormatPainter(quill) {
+        // 存储复制的格式
+        let storedFormats = null;
+        let formatPainterActive = false;
+        
+        // 创建格式刷按钮
+        const formatPainterButton = document.createElement('button');
+        formatPainterButton.className = 'ql-format-painter';
+        formatPainterButton.innerHTML = '<i class="fas fa-paint-brush"></i>';
+        formatPainterButton.title = '格式刷';
+        
+        // 获取工具栏并添加按钮
+        const toolbar = quill.getModule('toolbar');
+        toolbar.container.appendChild(formatPainterButton);
+        
+        // 格式刷按钮点击事件
+        formatPainterButton.addEventListener('click', function(e) {
+            // 阻止默认行为，防止URL改变
+            e.preventDefault();
+            
+            // 如果已经激活，则关闭格式刷
+            if (formatPainterActive) {
+                deactivateFormatPainter();
+                return;
+            }
+            
+            // 获取当前选中的格式
+            const range = quill.getSelection();
+            if (!range) {
+                showNotification('请先选择要复制格式的文本', 'info');
+                return;
+            }
+            
+            // 获取并存储当前选中文本的格式
+            storedFormats = quill.getFormat(range);
+            if (Object.keys(storedFormats).length === 0) {
+                showNotification('选中的文本没有可用的格式', 'info');
+                return;
+            }
+            
+            // 激活格式刷模式
+            activateFormatPainter();
+        });
+        
+        // 添加双击事件 - 开启连续格式刷
+        let clickTimer = null;
+        let clickCount = 0;
+        
+        formatPainterButton.addEventListener('mousedown', function(e) {
+            // 阻止默认行为，防止URL改变
+            e.preventDefault();
+            
+            clickCount++;
+            
+            if (clickCount === 1) {
+                clickTimer = setTimeout(function() {
+                    clickCount = 0;
+                }, 300);
+            } else if (clickCount === 2) {
+                clearTimeout(clickTimer);
+                clickCount = 0;
+                
+                // 双击激活连续格式刷模式
+                if (!formatPainterActive) {
+                    const range = quill.getSelection();
+                    if (range) {
+                        storedFormats = quill.getFormat(range);
+                        if (Object.keys(storedFormats).length > 0) {
+                            activateFormatPainter(true);
+                        }
+                    }
+                } else {
+                    deactivateFormatPainter();
+                }
+            }
+        });
+        
+        // 激活格式刷
+        function activateFormatPainter(continuous = false) {
+            formatPainterActive = true;
+            formatPainterButton.classList.add('ql-active');
+            
+            // 更改鼠标样式
+            document.body.classList.add('format-painter-cursor');
+            
+            // 显示通知
+            showNotification('格式刷已激活，点击文本应用格式' + (continuous ? '（连续模式）' : ''), 'success');
+            
+            // 监听选择变化事件
+            const selectionHandler = function(range, oldRange, source) {
+                // 只有当是用户操作且有选区时才应用格式
+                if (source === 'user' && range && range.length > 0 && storedFormats) {
+                    // 保存当前选区
+                    const currentSelection = {index: range.index, length: range.length};
+                    
+                    // 应用存储的格式到新选择的文本
+                    quill.formatText(currentSelection.index, currentSelection.length, storedFormats);
+                    
+                    // 确保保持选区不变
+                    quill.setSelection(currentSelection.index, currentSelection.length);
+                    
+                    // 非连续模式下，使用一次后禁用格式刷
+                    if (!continuous) {
+                        deactivateFormatPainter();
+                        quill.off('selection-change', selectionHandler);
+                    }
+                }
+            };
+            
+            // 监听选择变化事件，使用命名函数以便后续可以移除
+            quill.on('selection-change', selectionHandler);
+            
+            // 存储handler引用以便在deactivate时移除
+            quill.formatPainterHandler = selectionHandler;
+        }
+        
+        // 取消激活格式刷
+        function deactivateFormatPainter() {
+            formatPainterActive = false;
+            formatPainterButton.classList.remove('ql-active');
+            document.body.classList.remove('format-painter-cursor');
+            storedFormats = null;
+            
+            // 移除选择变化事件监听器
+            if (quill.formatPainterHandler) {
+                quill.off('selection-change', quill.formatPainterHandler);
+                quill.formatPainterHandler = null;
+            }
+        }
+        
+        // 在编辑器区域添加ESC键取消格式刷功能
+        quill.root.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && formatPainterActive) {
+                deactivateFormatPainter();
+            }
+        });
+        
+        return {
+            activate: activateFormatPainter,
+            deactivate: deactivateFormatPainter
+        };
+    }
+
+    // 在Quill初始化后调用
+    const formatPainter = addFormatPainter(quill);
+    
+    // 可选：暴露到全局以便外部调用
+    window.formatPainter = formatPainter;
 });

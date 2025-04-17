@@ -269,69 +269,56 @@ bool http_conn::read_once()
 }
 
 //解析http请求行，获得请求方法，目标url及http版本号
-http_conn::HTTP_CODE http_conn::parse_request_line(char *text)
-{
-    // 例：GET / HTTP/1.1   若不存在空格或制表符，说明后面没有目标url
+http_conn::HTTP_CODE http_conn::parse_request_line(char *text) {
     m_url = strpbrk(text, " \t");
+    if (!m_url) return BAD_REQUEST;
 
-    if (!m_url)
-    {
-        return BAD_REQUEST;
-    }
-
+    // 提取请求方法
     *m_url++ = '\0';
     char *method = text;
-
-    // 暂时只实现了get和post请求
-    if (strcasecmp(method, "GET") == 0)
+    if (strcasecmp(method, "GET") == 0) {
         m_method = GET;
-    else if (strcasecmp(method, "POST") == 0)
-    {
+    } else if (strcasecmp(method, "POST") == 0) {
         m_method = POST;
         cgi = 1;
-    }else if(strcasecmp(method, "DELETE") == 0){
+    } else if (strcasecmp(method, "DELETE") == 0) {
         m_method = DELETE;
-    }
-    else if(strcasecmp(method, "PATCH") == 0){
+    } else if (strcasecmp(method, "PATCH") == 0) {
         m_method = PATCH;
-    }
-    else
+    } else {
         return BAD_REQUEST;
+    }
 
+    // 跳过空格并提取版本号
     m_url += strspn(m_url, " \t");
     m_version = strpbrk(m_url, " \t");
-
-    if (!m_version)
-        return BAD_REQUEST;
-
+    if (!m_version) return BAD_REQUEST;
     *m_version++ = '\0';
     m_version += strspn(m_version, " \t");
-    if (strcasecmp(m_version, "HTTP/1.1") != 0)
-        return BAD_REQUEST;
+    if (strcasecmp(m_version, "HTTP/1.1") != 0) return BAD_REQUEST;
 
-    if (strncasecmp(m_url, "http://", 7) == 0)
-    {
+    // 处理协议前缀（http:// 或 https://）
+    if (m_url && strncasecmp(m_url, "http://", 7) == 0) {
         m_url += 7;
         m_url = strchr(m_url, '/');
-    }
-
-    if (strncasecmp(m_url, "https://", 8) == 0)
-    {
+        if (!m_url) return BAD_REQUEST;
+    } else if (m_url && strncasecmp(m_url, "https://", 8) == 0) {
         m_url += 8;
         m_url = strchr(m_url, '/');
+        if (!m_url) return BAD_REQUEST;
     }
 
-    if (!m_url || m_url[0] != '/')
-        return BAD_REQUEST;
+    // 验证路径格式
+    if (!m_url || m_url[0] != '/') return BAD_REQUEST;
 
-    //当url为/时，显示判断界面
-    if (strlen(m_url) == 1)     // 若长度为1，说明请求的是'/'
+    // 默认路径处理
+    if (strlen(m_url) == 1) {
         strcat(m_url, "blog_home.html");
+    }
 
     // 检测管理员路径
     if (strstr(m_url, "/admins") != nullptr) {
-        is_admin_request = true;  // 标记为管理员请求
-        // LOG_INFO("Admin request detected: %s", m_url);
+        is_admin_request = true;
     }
 
     m_check_state = CHECK_STATE_HEADER;
@@ -2212,6 +2199,8 @@ http_conn::HTTP_CODE http_conn::do_request()
         string message = "您有一篇新的博客《" + title + "》成功发布，请前往查看！";
         tool.insert_new_message(1, userid, 0, "system", message);
 
+        tool.increase_article_count(userid);
+
         return BLOG_DATA;
     }
     // 处理图片上传
@@ -3050,7 +3039,10 @@ http_conn::HTTP_CODE http_conn::do_request()
             return BAD_REQUEST;
         }
 
+        int userid = tool.get_userid(username);
+
         jsonData = "{\"success\": true, \"message\": \"删除成功\"}";
+        tool.decrease_article_count(userid);
         return BLOG_DATA;
     }
     // 个人中心-账号设置-修改信息

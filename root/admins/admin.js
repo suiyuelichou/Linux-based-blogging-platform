@@ -651,7 +651,7 @@ const CommentManager = (function() {
         
         // 处理文章链接点击
         if (e.target.classList.contains('comment-article')) {
-            window.open(`/blog_detail.html?blogId=${e.target.dataset.articleId}`, '_blank');
+            window.open(`/blog_detail.html?id=${e.target.dataset.articleId}`, '_blank');
         }
     }
 
@@ -1174,6 +1174,9 @@ const UserManager = (function() {
         elements.modalTitle.textContent = '编辑用户';
         userCurrentId = userId;
         
+        // 重置表单状态
+        resetUserFormState();
+        
         // 隐藏密码字段（编辑时不需要）
         const passwordFields = document.getElementById('passwordFields');
         const passwordInput = document.getElementById('password');
@@ -1190,48 +1193,61 @@ const UserManager = (function() {
         }
         
         // 显示重置密码按钮
-        if (elements.userForm) elements.userForm.classList.remove('creating-user');
+        if (elements.userForm) {
+            elements.userForm.classList.remove('creating-user');
+            elements.userForm.classList.add('editing-user');
+        }
+        
+        // 显示加载指示器
+        if (elements.userModal) {
+            elements.userModal.style.display = 'block';
+            // 可以添加加载指示器
+            const formContent = elements.userModal.querySelector('form');
+            if (formContent) {
+                formContent.innerHTML = '<div class="loading-indicator">加载中...</div>';
+            }
+        }
         
         // 获取用户详情
         fetch(`/admins/users/${userId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('获取用户数据失败');
+                }
+                return response.json();
+            })
             .then(user => {
                 // 存储原始用户数据，用于比较修改
                 window.originalUserData = user;
+
+                // 恢复表单内容
+                if (elements.userForm) {
+                    elements.userForm.innerHTML = getUserFormHtml();
+                }
 
                 // 填充表单
                 const usernameField = document.getElementById('username');
                 const emailField = document.getElementById('email');
                 const statusField = document.getElementById('userStatus');
                 const bioField = document.getElementById('bio');
+                const resetPasswordBtn = document.getElementById('resetPasswordBtn');
                 
-                // 填充数据并设置只读属性（仅在编辑模式下）
+                // 填充数据并设置只读属性
                 if (usernameField) {
-                    usernameField.value = user.username;
+                    usernameField.value = user.username || '';
                     usernameField.readOnly = true; // 设置为只读
                     usernameField.classList.add('readonly-field');
                 }
                 
                 if (emailField) {
-                    emailField.value = user.email;
+                    emailField.value = user.email || '';
                     emailField.readOnly = true; // 设置为只读
                     emailField.classList.add('readonly-field');
                 }
                 
                 if (statusField) {
                     // 确保设置正确的状态 - 状态是可编辑的
-                    statusField.value = user.status; 
-                    
-                    // 额外的安全检查：如果当前值不匹配，强制设置
-                    if (statusField.value !== user.status) {
-                        // 查找匹配的选项
-                        for (let i = 0; i < statusField.options.length; i++) {
-                            if (statusField.options[i].value === user.status) {
-                                statusField.selectedIndex = i;
-                                break;
-                            }
-                        }
-                    }
+                    statusField.value = user.status || 'active'; 
                 }
                 
                 if (bioField) {
@@ -1240,13 +1256,106 @@ const UserManager = (function() {
                     bioField.classList.add('readonly-field');
                 }
                 
-                // 显示模态框
-                if (elements.userModal) elements.userModal.style.display = 'block';
+                // 重新绑定事件
+                if (resetPasswordBtn) {
+                    resetPasswordBtn.addEventListener('click', showPasswordFields);
+                }
+                
+                // 重新绑定表单提交事件
+                const userForm = document.getElementById('userForm');
+                if (userForm) {
+                    userForm.addEventListener('submit', handleUserSubmit);
+                }
             })
             .catch(error => {
                 console.error('获取用户详情失败:', error);
-                alert('获取用户详情失败，请稍后重试');
+                if (elements.userModal) {
+                    const modalContent = elements.userModal.querySelector('.user-modal-content');
+                    if (modalContent) {
+                        modalContent.innerHTML = `
+                            <span class="user-close">&times;</span>
+                            <div class="error-message">
+                                <h3>获取用户数据失败</h3>
+                                <p>请稍后重试或联系管理员</p>
+                                <button class="secondary-btn" onclick="closeUserModal()">关闭</button>
+                            </div>
+                        `;
+                        
+                        // 重新绑定关闭按钮事件
+                        const closeBtn = modalContent.querySelector('.user-close');
+                        if (closeBtn) {
+                            closeBtn.addEventListener('click', closeUserModal);
+                        }
+                    }
+                }
             });
+    }
+    
+    // 重置用户表单状态
+    function resetUserFormState() {
+        // 重置表单验证状态和样式
+        const form = elements.userForm;
+        if (form) {
+            form.classList.remove('creating-user', 'editing-user');
+            
+            // 重置可能存在的错误消息
+            const errorMessages = form.querySelectorAll('.error-message');
+            errorMessages.forEach(el => el.remove());
+            
+            // 重置输入字段样式
+            const inputs = form.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                input.classList.remove('readonly-field');
+                input.readOnly = false;
+            });
+        }
+    }
+    
+    // 获取用户表单HTML
+    function getUserFormHtml() {
+        return `
+            <input type="hidden" id="userId" value="${userCurrentId || ''}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" name="username" required pattern="[a-zA-Z0-9]{6,20}" title="用户名只能包含字母、数字，长度6-20位">
+                    <small class="field-help">只能包含字母、数字,长度6-20位</small>
+                </div>
+                <div class="form-group">
+                    <label for="email">邮箱</label>
+                    <input type="email" id="email" name="email">
+                </div>
+            </div>
+            <div class="form-row" id="passwordFields" style="display: none;">
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" name="password" pattern="^(?=.*[A-Za-z])(?=.*[\\d\\W]).{8,16}$" title="密码8-16位，包含字母和（数字或符号）">
+                    <small class="field-help">密码8-16位，包含字母和（数字或符号）</small>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">确认密码</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword">
+                    <small class="field-help">请再次输入相同的密码</small>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="userStatus">状态</label>
+                    <select id="userStatus" name="status">
+                        <option value="active">已激活</option>
+                        <option value="blocked">已封禁</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="bio">个人简介</label>
+                <textarea id="bio" name="bio" rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" id="resetPasswordBtn" class="secondary-btn">重置密码</button>
+                <button type="submit" class="primary-btn">保存</button>
+            </div>
+        `;
     }
 
     // 显示密码字段（用于密码重置）

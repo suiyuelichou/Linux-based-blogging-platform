@@ -1687,6 +1687,8 @@ function initImageUpload() {
     // 确保初始状态是正确的 - 如果已经有图片，移除no-image类
     if (thumbnailPreview.querySelector('img')) {
         thumbnailPreview.classList.remove('no-image');
+        // 为已有的图片添加删除按钮
+        addRemoveButton(thumbnailPreview);
     } else {
         thumbnailPreview.classList.add('no-image');
     }
@@ -1712,10 +1714,38 @@ function initImageUpload() {
             reader.onload = function(e) {
                 thumbnailPreview.innerHTML = `<img src="${e.target.result}" alt="封面预览">`;
                 thumbnailPreview.classList.remove('no-image');
+                // 添加删除按钮
+                addRemoveButton(thumbnailPreview);
             };
             reader.readAsDataURL(file);
         }
     });
+    
+    // 添加删除封面图片的按钮函数
+    function addRemoveButton(container) {
+        // 确保不重复添加
+        if (container.querySelector('.remove-thumbnail')) {
+            return;
+        }
+        
+        const removeBtn = document.createElement('div');
+        removeBtn.className = 'remove-thumbnail';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = '删除封面图片';
+        
+        // 设置按钮点击事件
+        removeBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // 阻止事件冒泡
+            // 清空预览
+            container.innerHTML = `<span>尚未上传封面图片</span>`;
+            container.classList.add('no-image');
+            // 清空文件输入
+            thumbnailUpload.value = '';
+            console.log('封面图片已删除');
+        });
+        
+        container.appendChild(removeBtn);
+    }
     
     // 支持拖放上传
     thumbnailPreview.addEventListener('dragover', function(e) {
@@ -1855,7 +1885,8 @@ async function saveBlogEdit(blogId, closeModal) {
         
         // 如果没有封面图片，明确指出
         if (!hasCoverImage) {
-            formData.append('remove_thumbnail', 'true');
+            formData.append('thumbnail', '');
+            console.log('发送空的thumbnail参数来删除封面图片');
         }
         
         // 发送更新请求

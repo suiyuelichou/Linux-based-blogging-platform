@@ -151,6 +151,7 @@ private:
     bool add_blank_line();    // 添加空行
     unordered_map<string, string> parse_post_data(const string& body);  // 解析post请求体的内容
     string url_decode(const string &str);   // url解码函数
+    string html_escape(const string &str);  // HTML转义函数，防止XSS攻击
     string handle_file_upload(const string& boundary, const string& body, const string& upload_dir);  // 用于解析 multipart/form-data 并保存文件
     bool parse_multipart_form_data(const std::string& boundary, 
                                          std::map<std::string, std::string>& form_data,

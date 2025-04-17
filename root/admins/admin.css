@@ -904,12 +904,35 @@ table tr:last-child td {
 .user-modal-content {
     background-color: var(--card-bg);
     margin: 5% auto;
-    padding: 25px;
+    padding: 30px;
     border-radius: 8px;
     width: 80%;
     max-width: 800px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     position: relative;
+}
+
+.user-modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    color: var(--text-color);
+}
+
+.user-close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    color: #aaa;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.user-close:hover {
+    color: var(--text-color);
 }
 
 /* 隐藏密码重置按钮（当创建新用户时） */
@@ -923,6 +946,9 @@ table tr:last-child td {
     color: var(--disabled-text, #666);
     border-color: var(--disabled-border, #ddd);
     cursor: not-allowed;
+    opacity: 0.8;
+    border-radius: 4px;
+    padding: 8px 12px;
 }
 
 .readonly-field:focus {
@@ -935,22 +961,84 @@ textarea.readonly-field {
     resize: none;
 }
 
+/* 表单行和表单组样式 */
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 250px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: var(--primary-color, #3498db);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    outline: none;
+}
+
+/* 表单操作区域样式 */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.form-actions button {
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.primary-btn {
+    background-color: var(--primary-color, #3498db);
+    color: white;
+    border: none;
+}
+
+.primary-btn:hover {
+    background-color: #2980b9;
+}
+
 /* 表单帮助文本样式 */
 .field-help {
     display: block;
     font-size: 12px;
     color: #666;
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 /* 输入验证样式 */
 input:invalid {
     border-color: #e74c3c;
 }
-
-/* input:valid {
-    border-color: #2ecc71;
-} */
 
 /* 分类管理页面样式 */
 .categories-header {
@@ -1311,6 +1399,74 @@ input:invalid {
     justify-content: center;
     gap: 15px;
     margin-top: 25px;
+}
+
+/* 加载指示器样式 */
+.loading-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: var(--text-color);
+    font-size: 18px;
+    text-align: center;
+}
+
+.loading-indicator::before {
+    content: '';
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-color, #3498db);
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 错误消息样式 */
+.error-message {
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.error-message h3 {
+    color: var(--danger-color, #e74c3c);
+    margin-bottom: 15px;
+}
+
+.error-message p {
+    margin-bottom: 25px;
+    color: var(--text-color);
+}
+
+/* 编辑模式特殊样式 */
+.editing-user .form-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.editing-user .readonly-field {
+    background-color: var(--disabled-bg, #f5f5f5);
+    opacity: 0.7;
+}
+
+.field-status {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #666;
+}
+
+.field-status.readonly {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #888;
 }
 
 
