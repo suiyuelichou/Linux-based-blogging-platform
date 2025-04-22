@@ -704,79 +704,113 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // 渲染评论
+    // 添加HTML转义函数
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+    
+    // 修改渲染评论的函数，对评论内容进行转义
     function renderComments(comments) {
         const commentsList = document.getElementById('commentsList');
         commentsList.innerHTML = '';
         
-        if (!comments || comments.length === 0) {
-            commentsList.innerHTML = '<div class="no-comments-message">暂无评论，来说点什么吧！</div>';
+        if (comments.length === 0) {
+            commentsList.innerHTML = '<div class="no-comments-message">暂无评论，成为第一个评论的人吧！</div>';
             return;
         }
         
         // 获取当前登录用户
         const currentUsername = getCurrentUsername();
+        console.log("当前用户：", currentUsername); // 添加调试输出
         
         comments.forEach(comment => {
-            const isOwnComment = currentUsername && currentUsername === comment.username;
+            // 创建评论元素
+            const commentEl = document.createElement('div');
+            commentEl.className = 'comment';
+            commentEl.id = `comment-${comment.id}`;
+            commentEl.setAttribute('data-comment-id', comment.id);
             
-            const commentElement = document.createElement('div');
-            commentElement.className = `comment ${isOwnComment ? 'own-comment' : ''}`;
-            commentElement.setAttribute('data-comment-id', comment.id);
+            // 正确获取评论作者
+            const commentAuthor = comment.author || comment.username;
+            console.log("评论作者：", commentAuthor); // 添加调试输出
             
-            commentElement.innerHTML = `
-                <img src="${comment.avatar || 'img/default_touxiang.jpg'}" alt="${comment.username}" class="comment-avatar">
+            // 检查评论是否属于当前用户
+            const isOwnComment = currentUsername && 
+                                 commentAuthor && 
+                                 currentUsername.toLowerCase() === commentAuthor.toLowerCase();
+            
+            if (isOwnComment) {
+                commentEl.classList.add('own-comment');
+            }
+            
+            // 对评论内容进行HTML转义以防止XSS攻击
+            const escapedContent = escapeHtml(comment.content);
+            
+            commentEl.innerHTML = `
+                <img src="${escapeHtml(comment.avatar || 'img/default_touxiang.jpg')}" alt="${escapeHtml(commentAuthor)}" class="comment-avatar">
                 <div class="comment-body">
                     <div class="comment-header">
-                        <span class="comment-author">${comment.username}</span>
+                        <span class="comment-author">${escapeHtml(commentAuthor)}</span>
                         <span class="comment-date">${formatDate(comment.date)}</span>
                     </div>
-                    <div class="comment-text">${comment.content}</div>
-                    ${isOwnComment ? `
+                    <div class="comment-text">${escapedContent}</div>
                     <div class="comment-actions">
-                        <button class="comment-action delete-action" data-comment-id="${comment.id}">
-                            <i class="far fa-trash-alt"></i> 删除
-                        </button>
+                        ${isOwnComment ? 
+                            `<button class="comment-action delete-action" data-comment-id="${comment.id}">
+                                <i class="far fa-trash-alt"></i> 删除
+                            </button>` : ''}
                     </div>
-                    ` : ''}
                 </div>
             `;
             
-            commentsList.appendChild(commentElement);
+            commentsList.appendChild(commentEl);
         });
         
-        // 更新评论计数显示
-        document.getElementById('commentCountDisplay').textContent = comments.length;
+        // 更新评论计数
+        const commentCount = comments.length;
+        document.getElementById('commentCountDisplay').textContent = commentCount;
+        document.getElementById('commentCount').textContent = commentCount;
         
-        // 只添加删除按钮的事件监听
+        // 添加评论事件监听器
         addCommentEventListeners();
     }
     
-    // 获取当前登录用户名
+    // 修改 getCurrentUsername 函数，确保正确获取当前登录用户名
     function getCurrentUsername() {
-        // 检查是否已登录，从用户头像或其他元素获取用户名
-        const userDropdown = document.querySelector('.user-dropdown');
-        const logoutButton = document.getElementById('logout');
-        
-        if (userDropdown && logoutButton) {
-            // 用户已登录，尝试获取用户名
-            const userAvatar = document.getElementById('userAvatar');
-            // 假设用户头像上有 data-username 属性，或者从其他地方获取
-            return userAvatar.getAttribute('data-username') || localStorage.getItem('username');
+        // 从用户头像元素获取用户名
+        const userAvatar = document.getElementById('userAvatar');
+        if (userAvatar && userAvatar.getAttribute('data-username')) {
+            return userAvatar.getAttribute('data-username');
         }
         
-        return null; // 未登录
+        // 从 localStorage 获取用户名作为备选
+        return localStorage.getItem('username');
     }
     
-    // 添加评论的事件监听器
+    // 修改添加评论事件监听器函数
     function addCommentEventListeners() {
-        // 仅添加删除按钮事件监听
+        // 为所有删除按钮添加事件监听器
         document.querySelectorAll('.delete-action').forEach(button => {
-            button.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-comment-id');
-                showDeleteConfirmation(commentId);
-            });
+            // 移除已有的事件监听器，避免重复绑定
+            button.removeEventListener('click', handleDeleteButtonClick);
+            // 添加新的事件监听器
+            button.addEventListener('click', handleDeleteButtonClick);
         });
+    }
+    
+    // 添加一个处理删除按钮点击的函数
+    function handleDeleteButtonClick() {
+        const commentId = this.getAttribute('data-comment-id');
+        if (commentId) {
+            showDeleteConfirmation(commentId);
+        }
     }
     
     // 显示删除确认对话框
@@ -785,34 +819,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const overlay = document.createElement('div');
         overlay.className = 'delete-confirmation-overlay';
         
-        overlay.innerHTML = `
-            <div class="delete-confirmation-dialog">
-                <h4>删除评论</h4>
-                <p>确定要删除这条评论吗？此操作无法撤销。</p>
-                <div class="delete-confirmation-actions">
-                    <button class="cancel-delete">取消</button>
-                    <button class="confirm-delete">确认删除</button>
-                </div>
+        const dialog = document.createElement('div');
+        dialog.className = 'delete-confirmation-dialog';
+        
+        dialog.innerHTML = `
+            <h4>确认删除</h4>
+            <p>您确定要删除这条评论吗？此操作无法撤销。</p>
+            <div class="delete-confirmation-actions">
+                <button class="cancel-delete">取消</button>
+                <button class="confirm-delete">确认删除</button>
             </div>
         `;
         
+        overlay.appendChild(dialog);
         document.body.appendChild(overlay);
         
-        // 绑定事件
+        // 添加事件监听器
         overlay.querySelector('.cancel-delete').addEventListener('click', () => {
             document.body.removeChild(overlay);
         });
         
         overlay.querySelector('.confirm-delete').addEventListener('click', () => {
-            document.body.removeChild(overlay);
             deleteComment(commentId);
-        });
-        
-        // 点击背景关闭对话框
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                document.body.removeChild(overlay);
-            }
+            document.body.removeChild(overlay);
         });
     }
     
@@ -892,19 +921,23 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let html = '';
         articles.forEach((post, index) => {
+            // 确保标题和ID经过HTML转义
+            const safeTitle = escapeHtml(post.title);
+            const safeId = escapeHtml(post.id.toString());
+            
             // 检查缩略图是否为空，如果为空则使用随机图片
-            const thumbnail = post.thumbnail ? post.thumbnail : `https://picsum.photos/300/200?random=${post.id || index}`;
+            const thumbnail = post.thumbnail ? post.thumbnail : `https://picsum.photos/300/200?random=${safeId}`;
             
             // 确保标题不会太长
-            const truncatedTitle = post.title.length > 50 ? post.title.substring(0, 50) + '...' : post.title;
+            const truncatedTitle = safeTitle.length > 50 ? safeTitle.substring(0, 50) + '...' : safeTitle;
             
             html += `
             <li class="popular-post">
-                <a href="blog_detail.html?id=${post.id}" class="popular-post-image">
+                <a href="blog_detail.html?id=${safeId}" class="popular-post-image">
                     <img src="${thumbnail}" alt="${truncatedTitle}">
                 </a>
                 <div class="popular-post-info">
-                    <h4><a href="blog_detail.html?id=${post.id}" title="${post.title}" class="related-article-link">${post.title}</a></h4>
+                    <h4><a href="blog_detail.html?id=${safeId}" title="${safeTitle}" class="related-article-link">${safeTitle}</a></h4>
                     <div class="meta">
                         <span><i class="fas fa-eye"></i> ${post.views}</span>
                         <span><i class="fas fa-heart"></i> ${post.likes}</span>
@@ -1309,108 +1342,56 @@ document.addEventListener('DOMContentLoaded', function() {
         commentInput.scrollIntoView({ behavior: 'smooth' });
     }
     
-    // 提交新评论
+    // 修改提交评论函数，确保安全处理用户输入
     function submitNewComment() {
-        // 检查用户是否已登录
-        const userData = localStorage.getItem('userInfo');
-        if (!userData) {
-            showLoginNotification('请先登录后再发表评论', 'warning');
-            return;
-        }
+        // 获取评论内容
+        const commentContent = document.getElementById('commentInput').value.trim();
         
-        const commentInput = document.getElementById('commentInput');
-        const commentContent = commentInput.value.trim();
-        
-        if (commentContent === '') {
+        // 基本验证
+        if (!commentContent) {
             showNotification('评论内容不能为空', 'error');
             return;
         }
         
-        // 显示加载状态
-        const submitBtn = document.getElementById('submitComment');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
+        // 获取文章ID
+        const articleId = new URLSearchParams(window.location.search).get('id');
         
-        // 解析用户信息
-        const user = JSON.parse(userData);
+        // 准备请求数据 - 不在前端转义，由后端存储原始内容，前端显示时再转义
+        const requestData = {
+            content: commentContent,
+            articleId: articleId
+        };
         
-        // 发送请求提交评论
-        fetch(`/api/comments`, {
+        // 发送请求
+        fetch('/api/comments', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                articleId: articleId,
-                content: commentContent
-            }),
+            body: JSON.stringify(requestData),
             credentials: 'include'
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('提交评论失败');
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            // 清空输入框
-            commentInput.value = '';
-            
-            // 添加新评论到列表
-            const commentsList = document.getElementById('commentsList');
-            const noComments = commentsList.querySelector('.no-comments-message');
-            
-            if (noComments) {
-                commentsList.innerHTML = '';
+            if (data.success) {
+                // 清空评论输入框
+                document.getElementById('commentInput').value = '';
+                
+                // 刷新评论列表
+                loadComments(articleId);
+                
+                // 显示成功通知
+                showNotification('评论发表成功!', 'success');
+                
+                // 可选: 添加评论到本地数组以避免重新加载
+                // addCommentToLocalList(data);
+            } else {
+                showNotification(data.message || '评论失败，请稍后重试', 'error');
             }
-            
-            // 创建新评论元素 - 修改此部分添加删除按钮
-            const newComment = document.createElement('div');
-            newComment.className = 'comment own-comment'; // 添加own-comment类标识这是当前用户的评论
-            newComment.setAttribute('data-comment-id', data.id);
-            
-            newComment.innerHTML = `
-                <img src="${user.avatar || 'img/default_touxiang.jpg'}" alt="${user.username}" class="comment-avatar">
-                <div class="comment-body">
-                    <div class="comment-header">
-                        <span class="comment-author">${user.username}</span>
-                        <span class="comment-date">刚刚</span>
-                    </div>
-                    <div class="comment-text">${commentContent}</div>
-                    <div class="comment-actions">
-                        <button class="comment-action delete-action" data-comment-id="${data.id}">
-                            <i class="far fa-trash-alt"></i> 删除
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            commentsList.prepend(newComment);
-            
-            // 为新添加的删除按钮绑定事件监听器
-            const deleteButton = newComment.querySelector('.delete-action');
-            deleteButton.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-comment-id');
-                showDeleteConfirmation(commentId);
-            });
-            
-            // 更新评论数量
-            const commentCount = document.getElementById('commentCount');
-            const commentCountDisplay = document.getElementById('commentCountDisplay');
-            const newCount = parseInt(commentCount.textContent) + 1;
-            commentCount.textContent = newCount;
-            commentCountDisplay.textContent = newCount;
-            
-            showNotification('评论发表成功', 'success');
         })
         .catch(error => {
-            console.error('提交评论失败:', error);
-            showNotification('评论发表失败，请重试', 'error');
-        })
-        .finally(() => {
-            // 恢复按钮状态
-            submitBtn.disabled = false;
-            submitBtn.textContent = '发表评论';
+            console.error('Error:', error);
+            showNotification('评论提交失败，请稍后重试', 'error');
         });
     }
     
@@ -1497,7 +1478,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 userDropdown.innerHTML = `
                 <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
                 <a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
-                <a href="user_settings.html"><i class="fas fa-cog"></i> 设置</a>
                 <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
                 `;
                 

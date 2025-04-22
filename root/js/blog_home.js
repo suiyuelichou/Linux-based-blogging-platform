@@ -210,21 +210,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     excerpt = '无内容摘要';
                 }
                 
+                // 转义所有用户生成内容
+                const safeTitle = escapeHtml(article.title);
+                const safeExcerpt = escapeHtml(excerpt);
+                const safeAuthor = escapeHtml(article.author);
+                const safeCategory = escapeHtml(article.category);
+                
                 html += `
                 <article class="article-card fade-in" style="animation-delay: ${index * 0.1}s">
                     <div class="thumbnail">
                         <a href="blog_detail.html?id=${article.id}">
-                            <img src="${thumbnail}" alt="${article.title}">
+                            <img src="${thumbnail}" alt="${safeTitle}">
                         </a>
                     </div>
                     <div class="content">
-                        <span class="category">${article.category}</span>
-                        <h3><a href="blog_detail.html?id=${article.id}">${article.title}</a></h3>
-                        <p>${excerpt}</p>
+                        <span class="category">${safeCategory}</span>
+                        <h3><a href="blog_detail.html?id=${article.id}">${safeTitle}</a></h3>
+                        <p>${safeExcerpt}</p>
                         <div class="article-meta">
                             <div class="author">
-                                <img src="${article.authorAvatar}" alt="${article.author}">
-                                <span>${article.author}</span>
+                                <img src="${article.authorAvatar}" alt="${safeAuthor}">
+                                <span>${safeAuthor}</span>
                             </div>
                             <div class="article-stats">
                                 <span><i class="fas fa-eye"></i> ${article.views}</span>
@@ -436,16 +442,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 检查缩略图是否为空，如果为空则使用随机图片
                     const thumbnail = post.thumbnail ? post.thumbnail : `https://picsum.photos/600/400?random=${post.id || index + 100}`;
                     
-                    // 确保标题是纯文本
-                    const title = post.title ? extractExcerpt(post.title, 60) : '无标题';
+                    // 确保标题是纯文本，且经过HTML转义
+                    const safeTitle = escapeHtml(post.title || '无标题');
+                    
+                    // 转义ID（虽然ID通常是数字，但为了安全起见）
+                    const safeId = escapeHtml(post.id);
                     
                     html += `
                     <li class="popular-post">
-                        <a href="blog_detail.html?id=${post.id}">
-                            <img src="${thumbnail}" alt="${title}">
+                        <a href="blog_detail.html?id=${safeId}">
+                            <img src="${thumbnail}" alt="${safeTitle}">
                         </a>
                         <div class="popular-post-info">
-                            <h4><a href="blog_detail.html?id=${post.id}">${title}</a></h4>
+                            <h4><a href="blog_detail.html?id=${safeId}">${safeTitle}</a></h4>
                             <div class="meta">
                                 <span><i class="fas fa-eye"></i> ${post.views}</span>
                                 <span><i class="fas fa-heart"></i> ${post.likes}</span>
@@ -464,13 +473,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 let html = '';
                 posts.forEach(post => {
+                    // 确保模拟数据也经过HTML转义
+                    const safeTitle = escapeHtml(post.title);
+                    
                     html += `
                     <li class="popular-post">
                         <a href="blog_detail.html?id=${post.id}">
-                            <img src="${post.thumbnail}" alt="${post.title}">
+                            <img src="${post.thumbnail}" alt="${safeTitle}">
                         </a>
                         <div class="popular-post-info">
-                            <h4><a href="blog_detail.html?id=${post.id}">${post.title}</a></h4>
+                            <h4><a href="blog_detail.html?id=${post.id}">${safeTitle}</a></h4>
                             <div class="meta">
                                 <span><i class="fas fa-eye"></i> ${post.views}</span>
                                 <span><i class="fas fa-heart"></i> ${post.likes}</span>
@@ -526,21 +538,31 @@ document.addEventListener('DOMContentLoaded', function() {
         const sidebarUserAvatar = document.querySelector('.user-profile-header img');
         
         if (isLoggedIn && userData) {
+            // 转义所有用户数据
+            const safeUsername = escapeHtml(userData.username || '用户');
+            const safeAvatar = userData.avatar || 'img/default_touxiang.jpg';
+            const safeArticleCount = escapeHtml(userData.articleCount || '0');
+            const safeViewCount = escapeHtml(userData.viewCount || '0');
+            const safeLikeCount = escapeHtml(userData.likeCount || '0');
+            
             // 用户已登录，显示用户信息
-            if (userName) userName.textContent = userData.username || '用户';
-            if (userAvatar) userAvatar.src = userData.avatar || 'img/default_touxiang.jpg';
+            if (userName) userName.textContent = safeUsername;
+            if (userAvatar) {
+                userAvatar.src = safeAvatar;
+                // 存储安全的用户名，以便其他函数使用
+                userAvatar.setAttribute('data-username', safeUsername);
+            }
             // 更新侧边栏用户头像
-            if (sidebarUserAvatar) sidebarUserAvatar.src = userData.avatar || 'img/default_touxiang.jpg';
-            if (articleCount) articleCount.textContent = userData.articleCount || '0';
-            if (categoryCount) categoryCount.textContent = userData.viewCount || '0';
-            if (likeCount) likeCount.textContent = userData.likeCount || '0';
+            if (sidebarUserAvatar) sidebarUserAvatar.src = safeAvatar;
+            if (articleCount) articleCount.textContent = safeArticleCount;
+            if (categoryCount) categoryCount.textContent = safeViewCount;
+            if (likeCount) likeCount.textContent = safeLikeCount;
             
             // 更新下拉菜单
             if (userDropdown) {
                 userDropdown.innerHTML = `
                 <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
                 <a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
-                <a href="blog_settings.html"><i class="fas fa-cog"></i> 设置</a>
                 <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
                 `;
                 
@@ -556,7 +578,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // 用户未登录，显示游客信息
             if (userName) userName.textContent = '游客';
-            if (userAvatar) userAvatar.src = 'img/default_touxiang.jpg';
+            if (userAvatar) {
+                userAvatar.src = 'img/default_touxiang.jpg';
+                userAvatar.removeAttribute('data-username');
+            }
             // 更新侧边栏用户头像为默认头像
             if (sidebarUserAvatar) sidebarUserAvatar.src = 'img/default_touxiang.jpg';
             if (articleCount) articleCount.textContent = '0';
@@ -693,6 +718,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 显示通知消息
     function showNotification(message, type = 'info') {
+        // 转义消息内容
+        const safeMessage = escapeHtml(message);
+        
         // 先删除可能存在的通知
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
@@ -717,7 +745,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         notification.innerHTML = `
             ${icon}
-            <div class="notification-message">${message}</div>
+            <div class="notification-message">${safeMessage}</div>
             <div class="notification-close"><i class="fas fa-times"></i></div>
         `;
         
@@ -780,5 +808,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         return mockArticles;
+    }
+
+    // 添加HTML转义函数（添加在文件开头的全局区域）
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 });

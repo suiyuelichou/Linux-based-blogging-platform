@@ -359,6 +359,56 @@ http_conn::HTTP_CODE http_conn::parse_headers(char *text)
         text += strspn(text, " \t");
         m_host = text;
     }
+    else if (strncasecmp(text, "Referer:", 8) == 0) // 检测Referer值
+    {
+        text += 8;
+        text += strspn(text, " \t");
+        m_referer = text;
+        
+        // 简单的Referer检测，防止CSRF攻击
+        if (m_referer && strlen(m_referer) > 0) {
+            // 允许的域名列表
+            const char* allowed_domains[] = {"localhost", "127.0.0.1", "example.com", "192.168.164.128:9006"};
+            bool is_valid_referer = false;
+            
+            // 提取Referer中的域名部分
+            const char* http_prefix = "http://";
+            const char* https_prefix = "https://";
+            const char* domain_start = nullptr;
+            
+            if (strstr(m_referer, http_prefix) == m_referer) {
+                domain_start = m_referer + strlen(http_prefix);
+            } else if (strstr(m_referer, https_prefix) == m_referer) {
+                domain_start = m_referer + strlen(https_prefix);
+            }
+            
+            if (domain_start) {
+                // 查找域名结束位置（第一个斜杠或结束）
+                const char* domain_end = strchr(domain_start, '/');
+                string referer_domain;
+                
+                if (domain_end) {
+                    referer_domain = string(domain_start, domain_end - domain_start);
+                } else {
+                    referer_domain = domain_start;
+                }
+                
+                // 检查是否是允许的域名
+                for (const char* allowed : allowed_domains) {
+                    if (referer_domain == allowed || 
+                        (referer_domain.length() > strlen(allowed) && 
+                         referer_domain.substr(referer_domain.length() - strlen(allowed) - 1) == 
+                         string(".") + allowed)) {
+                        is_valid_referer = true;
+                        break;
+                    }
+                }
+                
+                // 记录Referer验证结果
+                m_is_valid_referer = is_valid_referer;
+            }
+        }
+    }
     else if (strncasecmp(text, "Content-Type:", 13) == 0) // 提取 Content-Type
     {
         text += 13;
@@ -1698,13 +1748,14 @@ http_conn::HTTP_CODE http_conn::do_request()
             int like_count = tool.get_blog_liked_count_by_userid(userid);
             int article_count = tool.get_article_count_by_userid(userid);
             int comment_count = tool.get_blog_comments_count_by_userid(username);
+            string bio = escapeJsonString(user.get_description());
 
             jsonData = "{";
             jsonData += "\"username\": \"" + user.get_username() + "\",";
             jsonData += "\"avatar\": \"" + user.get_avatar() + "\",";
             jsonData += "\"email\": \"" + user.get_eamil() + "\",";
             jsonData += "\"registerDate\": \"" + user.get_register_time() + "\",";
-            jsonData += "\"bio\": \"" + user.get_description() + "\",";
+            jsonData += "\"bio\": \"" + bio + "\",";
             jsonData += "\"articleCount\": \"" + to_string(article_count) + "\",";
             jsonData += "\"viewCount\": \"" + to_string(view_count) + "\",";
             jsonData += "\"likeCount\": \"" + to_string(like_count) + "\",";
@@ -2683,6 +2734,11 @@ http_conn::HTTP_CODE http_conn::do_request()
             return AUTHENTICATION;
         }
 
+        if(!m_is_valid_referer){
+            jsonData = "{\"success\": false, \"message\": \"Referer验证失败\"}";
+            return BAD_REQUEST;
+        }
+
         // 解析POST请求体
         json post_data;
         try {
@@ -2700,6 +2756,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         if(users[username] == oldPassword || BCrypt::validatePassword(oldPassword, users[username])){
             tool.modify_password_by_username(username, hash_password);
             m_lock.lock();
+            users.erase(username);
             users.insert(pair<string, string>(username, hash_password));
             m_lock.unlock();
             jsonData = "{\"success\": true, \"message\": \"密码修改成功\"}";
@@ -2788,7 +2845,7 @@ http_conn::HTTP_CODE http_conn::do_request()
             jsonData += "{";
             jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
             jsonData += "\"title\": \"" + escapedTitle + "\",";
-            jsonData += "\"summary\": \"" + escapedSummary + "\",";
+            // jsonData += "\"summary\": \"" + escapedSummary + "\",";
             jsonData += "\"coverImage\": \"" + blog.get_thumbnail() + "\",";
             jsonData += "\"publishDate\": \"" + blog.get_blog_postTime() + "\",";
             jsonData += "\"updateDate\": \"" + blog.get_updatedAt() + "\",";
@@ -2833,6 +2890,7 @@ http_conn::HTTP_CODE http_conn::do_request()
 
         sql_blog_tool tool;
         Blog blog = tool.select_blog_by_id(blogId);
+        string title = escapeJsonString(blog.get_blog_title());
         string content = escapeJsonString(blog.get_blog_content());
         string categoryName = tool.get_cotegoriename_by_cotegorieid(blog.get_category_id());
         
@@ -2849,7 +2907,7 @@ http_conn::HTTP_CODE http_conn::do_request()
         jsonData = "{\"code\": 200, \"message\": \"获取成功\", \"data\": ";
         jsonData += "{";
         jsonData += "\"id\": " + std::to_string(blog.get_blog_id()) + ",";
-        jsonData += "\"title\": \"" + blog.get_blog_title() + "\",";
+        jsonData += "\"title\": \"" + title + "\",";
         jsonData += "\"content\": \"" + content + "\",";
         // jsonData += "\"content_format\": \"" + string("delta") + "\",";
         jsonData += "\"category\": \"" + categoryName + "\",";

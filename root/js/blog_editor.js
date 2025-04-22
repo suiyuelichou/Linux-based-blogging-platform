@@ -992,7 +992,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 userDropdown.innerHTML = `
                 <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
                 <a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
-                <a href="new_user_settings.html"><i class="fas fa-cog"></i> 设置</a>
                 <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
                 `;
                 

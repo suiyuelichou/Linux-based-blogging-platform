@@ -152,7 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 userDropdown.innerHTML = `
                     <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
                     <a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
-                    <a href="blog_settings.html"><i class="fas fa-cog"></i> 设置</a>
                     <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
                 `;
                 
@@ -432,7 +431,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return mockMessages;
     }
     
-    // 渲染留言列表 - 修改为包含回复
+    // 添加HTML转义函数
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+    
+    // 修改渲染留言的函数，对留言内容进行转义
     function renderMessages(isFirstLoad) {
         const messagesContainer = document.getElementById('messagesContainer');
         if (!messagesContainer) return;
@@ -450,9 +461,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="message-item" id="message-${message.id}">
                 <div class="message-header">
                     <div class="message-author">
-                        <img src="${message.authorAvatar}" alt="${message.author}" class="message-author-avatar">
+                        <img src="${escapeHtml(message.authorAvatar)}" alt="${escapeHtml(message.author)}" class="message-author-avatar">
                         <div class="message-author-info">
-                            <div class="message-author-name">${message.author}</div>
+                            <div class="message-author-name">${escapeHtml(message.author)}</div>
                             <div class="message-date">${formatDate(message.date)}</div>
                         </div>
                     </div>
@@ -462,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>
                     ` : ''}
                 </div>
-                <div class="message-content">${formatMessageContent(message.content)}</div>
+                <div class="message-content">${escapeHtml(message.content)}</div>
                 <div class="message-actions">
                     <button class="action-btn ${message.isLiked ? 'liked' : ''}" onclick="toggleLike(${message.id})">
                         <i class="fa${message.isLiked ? 's' : 'r'} fa-heart"></i>
@@ -496,7 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 生成回复HTML
+    // 修改渲染回复的函数，对回复内容进行转义
     function renderRepliesHTML(replies) {
         if (!replies || replies.length === 0) {
             return '<div class="no-replies">暂无回复</div>';
@@ -507,13 +518,13 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `
             <div class="reply-item" id="reply-${reply.id}">
                 <div class="reply-author">
-                    <img src="${reply.authorAvatar}" alt="${reply.author}" class="reply-avatar">
+                    <img src="${escapeHtml(reply.authorAvatar)}" alt="${escapeHtml(reply.author)}" class="reply-avatar">
                     <div class="reply-info">
-                        <div class="reply-name">${reply.author}</div>
+                        <div class="reply-name">${escapeHtml(reply.author)}</div>
                         <div class="reply-date">${formatDate(reply.date)}</div>
                     </div>
                 </div>
-                <div class="reply-content">${formatMessageContent(reply.content)}</div>
+                <div class="reply-content">${escapeHtml(reply.content)}</div>
                 <div class="reply-actions">
                     <button class="action-btn ${reply.isLiked ? 'liked' : ''}" onclick="toggleReplyLike(${reply.parentId}, ${reply.id})">
                         <i class="fa${reply.isLiked ? 's' : 'r'} fa-heart"></i>

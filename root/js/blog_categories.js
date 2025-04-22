@@ -1,3 +1,15 @@
+// 添加HTML转义函数（放在文件开头）
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe
+        .toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 全局变量
     let currentPage = 1;
@@ -262,6 +274,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 渲染各个分类卡片
         categories.forEach((category, index) => {
+            // 对分类名和文章数进行转义
+            const safeName = escapeHtml(category.name);
+            const safeCount = escapeHtml(category.count);
+            
             // 根据分类名选择合适的图标
             let iconClass = 'fas fa-folder';
             
@@ -286,12 +302,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             html += `
-            <div class="category-card ${category.name === currentCategory ? 'active' : ''}" 
-                 data-category="${category.name}" 
+            <div class="category-card ${safeName === currentCategory ? 'active' : ''}" 
+                 data-category="${safeName}" 
                  style="animation-delay: ${index * 0.05}s">
                 <i class="${iconClass} category-icon"></i>
-                <div class="category-name">${category.name}</div>
-                <div class="category-count">${category.count} 篇文章</div>
+                <div class="category-name">${safeName}</div>
+                <div class="category-count">${safeCount} 篇文章</div>
             </div>
             `;
         });
@@ -479,21 +495,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     excerpt = '无内容摘要';
                 }
                 
+                // 转义所有用户生成内容
+                const safeTitle = escapeHtml(article.title);
+                const safeExcerpt = escapeHtml(excerpt);
+                const safeAuthor = escapeHtml(article.author);
+                const safeCategory = escapeHtml(article.category);
+                
                 html += `
                 <article class="article-card fade-in" style="animation-delay: ${index * 0.1}s">
                     <div class="thumbnail">
                         <a href="blog_detail.html?id=${article.id}">
-                            <img src="${thumbnail}" alt="${article.title}">
+                            <img src="${thumbnail}" alt="${safeTitle}">
                         </a>
                     </div>
                     <div class="content">
-                        <span class="category">${article.category}</span>
-                        <h3><a href="blog_detail.html?id=${article.id}">${article.title}</a></h3>
-                        <p>${excerpt}</p>
+                        <span class="category">${safeCategory}</span>
+                        <h3><a href="blog_detail.html?id=${article.id}">${safeTitle}</a></h3>
+                        <p>${safeExcerpt}</p>
                         <div class="article-meta">
                             <div class="author">
-                                <img src="${article.authorAvatar}" alt="${article.author}">
-                                <span>${article.author}</span>
+                                <img src="${article.authorAvatar}" alt="${safeAuthor}">
+                                <span>${safeAuthor}</span>
                             </div>
                             <div class="article-stats">
                                 <span><i class="fas fa-eye"></i> ${article.views}</span>
@@ -711,16 +733,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 检查缩略图是否为空，如果为空则使用随机图片
                     const thumbnail = post.thumbnail ? post.thumbnail : `https://picsum.photos/600/400?random=${post.id || index + 100}`;
                     
-                    // 确保标题是纯文本
-                    const title = post.title ? extractExcerpt(post.title, 60) : '无标题';
+                    // 确保标题是纯文本，且经过HTML转义
+                    const safeTitle = escapeHtml(post.title || '无标题');
                     
                     html += `
                     <li class="popular-post">
                         <a href="blog_detail.html?id=${post.id}">
-                            <img src="${thumbnail}" alt="${title}">
+                            <img src="${thumbnail}" alt="${safeTitle}">
                         </a>
                         <div class="popular-post-info">
-                            <h4><a href="blog_detail.html?id=${post.id}">${title}</a></h4>
+                            <h4><a href="blog_detail.html?id=${post.id}">${safeTitle}</a></h4>
                             <div class="meta">
                                 <span><i class="fas fa-eye"></i> ${post.views}</span>
                                 <span><i class="fas fa-heart"></i> ${post.likes}</span>
@@ -739,13 +761,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 let html = '';
                 posts.forEach(post => {
+                    // 确保模拟数据也经过HTML转义
+                    const safeTitle = escapeHtml(post.title || '无标题');
+                    
                     html += `
                     <li class="popular-post">
                         <a href="blog_detail.html?id=${post.id}">
-                            <img src="${post.thumbnail}" alt="${post.title}">
+                            <img src="${post.thumbnail}" alt="${safeTitle}">
                         </a>
                         <div class="popular-post-info">
-                            <h4><a href="blog_detail.html?id=${post.id}">${post.title}</a></h4>
+                            <h4><a href="blog_detail.html?id=${post.id}">${safeTitle}</a></h4>
                             <div class="meta">
                                 <span><i class="fas fa-eye"></i> ${post.views}</span>
                                 <span><i class="fas fa-heart"></i> ${post.likes}</span>
@@ -783,13 +808,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 let html = '';
                 tags.forEach(tag => {
+                    // 转义标签名
+                    const safeTagName = escapeHtml(tag.name);
+                    const safeTagCount = escapeHtml(tag.count.toString());
+                    
                     const fontSize = 0.8 + (tag.count / 20) * 0.4; // 根据数量调整大小
                     html += `
                     <a href="javascript:void(0)" 
                     class="category-tag" 
-                    data-tag="${tag.name}"
+                    data-tag="${safeTagName}"
                     style="font-size: ${fontSize}rem">
-                        ${tag.name} (${tag.count})
+                        ${safeTagName} (${safeTagCount})
                     </a>
                     `;
                 });
@@ -825,13 +854,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 let html = '';
                 tags.forEach(tag => {
+                    // 转义模拟数据的标签名
+                    const safeTagName = escapeHtml(tag.name);
+                    const safeTagCount = escapeHtml(tag.count.toString());
+                    
                     const fontSize = 0.8 + (tag.count / 20) * 0.4;
                     html += `
                     <a href="javascript:void(0)" 
                     class="category-tag" 
-                    data-tag="${tag.name}"
+                    data-tag="${safeTagName}"
                     style="font-size: ${fontSize}rem">
-                        ${tag.name} (${tag.count})
+                        ${safeTagName} (${safeTagCount})
                     </a>
                     `;
                 });
@@ -857,10 +890,13 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading();
         currentPage = 1; // 重置页码
         
+        // 转义标签名供显示使用
+        const safeTag = escapeHtml(tag);
+        
         // 更新当前分类显示
         const currentCategoryEl = document.getElementById('currentCategory');
         if (currentCategoryEl) {
-            currentCategoryEl.textContent = `标签: ${tag}`;
+            currentCategoryEl.textContent = `标签: ${safeTag}`;
         }
         
         // 更新URL但不刷新页面
@@ -960,9 +996,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const sidebarAvatar = document.querySelector('.user-profile-header img'); // 添加侧边栏头像选择器
         
         if (isLoggedIn && userData) {
+            // 转义用户名
+            const safeUsername = escapeHtml(userData.username || '用户');
+            
             // 用户已登录，显示用户信息
-            if (userName) userName.textContent = userData.username || '用户';
-            if (userAvatar) userAvatar.src = userData.avatar || 'img/default_touxiang.jpg';
+            if (userName) userName.textContent = safeUsername;
+            if (userAvatar) {
+                userAvatar.src = userData.avatar || 'img/default_touxiang.jpg';
+                // 存储安全的用户名，以便其他函数使用
+                userAvatar.setAttribute('data-username', safeUsername);
+            }
             if (sidebarAvatar) sidebarAvatar.src = userData.avatar || 'img/default_touxiang.jpg'; // 更新侧边栏头像
             if (articleCount) articleCount.textContent = userData.articleCount || '0';
             if (categoryCount) categoryCount.textContent = userData.viewCount || '0';
@@ -973,7 +1016,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 userDropdown.innerHTML = `
                 <a href="user_center.html"><i class="fas fa-user-circle"></i> 个人中心</a>
                 <a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
-                <a href="new_user_settings.html"><i class="fas fa-cog"></i> 设置</a>
                 <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
                 `;
                 
@@ -989,7 +1031,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // 用户未登录，显示游客信息
             if (userName) userName.textContent = '游客';
-            if (userAvatar) userAvatar.src = 'img/default_touxiang.jpg';
+            if (userAvatar) {
+                userAvatar.src = 'img/default_touxiang.jpg';
+                userAvatar.removeAttribute('data-username');
+            }
             if (sidebarAvatar) sidebarAvatar.src = 'img/default_touxiang.jpg'; // 更新侧边栏头像
             if (articleCount) articleCount.textContent = '0';
             if (categoryCount) categoryCount.textContent = '0';
@@ -1112,6 +1157,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 显示通知消息
     function showNotification(message, type = 'info') {
+        // 转义消息内容
+        const safeMessage = escapeHtml(message);
+        
         // 先删除可能存在的通知
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
@@ -1136,7 +1184,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         notification.innerHTML = `
             ${icon}
-            <div class="notification-message">${message}</div>
+            <div class="notification-message">${safeMessage}</div>
             <div class="notification-close"><i class="fas fa-times"></i></div>
         `;
         
@@ -1167,6 +1215,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 生成模拟分类数据
     function generateMockCategories() {
+        // 返回的模拟数据本身不需要转义
+        // 转义应该在使用数据进行渲染时进行
         return [
             { name: '技术', count: 15 },
             { name: '生活', count: 8 },
@@ -1183,6 +1233,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 生成模拟文章数据
     function generateMockArticles(count) {
+        // 返回的模拟数据本身不需要转义
+        // 转义应该在使用数据进行渲染时进行
         const mockArticles = [];
         const categories = ['技术', '生活', '旅行', '美食', '编程', '前端', '后端', '设计', '数据库', '算法'];
         const authors = [
@@ -1234,10 +1286,11 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedCard.classList.add('active');
         }
         
-        // 更新当前分类标题
+        // 更新当前分类标题 - 添加转义
         const currentCategoryEl = document.getElementById('currentCategory');
         if (currentCategoryEl) {
-            currentCategoryEl.textContent = categoryName || '所有分类';
+            // 如果categoryName为空，显示"所有分类"，否则显示经过转义的分类名
+            currentCategoryEl.textContent = categoryName ? escapeHtml(categoryName) : '所有分类';
         }
     }
 

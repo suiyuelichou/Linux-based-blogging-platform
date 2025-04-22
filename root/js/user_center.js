@@ -1,3 +1,15 @@
+// 添加HTML转义函数（放在文件开头）
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe
+        .toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化页面
     initUserCenter();
@@ -98,7 +110,6 @@ function updateUIForAuthStatus(isLoggedIn, userData = null) {
             userDropdown.innerHTML = `
                 <a href="user_center.html" class="active"><i class="fas fa-user-circle"></i> 个人中心</a>
                 <a href="blog_editor.html"><i class="fas fa-edit"></i> 写博客</a>
-                <a href="blog_settings.html"><i class="fas fa-cog"></i> 设置</a>
                 <a href="#" id="logout"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
             `;
             
@@ -139,7 +150,11 @@ function updateProfileContent(userData) {
         return; // 不是个人资料页面或没有数据
     }
     
-    const bioText = userData.bio ? userData.bio : '这个人很懒，什么都没写...';
+    // 使用escapeHtml函数对用户生成的内容进行转义
+    const safeUsername = escapeHtml(userData.username || '未设置');
+    const safeEmail = escapeHtml(userData.email || '未设置');
+    const safeRegisterDate = escapeHtml(userData.registerDate || '未知');
+    const safeBio = escapeHtml(userData.bio || '这个人很懒，什么都没写...');
     
     // 基本信息部分
     const basicInfoSection = contentArea.querySelector('.profile-section:nth-child(1)');
@@ -148,19 +163,19 @@ function updateProfileContent(userData) {
             <h3>基本信息</h3>
             <div class="info-item">
                 <label>用户名</label>
-                <span>${userData.username || '未设置'}</span>
+                <span>${safeUsername}</span>
             </div>
             <div class="info-item">
                 <label>邮箱</label>
-                <span>${userData.email || '未设置'}</span>
+                <span>${safeEmail}</span>
             </div>
             <div class="info-item">
                 <label>注册时间</label>
-                <span>${userData.registerDate || '未知'}</span>
+                <span>${safeRegisterDate}</span>
             </div>
             <div class="info-item">
                 <label>个人简介</label>
-                <p>${bioText}</p>
+                <p>${safeBio}</p>
             </div>
         `;
     }
@@ -170,19 +185,19 @@ function updateProfileContent(userData) {
     if (statsSection) {
         statsSection.innerHTML = `
             <div class="stat-item">
-                <div class="stat-value">${userData.articleCount || '0'}</div>
+                <div class="stat-value">${escapeHtml(userData.articleCount || '0')}</div>
                 <div class="stat-label">发布博客</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">${userData.viewCount || '0'}</div>
+                <div class="stat-value">${escapeHtml(userData.viewCount || '0')}</div>
                 <div class="stat-label">总浏览量</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">${userData.likeCount || '0'}</div>
+                <div class="stat-value">${escapeHtml(userData.likeCount || '0')}</div>
                 <div class="stat-label">获赞数</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">${userData.commentCount || '0'}</div>
+                <div class="stat-value">${escapeHtml(userData.commentCount || '0')}</div>
                 <div class="stat-label">评论数</div>
             </div>
         `;
@@ -929,18 +944,22 @@ function renderMessages(messages, total, type, currentPage, pageSize) {
         messageItem.className = `message-item ${msg.read ? '' : 'unread'}`;
         messageItem.dataset.id = msg.id;
         
+        // 使用escapeHtml函数对用户生成的内容进行转义
+        const safeSender = escapeHtml(msg.sender || '系统通知');
+        const safeContent = escapeHtml(msg.content);
+        
         messageItem.innerHTML = `
             <div class="message-header">
-                <div class="message-sender">${msg.sender || '系统通知'}</div>
+                <div class="message-sender">${safeSender}</div>
                 <div class="message-time">${formatMessageTime(msg.time || msg.created_at)}</div>
             </div>
-            <div class="message-content">${msg.content}</div>
+            <div class="message-content">${safeContent}</div>
         `;
         
         // 添加点击事件标记为已读
         messageItem.addEventListener('click', function() {
             if (!msg.read) {
-            this.classList.remove('unread');
+                this.classList.remove('unread');
                 markMessageAsRead(msg.id);
             }
         });
@@ -1401,6 +1420,10 @@ function updateBlogList(blogs, total) {
             // 判断图片是否存在且有效
             let hasCoverImage = blog.coverImage && blog.coverImage.trim() !== '';
             
+            // 使用escapeHtml函数对用户生成的内容进行转义
+            const safeTitle = escapeHtml(blog.title);
+            const safeCoverImage = escapeHtml(hasCoverImage ? blog.coverImage : 'img/default_touxiang.jpg');
+            
             const blogCard = document.createElement('div');
             blogCard.className = 'manage-card'; // 初始无可见性类，由动画添加
             blogCard.dataset.blogId = blog.id;
@@ -1408,10 +1431,10 @@ function updateBlogList(blogs, total) {
             blogCard.innerHTML = `
                 <div class="blog-status ${statusClass}">${statusText}</div>
                 <div class="blog-thumbnail">
-                    <img src="${hasCoverImage ? blog.coverImage : 'img/default_touxiang.jpg'}" alt="博客封面" onerror="this.src='img/default_touxiang.jpg'">
+                    <img src="${safeCoverImage}" alt="博客封面" onerror="this.src='img/default_touxiang.jpg'">
                 </div>
                 <div class="blog-info">
-                    <h3 class="blog-title"><a href="blog_detail.html?id=${blog.id}" title="${blog.title}">${blog.title}</a></h3>
+                    <h3 class="blog-title"><a href="blog_detail.html?id=${blog.id}" title="${safeTitle}">${safeTitle}</a></h3>
                     <div class="blog-meta">
                         <span><i class="far fa-calendar-alt"></i> ${new Date(blog.postTime || blog.publishDate).toLocaleDateString()}</span>
                         <span><i class="far fa-eye"></i> ${blog.views || 0}</span>

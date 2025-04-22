@@ -187,6 +187,8 @@ private:
     char *m_version;              // HTTP 版本
     char *m_host;                 // 主机
     char *m_content_type;
+    char *m_referer;
+    bool m_is_valid_referer;      // 是否有效的Referer
     long m_content_length;        // 内容长度
     int m_content_start;        // 请求体的起始位置
     string m_content;           // 请求体的具体内容
