@@ -44,7 +44,6 @@ void Cookie::setCookie(const string& name, const string& value, const CookieOpti
 // 获取请求中的 cookie 值：查找指定名称的 Cookie
 string Cookie::getCookie(const string& name) const {
     auto it = request_cookies.find(name);  // 查找请求中是否有该 Cookie
-    cout << "request_cookies: " << request_cookies.size() << endl;
     return (it != request_cookies.end()) ? it->second : "";  // 如果存在，返回值，否则返回空字符串
 }
 

@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 确保 Marked.js 加载
             loadScriptIfNeeded('https://cdn.jsdelivr.net/npm/marked/marked.min.js'),
             // 确保 Highlight.js 加载
-            loadScriptIfNeeded('https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/highlight.min.js')
+            // loadScriptIfNeeded('https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/lib/highlight.min.js')
         ]).then(() => {
             // 加载代码高亮的 CSS
             if (window.hljs) {
