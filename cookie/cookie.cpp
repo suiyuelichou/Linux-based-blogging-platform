@@ -11,6 +11,9 @@ Cookie::~Cookie() = default; // 默认析构函数
 
 // 解析请求中的Cookie头部：将 Cookie 字符串解析为键值对，并存储在 request_cookies 中
 void Cookie::parseCookieHeader(const string& header) {
+    // 清空request_cookies
+    request_cookies.clear();
+
     if (header.empty()) return;  // 如果头部为空，则返回
 
     stringstream ss(header);  // 使用 stringstream 来分割 Cookie 字符串
@@ -41,6 +44,7 @@ void Cookie::setCookie(const string& name, const string& value, const CookieOpti
 // 获取请求中的 cookie 值：查找指定名称的 Cookie
 string Cookie::getCookie(const string& name) const {
     auto it = request_cookies.find(name);  // 查找请求中是否有该 Cookie
+    cout << "request_cookies: " << request_cookies.size() << endl;
     return (it != request_cookies.end()) ? it->second : "";  // 如果存在，返回值，否则返回空字符串
 }
 
@@ -178,6 +182,12 @@ void Cookie::cleanupSessions() {
         }
     }
     session_lock.unlock();  // 解锁会话管理
+}
+
+void Cookie::resetCookies()
+{
+    request_cookies.clear();
+    response_cookies.clear();
 }
 
 // 辅助方法：去除字符串前后的空白字符

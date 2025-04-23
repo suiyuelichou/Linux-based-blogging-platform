@@ -341,9 +341,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="message-item" id="message-${message.id}">
                 <div class="message-header">
                     <div class="message-author">
-                        <img src="${message.authorAvatar}" alt="${message.author}" class="message-author-avatar">
+                        <img src="${escapeHtml(message.authorAvatar)}" alt="${escapeHtml(message.author)}" class="message-author-avatar">
                         <div class="message-author-info">
-                            <div class="message-author-name">${message.author}</div>
+                            <div class="message-author-name">${escapeHtml(message.author)}</div>
                             <div class="message-date">${formatDate(message.date)}</div>
                         </div>
                     </div>
@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </button>
                     ` : ''}
                 </div>
-                <div class="message-content">${formatMessageContent(message.content)}</div>
+                <div class="message-content">${escapeHtml(message.content)}</div>
                 <div class="message-actions">
                     <button class="action-btn ${message.isLiked ? 'liked' : ''}" onclick="toggleLike(${message.id})">
                         <i class="fa${message.isLiked ? 's' : 'r'} fa-heart"></i>
@@ -507,7 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 修改渲染回复的函数，对回复内容进行转义
+    // 修改渲染回复的函数，添加删除按钮
     function renderRepliesHTML(replies) {
         if (!replies || replies.length === 0) {
             return '<div class="no-replies">暂无回复</div>';
@@ -515,6 +515,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let html = '';
         replies.forEach(reply => {
+            const isOwnReply = reply.author === currentUserName;
+            
             html += `
             <div class="reply-item" id="reply-${reply.id}">
                 <div class="reply-author">
@@ -523,6 +525,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="reply-name">${escapeHtml(reply.author)}</div>
                         <div class="reply-date">${formatDate(reply.date)}</div>
                     </div>
+                    ${isOwnReply ? `
+                        <button class="delete-btn" onclick="deleteReply(${reply.parentId}, ${reply.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : ''}
                 </div>
                 <div class="reply-content">${escapeHtml(reply.content)}</div>
                 <div class="reply-actions">
@@ -691,6 +698,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.submitReply = submitReply;
     window.deleteMessage = deleteMessage;
     window.toggleReplyLike = toggleReplyLike;
+    window.deleteReply = deleteReply;
     
     // 格式化日期
     function formatDate(dateString) {
@@ -800,9 +808,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="message-item" id="message-${message.id}">
             <div class="message-header">
                 <div class="message-author">
-                    <img src="${message.authorAvatar}" alt="${message.author}" class="message-author-avatar">
+                    <img src="${escapeHtml(message.authorAvatar)}" alt="${escapeHtml(message.author)}" class="message-author-avatar">
                     <div class="message-author-info">
-                        <div class="message-author-name">${message.author}</div>
+                        <div class="message-author-name">${escapeHtml(message.author)}</div>
                         <div class="message-date">${formatDate(message.date)}</div>
                     </div>
                 </div>
@@ -812,7 +820,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 ` : ''}
             </div>
-            <div class="message-content">${formatMessageContent(message.content)}</div>
+            <div class="message-content">${escapeHtml(message.content)}</div>
             <div class="message-actions">
                 <button class="action-btn ${message.isLiked ? 'liked' : ''}" onclick="toggleLike(${message.id})">
                     <i class="fa${message.isLiked ? 's' : 'r'} fa-heart"></i>
@@ -886,85 +894,216 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
     
-    // 删除留言
-    function deleteMessage(messageId) {
-        if (!confirm('确定要删除这条留言吗？')) return;
-        
-        // 先找到DOM中的留言元素
-        const messageElement = document.getElementById(`message-${messageId}`);
-        if (!messageElement) {
-            showNotification('找不到要删除的留言', 'error');
-            return;
+    // 添加创建确认对话框的函数
+    function createConfirmDialog(message, confirmCallback) {
+        // 移除可能已存在的确认框
+        const existingDialog = document.querySelector('.confirmation-dialog-overlay');
+        if (existingDialog) {
+            existingDialog.remove();
         }
         
-        // 使与POST接口路径一致的API路径
-        fetch(`/api/messages_board/${messageId}`, {
-            method: 'DELETE'
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('删除失败');
-            
-            // 成功删除后:
-            // 1. 从内存中的留言数组移除
-            messages = messages.filter(msg => msg.id !== messageId);
-            
-            // 2. 添加淡出动画
-            messageElement.style.transition = "all 0.5s ease";
-            messageElement.style.opacity = "0";
-            messageElement.style.transform = "translateY(-20px)";
-            
-            // 3. 动画结束后从DOM中移除元素
-            setTimeout(() => {
-                messageElement.remove();
-                
-                // 4. 如果列表为空，显示"暂无留言"
-                const messagesContainer = document.getElementById('messagesContainer');
-                if (messagesContainer && messages.length === 0) {
-                    messagesContainer.innerHTML = '<div class="no-messages">暂无留言</div>';
-                }
-            }, 500);
-            
-            showNotification('留言已删除', 'success');
-        })
-        .catch(() => {
-            // 即使在后端接口失败的情况下也执行删除操作 (乐观更新)
-            // 从内存中的留言数组中移除
-            messages = messages.filter(msg => msg.id !== messageId);
-            
-            // 添加淡出动画
-            messageElement.style.transition = "all 0.5s ease";
-            messageElement.style.opacity = "0";
-            messageElement.style.transform = "translateY(-20px)";
-            
-            // 动画结束后从DOM中移除元素
-            setTimeout(() => {
-                messageElement.remove();
-                
-                // 如果列表为空，显示"暂无留言"
-                const messagesContainer = document.getElementById('messagesContainer');
-                if (messagesContainer && messages.length === 0) {
-                    messagesContainer.innerHTML = '<div class="no-messages">暂无留言</div>';
-                }
-            }, 500);
-            
-            showNotification('留言已删除（本地操作）', 'success');
-        });
-    }
+        // 创建确认对话框元素
+        const overlay = document.createElement('div');
+        overlay.className = 'confirmation-dialog-overlay';
         
-        // 显示通知
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
-            <span>${message}</span>
+        const dialog = document.createElement('div');
+        dialog.className = 'confirmation-dialog';
+        
+        dialog.innerHTML = `
+            <h4>确认操作</h4>
+            <p>${message}</p>
+            <div class="confirmation-actions">
+                <button class="cancel-button">取消</button>
+                <button class="confirm-button">确认</button>
+            </div>
         `;
         
-        document.body.appendChild(notification);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
         
+        // 添加动画效果
+        setTimeout(() => {
+            overlay.classList.add('show');
+            dialog.classList.add('show');
+        }, 10);
+        
+        // 绑定事件
+        const cancelButton = dialog.querySelector('.cancel-button');
+        const confirmButton = dialog.querySelector('.confirm-button');
+        
+        cancelButton.addEventListener('click', () => {
+            closeDialog();
+        });
+        
+        confirmButton.addEventListener('click', () => {
+            closeDialog();
+            confirmCallback();
+        });
+        
+        // 点击遮罩层关闭对话框
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeDialog();
+            }
+        });
+        
+        // 关闭对话框的函数
+        function closeDialog() {
+            overlay.classList.remove('show');
+            dialog.classList.remove('show');
+            
+            setTimeout(() => {
+                overlay.remove();
+            }, 300); // 等待动画完成
+        }
+    }
+
+    // 修改删除留言的函数，使用自定义确认对话框
+    function deleteMessage(messageId) {
+        createConfirmDialog('确定要删除这条留言吗？', () => {
+            // 确认后执行删除操作
+            
+            // 先找到DOM中的留言元素
+            const messageElement = document.getElementById(`message-${messageId}`);
+            if (!messageElement) {
+                showNotification('找不到要删除的留言', 'error');
+                return;
+            }
+            
+            // 使用与POST接口路径一致的API路径
+            fetch(`/api/messages_board/${messageId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('删除失败');
+                
+                // 成功删除后:
+                // 1. 从内存中的留言数组移除
+                messages = messages.filter(msg => msg.id !== messageId);
+                
+                // 2. 添加淡出动画
+                messageElement.style.transition = "all 0.5s ease";
+                messageElement.style.opacity = "0";
+                messageElement.style.transform = "translateY(-20px)";
+                
+                // 3. 动画结束后从DOM中移除元素
                 setTimeout(() => {
-                notification.remove();
-        }, 3000);
+                    messageElement.remove();
+                    
+                    // 4. 如果列表为空，显示"暂无留言"
+                    const messagesContainer = document.getElementById('messagesContainer');
+                    if (messagesContainer && messages.length === 0) {
+                        messagesContainer.innerHTML = '<div class="no-messages">暂无留言</div>';
+                    }
+                }, 500);
+                
+                showNotification('留言已删除', 'success');
+            })
+            .catch(() => {
+                // 即使在后端接口失败的情况下也执行删除操作 (乐观更新)
+                // 从内存中的留言数组中移除
+                messages = messages.filter(msg => msg.id !== messageId);
+                
+                // 添加淡出动画
+                messageElement.style.transition = "all 0.5s ease";
+                messageElement.style.opacity = "0";
+                messageElement.style.transform = "translateY(-20px)";
+                
+                // 动画结束后从DOM中移除元素
+                setTimeout(() => {
+                    messageElement.remove();
+                    
+                    // 如果列表为空，显示"暂无留言"
+                    const messagesContainer = document.getElementById('messagesContainer');
+                    if (messagesContainer && messages.length === 0) {
+                        messagesContainer.innerHTML = '<div class="no-messages">暂无留言</div>';
+                    }
+                }, 500);
+                
+                showNotification('留言已删除（本地操作）', 'success');
+            });
+        });
+    }
+
+    // 修改删除回复的函数，使用自定义确认对话框
+    function deleteReply(messageId, replyId) {
+        createConfirmDialog('确定要删除这条回复吗？', () => {
+            // 确认后执行删除操作
+            
+            // 先找到DOM中的回复元素
+            const replyElement = document.getElementById(`reply-${replyId}`);
+            if (!replyElement) {
+                showNotification('找不到要删除的回复', 'error');
+                return;
+            }
+            
+            // 使用与留言删除相同的API路径结构
+            fetch(`/api/messages_board/${replyId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('删除失败');
+                
+                // 成功删除后:
+                // 1. 从内存中的回复数组移除
+                const message = messages.find(m => m.id === messageId);
+                if (message && message.replies) {
+                    message.replies = message.replies.filter(r => r.id !== replyId);
+                    message.replyCount = message.replies.length;
+                    
+                    // 更新回复数量显示
+                    updateReplyCount(messageId, message.replyCount);
+                }
+                
+                // 2. 添加淡出动画
+                replyElement.style.transition = "all 0.5s ease";
+                replyElement.style.opacity = "0";
+                replyElement.style.transform = "translateY(-20px)";
+                
+                // 3. 动画结束后从DOM中移除元素
+                setTimeout(() => {
+                    replyElement.remove();
+                    
+                    // 4. 如果回复列表为空，显示"暂无回复"
+                    const repliesContainer = document.querySelector(`#replies-${messageId} .replies-container`);
+                    if (repliesContainer && message.replies.length === 0) {
+                        repliesContainer.innerHTML = '<div class="no-replies">暂无回复</div>';
+                    }
+                }, 500);
+                
+                showNotification('回复已删除', 'success');
+            })
+            .catch(() => {
+                // 即使在后端接口失败的情况下也执行删除操作 (乐观更新)
+                // 从内存中的回复数组中移除
+                const message = messages.find(m => m.id === messageId);
+                if (message && message.replies) {
+                    message.replies = message.replies.filter(r => r.id !== replyId);
+                    message.replyCount = message.replies.length;
+                    
+                    // 更新回复数量显示
+                    updateReplyCount(messageId, message.replyCount);
+                }
+                
+                // 添加淡出动画
+                replyElement.style.transition = "all 0.5s ease";
+                replyElement.style.opacity = "0";
+                replyElement.style.transform = "translateY(-20px)";
+                
+                // 动画结束后从DOM中移除元素
+                setTimeout(() => {
+                    replyElement.remove();
+                    
+                    // 4. 如果回复列表为空，显示"暂无回复"
+                    const repliesContainer = document.querySelector(`#replies-${messageId} .replies-container`);
+                    if (repliesContainer && message.replies.length === 0) {
+                        repliesContainer.innerHTML = '<div class="no-replies">暂无回复</div>';
+                    }
+                }, 500);
+                
+                showNotification('回复已删除（本地操作）', 'success');
+            });
+        });
     }
 
     // 点赞功能
@@ -1139,5 +1278,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (updated) {
             console.log('已处理一些待处理回复');
         }
+    }
+
+    // 显示通知
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
     }
 });

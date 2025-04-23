@@ -64,6 +64,7 @@ public:
     bool validateSession(const string& username, const string& session_id);
     void removeSession(const string& username);
     static void cleanupSessions();
+    void resetCookies();
 
     // 用于测试
     // 新增：获取当前所有活跃用户

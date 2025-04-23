@@ -176,6 +176,7 @@ void http_conn::init()
     improv = 0;
     islogin = false;
     current_username = "";
+    cookie.resetCookies();
 
     memset(m_read_buf, '\0', READ_BUFFER_SIZE);
     memset(m_write_buf, '\0', WRITE_BUFFER_SIZE);
@@ -328,6 +329,7 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char *text) {
 //解析http请求的请求头（一行一行传进来）
 http_conn::HTTP_CODE http_conn::parse_headers(char *text)
 {
+    // cookie.resetCookies();
     if (text[0] == '\0')    // 若是空行，说明请求头已结束（请求头和请求体之间是一行空行）
     {
         if (m_content_length != 0)
@@ -1739,8 +1741,10 @@ http_conn::HTTP_CODE http_conn::do_request()
     else if (strstr(m_url, "/api/user/info")) {
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
+        cout << "username: " << username << endl;
+        cout << "session_id: " << session_id << endl;
 
-        if(cookie.validateSession(username, session_id)){
+        if(cookie.validateSession(username, session_id) && !username.empty() && !session_id.empty()){
             sql_blog_tool tool;
             int userid = tool.get_userid(username);
             User user = tool.get_userdata_by_userid(userid);
