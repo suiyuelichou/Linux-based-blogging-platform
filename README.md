@@ -17,6 +17,9 @@
 - **前端**: HTML, CSS, JavaScript（AJAX）用于页面展示与交互
 - **框架与库**: 
   - `editor.md`: 用于Markdown编辑的富文本编辑器
+  sudo yum install -y mysql-devel
+  https://github.com/trusch/libbcrypt
+  https://blog.csdn.net/m0_51580562/article/details/142264165 json库（低版本需更新cmake）
 - **服务器环境**:
   - **操作系统**: Linux（CentOS_7_9）
   - **Web服务器**: 自定义C++编写的Web服务器
@@ -336,6 +339,8 @@ MYSQL *connection_pool::GetConnection()
 > 当该连接断开后，服务器可能将这个http_conn对象分配给另一个新的连接
 > 如果新连接没有Cookie头，parseCookieHeader方法会提前返回，不会清空旧值
 > 结果是，新连接可以访问到用户A的Cookie信息
+
+
 
 ## 更新日志
 

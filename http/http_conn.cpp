@@ -1741,8 +1741,6 @@ http_conn::HTTP_CODE http_conn::do_request()
     else if (strstr(m_url, "/api/user/info")) {
         string username = cookie.getCookie("username");
         string session_id = cookie.getCookie("session_id");
-        cout << "username: " << username << endl;
-        cout << "session_id: " << session_id << endl;
 
         if(cookie.validateSession(username, session_id) && !username.empty() && !session_id.empty()){
             sql_blog_tool tool;
