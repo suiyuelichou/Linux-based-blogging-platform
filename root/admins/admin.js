@@ -1,3 +1,15 @@
+// 在文件顶部添加
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return unsafe
+        .toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const sidebarItems = document.querySelectorAll(".sidebar li");
     const tabContents = document.querySelectorAll(".tab-content");
@@ -209,16 +221,20 @@ const BlogPostManager = (function() {
         }
         
         posts.forEach(post => {
-            const row = document.createElement('tr');
+            const safeTitle = escapeHtml(post.title);
+            const safeAuthor = escapeHtml(post.user || '未知作者');
+            const safeCategory = escapeHtml(post.categoryName || '未分类');
+            
+            const tr = document.createElement('tr');
             
             // 格式化日期
             const createdDate = new Date(post.createdAt).toLocaleDateString('zh-CN');
             const updatedDate = new Date(post.updatedAt).toLocaleDateString('zh-CN');
             
-            row.innerHTML = `
-                <td class="post-title">${post.title}</td>
-                <td>${post.user}</td>
-                <td>${post.categoryName || '-'}</td>
+            tr.innerHTML = `
+                <td class="post-title">${safeTitle}</td>
+                <td>${safeAuthor}</td>
+                <td>${safeCategory}</td>
                 <td>${createdDate}</td>
                 <td>${updatedDate}</td>
                 <td>${post.views || 0}</td>
@@ -228,7 +244,7 @@ const BlogPostManager = (function() {
                 </td>
             `;
             
-            elements.postsTableBody.appendChild(row);
+            elements.postsTableBody.appendChild(tr);
         });
         
         // 为查看和删除按钮添加事件监听器
@@ -360,12 +376,13 @@ const BlogPostManager = (function() {
                 // 处理标签
                 const tagsContainer = document.getElementById('blog-tagsContainer');
                 tagsContainer.innerHTML = '';
-                
+
                 if (post.tags && post.tags.length > 0) {
                     post.tags.forEach(tag => {
+                        // 不对标签文本进行HTML转义，因为textContent会自动安全处理内容
                         const tagElement = document.createElement('span');
                         tagElement.className = 'post-tag';
-                        tagElement.textContent = tag;
+                        tagElement.textContent = tag; // 直接使用原始标签文本，不进行转义
                         tagsContainer.appendChild(tagElement);
                     });
                 } else {
@@ -379,6 +396,9 @@ const BlogPostManager = (function() {
                 if (post.content_format === 'markdown' && typeof post.content === 'string') {
                     // 如果是Markdown格式
                     if (window.marked) {
+                        marked.setOptions({
+                            sanitize: true // 开启marked的XSS防护
+                        });
                         contentElement.innerHTML = marked.parse(post.content);
                     } else {
                         contentElement.innerHTML = `<pre>${post.content}</pre>`;
@@ -715,6 +735,10 @@ const CommentManager = (function() {
         }
         
         comments.forEach(comment => {
+            const safeAuthor = escapeHtml(comment.author || '匿名用户');
+            const safeContent = escapeHtml(comment.content);
+            const safeArticleTitle = escapeHtml(comment.articleTitle || '未知文章');
+            
             const row = document.createElement('tr');
             
             // 格式化日期
@@ -723,14 +747,13 @@ const CommentManager = (function() {
             
             row.innerHTML = `
                 <td>
-                    <div class="comment-author">${comment.author}</div>
-                    
+                    <div class="comment-author">${safeAuthor}</div>
                 </td>
                 <td>
-                    <div class="comment-preview">${comment.content}</div>
+                    <div class="comment-preview">${safeContent}</div>
                 </td>
                 <td>
-                    <div class="comment-article" data-article-id="${comment.articleId}" title="查看文章">${comment.articleTitle}</div>
+                    <div class="comment-article" data-article-id="${comment.articleId}" title="查看文章">${safeArticleTitle}</div>
                 </td>
                 <td>${commentDate}</td>
                 <td>
@@ -1065,38 +1088,36 @@ const UserManager = (function() {
         }
         
         users.forEach(user => {
-            const row = document.createElement('tr');
+            const safeUsername = escapeHtml(user.username);
+            const safeEmail = escapeHtml(user.email || '');
+            const safeBio = escapeHtml(user.bio || '');
             
-            // 格式化日期
             const registeredDate = new Date(user.createdAt).toLocaleDateString('zh-CN');
             const lastLoginDate = user.lastLogin ? 
                 new Date(user.lastLogin).toLocaleDateString('zh-CN') + ' ' + 
                 new Date(user.lastLogin).toLocaleTimeString('zh-CN', {hour: '2-digit', minute:'2-digit'}) : 
                 '从未登录';
             
-            // 状态标签类
             const statusClass = `status-${user.status}`;
-            
-            // 状态显示文本
             const statusText = {
                 'active': '已激活',
                 'blocked': '已封禁'
             }[user.status] || user.status;
             
-            // 获取用户名首字母作为头像占位符
-            const firstLetter = user.username.charAt(0).toUpperCase();
+            const firstLetter = safeUsername.charAt(0).toUpperCase();
             
+            const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
                     <div class="user-avatar">
                         ${user.avatar ? 
-                            `<img src="${user.avatar}" alt="${user.username}">` : 
+                            `<img src="${escapeHtml(user.avatar)}" alt="${safeUsername}">` : 
                             `<div class="avatar-placeholder">${firstLetter}</div>`
                         }
                     </div>
                 </td>
-                <td>${user.username}</td>
-                <td>${user.email}</td>
+                <td>${safeUsername}</td>
+                <td>${safeEmail}</td>
                 <td><span class="status-tag ${statusClass}">${statusText}</span></td>
                 <td>${registeredDate}</td>
                 <td>${lastLoginDate}</td>
@@ -1780,25 +1801,24 @@ let categoryPageSize = 10;
         }
         
         categories.forEach(category => {
-            const row = document.createElement('tr');
+            const safeName = escapeHtml(category.name);
+            const safeDescription = escapeHtml(category.description || '无描述');
             
-            // 格式化日期
             const createdDate = new Date(category.createdAt).toLocaleDateString('zh-CN');
+            const firstLetter = safeName.charAt(0).toUpperCase();
             
-            // 获取分类名称首字母作为图标占位符
-            const firstLetter = category.name.charAt(0).toUpperCase();
-            
+            const row = document.createElement('tr');
             row.innerHTML = `
                 <td>
                     <div class="category-icon">
                         ${category.icon ? 
-                            `<span>${category.icon}</span>` : 
+                            `<span>${escapeHtml(category.icon)}</span>` : 
                             `<span>${firstLetter}</span>`
                         }
                     </div>
                 </td>
-                <td>${category.name}</td>
-                <td><div class="category-description" title="${category.description || ''}">${category.description || '无描述'}</div></td>
+                <td>${safeName}</td>
+                <td><div class="category-description" title="${safeDescription}">${safeDescription}</div></td>
                 <td>${createdDate}</td>
                 <td>${category.articlesCount || 0}</td>
                 <td>
@@ -2168,11 +2188,13 @@ const TagManager = (function() {
         }
         
         tags.forEach(tag => {
-            const row = document.createElement('tr');
+            const safeName = escapeHtml(tag.name);
+            const safeDescription = escapeHtml(tag.description || '无描述');
             
+            const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${tag.name}</td>
-                <td><div class="tag-description" title="${tag.description || ''}">${tag.description || '无描述'}</div></td>
+                <td>${safeName}</td>
+                <td><div class="tag-description" title="${safeDescription}">${safeDescription}</div></td>
                 <td>${new Date(tag.createdAt).toLocaleDateString('zh-CN')}</td>
                 <td>${tag.blogCount || tag.articlesCount || tag.article_count || 0}</td>
                 <td>

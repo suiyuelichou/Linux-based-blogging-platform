@@ -4479,7 +4479,8 @@ http_conn::HTTP_CODE http_conn::do_request()
                     vector<string> tags = tool.get_tags_by_blogid(blogId); // 假设此方法返回 vector<string>
                     jsonData += "\"tags\": [";
                     for (size_t i = 0; i < tags.size(); i++) {
-                        jsonData += "\"" + tags[i] + "\"";
+                        string escapedTag = escapeJsonString(tags[i]);
+                        jsonData += "\"" + escapedTag + "\"";
                         if (i < tags.size() - 1) jsonData += ",";
                     }
                     jsonData += "],";
@@ -4683,15 +4684,16 @@ http_conn::HTTP_CODE http_conn::do_request()
                 Blog blog = tool.select_blog_by_id(comment.get_blog_id());
                 string escapedUser = escapeJsonString(comment.get_username());
                 string escapedContent = escapeJsonString(comment.get_content());
+                string escapedTitle = escapeJsonString(blog.get_blog_title());
                 
 
                 jsonData += "{";
                 jsonData += "\"id\": " + std::to_string(comment.get_comment_id()) + ",";
                 jsonData += "\"author\": \"" + escapedUser + "\",";
                 // jsonData += "\"email\": \"" + user.get_eamil() + "\",";
-                jsonData += "\"content\": \"" + comment.get_content() + "\",";
+                jsonData += "\"content\": \"" + escapedContent + "\",";
                 jsonData += "\"articleId\": " + std::to_string(comment.get_blog_id()) + ",";
-                jsonData += "\"articleTitle\": \"" + blog.get_blog_title() + "\",";
+                jsonData += "\"articleTitle\": \"" + escapedTitle + "\",";
                 // jsonData += "\"status\": \"" + std::string("approved") + "\",";
                 jsonData += "\"createdAt\": \"" + comment.get_comment_time() + "\"";
                 jsonData += "}";
