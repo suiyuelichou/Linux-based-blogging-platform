@@ -10,6 +10,9 @@
 #include <string>
 #include <ctime>
 #include <vector>
+#include <thread>
+#include <atomic>
+#include <chrono>
 #include "../lock/locker.h"
 #include "../log/log.h"
 
@@ -23,6 +26,10 @@ public:
 	bool ReleaseConnection(MYSQL *conn); // 释放连接
 	int GetFreeConn();					 // 获取连接
 	void DestroyPool();					 // 销毁所有连接
+	bool PingConnection(MYSQL *conn);    // 检查连接是否有效
+	void KeepAliveConnections();         // 定期保活连接
+	void StartKeepAliveThread();         // 启动保活线程
+	void StopKeepAliveThread();          // 停止保活线程
 
 	// 单例模式
 	static connection_pool *GetInstance();
@@ -44,14 +51,17 @@ private:
 	locker lock;
 	sem reserve;	// 设置一个数据库连接池信号量
 	list<MYSQL *> connList; //连接池
+	
+	std::thread *keepalive_thread;     // 保活线程
+	std::atomic<bool> running;         // 线程运行标志
 
 public:
 	string m_url;			 //主机地址
-	string m_Port;		 //数据库端口号
-	string m_User;		 //登陆数据库用户名
-	string m_PassWord;	 //登陆数据库密码
-	string m_DatabaseName; //使用数据库名
-	int m_close_log;	//日志开关
+	int m_Port;		         //数据库端口号(改为整型)
+	string m_User;		     //登陆数据库用户名
+	string m_PassWord;	     //登陆数据库密码
+	string m_DatabaseName;   //使用数据库名
+	int m_close_log;	     //日志开关
 };
 
 // 用于获取数据库连接 

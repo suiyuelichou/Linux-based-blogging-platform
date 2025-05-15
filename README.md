@@ -347,6 +347,16 @@ MYSQL *connection_pool::GetConnection()
 3. 总之就是给后台管理的前端添加了XSS防护
 4. 还有一个问题没解决，管理员登录后，会导致用户的登录出现问题。
 
+### 2025-5-16
+1. 添加了两个脚本用于启动和关闭服务器。
+2. 添加了用户账号是否被封禁的验证。
+3. 暂时把GitHub的链接删了，好像有攻击可以直接针对这个链接
+4. bool PingConnection(MYSQL *conn);    // 检查连接是否有效
+	void KeepAliveConnections();         // 定期保活连接
+	void StartKeepAliveThread();         // 启动保活线程
+	void StopKeepAliveThread();          // 停止保活线程
+添加了几个函数，解决了长时间运行后数据库连接自动断开的问题。
+
 ## 更新日志
 
 ### 版本 1.0.0

@@ -1428,16 +1428,27 @@ http_conn::HTTP_CODE http_conn::do_request()
         // 检查用户名是否存在
         if(users.find(username) != users.end()){
             string stored_hash = users[username];
-            if(BCrypt::validatePassword(password, stored_hash) || password == stored_hash){
+            if(BCrypt::validatePassword(password, stored_hash)){
+                sql_blog_tool tool;
+                // 判断该用户是否已被封禁
+                string status = "active";
+                int userid = tool.get_userid(username);
+                User user = tool.get_userdata_by_userid(userid);
+                if(user.get_status() != status){
+                    json response = {
+                        {"success", false},
+                        {"message", "该用户已被封禁！请联系管理员"}
+                    };
+                    jsonData = response.dump();
+                    return LOGIN;
+                }
+
                 // 创建新会话
                 try{
                     cookie.createSession(username);
-                    sql_blog_tool tool;
-                    int userid = tool.get_userid(username);
                     tool.update_last_login_time(userid);
                     int view_count = tool.get_view_count_by_userid(userid);
                     int like_count = tool.get_blog_liked_count_by_userid(userid);
-                    User user = tool.get_userdata_by_userid(userid);
 
                     json response = {
                         {"success", true},

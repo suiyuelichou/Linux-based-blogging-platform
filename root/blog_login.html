@@ -264,7 +264,12 @@
                 })
                 .catch(error => {
                     console.error('登录失败:', error);
-                    showNotification('用户名或密码错误，请重试', 'error');
+                    // 检查是否是用户被封禁的错误消息
+                    if (error.message === '该用户已被封禁！请联系管理员') {
+                        showNotification('该用户已被封禁！请联系管理员', 'error');
+                    } else {
+                        showNotification('用户名或密码错误，请重试', 'error');
+                    }
                     
                     // 恢复按钮状态
                     loginBtn.disabled = false;

@@ -14,6 +14,8 @@ connection_pool::connection_pool()
 {
 	m_CurConn = 0;
 	m_FreeConn = 0;
+	keepalive_thread = nullptr;
+	running = false;
 }
 
 // 实例的初始化放在函数内部，是单例模式中的懒汉模式（在第一次被调用才会进行初始化）
@@ -27,7 +29,7 @@ connection_pool *connection_pool::GetInstance()
 void connection_pool::init(string url, string UserName, string PassWord, string DBName, int Port, int MaxConn, int close_log)
 {
 	m_url = url;
-	m_Port = Port;
+	m_Port = Port;  // 直接存储整型值
 	m_User = UserName;
 	m_PassWord = PassWord;
 	m_DatabaseName = DBName;
@@ -43,7 +45,24 @@ void connection_pool::init(string url, string UserName, string PassWord, string 
 			LOG_ERROR("MySQL Error");
 			exit(1);
 		}
-		// 建立数据库连接
+
+		// 设置自动重连选项
+		my_bool reconnect = 1;
+		mysql_options(con, MYSQL_OPT_RECONNECT, &reconnect);
+		
+		// 设置连接超时时间
+		int timeout = 10;
+		mysql_options(con, MYSQL_OPT_CONNECT_TIMEOUT, &timeout);
+		
+		// 设置读取超时时间
+		int read_timeout = 30;
+		mysql_options(con, MYSQL_OPT_READ_TIMEOUT, &read_timeout);
+		
+		// 设置写入超时时间
+		int write_timeout = 30;
+		mysql_options(con, MYSQL_OPT_WRITE_TIMEOUT, &write_timeout);
+
+		// 建立数据库连接，直接使用整型端口号
 		con = mysql_real_connect(con, url.c_str(), UserName.c_str(), PassWord.c_str(), DBName.c_str(), Port, NULL, 0);
 
 		if (con == NULL)
@@ -51,6 +70,10 @@ void connection_pool::init(string url, string UserName, string PassWord, string 
 			LOG_ERROR("MySQL Error");
 			exit(1);
 		}
+
+		// 设置UTF8mb4字符集
+		mysql_set_character_set(con, "utf8mb4");
+
 		connList.push_back(con);
 		++m_FreeConn;
 	}
@@ -58,8 +81,20 @@ void connection_pool::init(string url, string UserName, string PassWord, string 
 	reserve = sem(m_FreeConn);	// 将当前可使用的连接数量作为信号量的初始值
 
 	m_MaxConn = m_FreeConn;
+
+	// 启动保活线程
+	StartKeepAliveThread();
 }
 
+// 检查连接是否有效
+bool connection_pool::PingConnection(MYSQL *conn)
+{
+	if (conn == NULL)
+		return false;
+	
+	// mysql_ping: 如果连接断开会尝试重连，返回0表示连接正常
+	return (mysql_ping(conn) == 0);
+}
 
 //从数据库连接池中取出一个可用连接，更新使用和空闲连接数
 MYSQL *connection_pool::GetConnection()
@@ -84,6 +119,48 @@ MYSQL *connection_pool::GetConnection()
 	++m_CurConn;
 
 	lock.unlock();
+
+	// 检查连接是否有效，如果无效则重新建立连接
+	if (!PingConnection(con)) {
+		LOG_INFO("Connection lost, reconnecting to MySQL server");
+		
+		// 关闭失效连接
+		mysql_close(con);
+		
+		// 初始化新连接
+		con = mysql_init(NULL);
+		if (con == NULL) {
+			LOG_ERROR("MySQL init error during reconnect");
+			lock.lock();
+			--m_CurConn;
+			++m_FreeConn;
+			reserve.post();
+			lock.unlock();
+			return NULL;
+		}
+		
+		// 设置自动重连选项
+		my_bool reconnect = 1;
+		mysql_options(con, MYSQL_OPT_RECONNECT, &reconnect);
+		
+		// 重新连接数据库 - 使用整型端口号
+		con = mysql_real_connect(con, m_url.c_str(), m_User.c_str(), m_PassWord.c_str(),
+								m_DatabaseName.c_str(), m_Port, NULL, 0);
+		
+		if (con == NULL) {
+			LOG_ERROR("MySQL reconnect error");
+			lock.lock();
+			--m_CurConn;
+			++m_FreeConn;
+			reserve.post();
+			lock.unlock();
+			return NULL;
+		}
+		
+		// 设置UTF8mb4字符集
+		mysql_set_character_set(con, "utf8mb4");
+	}
+	
 	return con;
 }
 
@@ -105,9 +182,107 @@ bool connection_pool::ReleaseConnection(MYSQL *con)
 	return true;
 }
 
+// 定期保活连接的函数
+void connection_pool::KeepAliveConnections()
+{
+	if (m_close_log == 0)
+		LOG_INFO("Database connection keepalive thread started");
+	
+	while (running) {
+		// 每30分钟检查一次连接
+		std::this_thread::sleep_for(std::chrono::minutes(30));
+		
+		if (!running)
+			break;
+			
+		lock.lock();
+		
+		if (m_close_log == 0)
+			LOG_INFO("Checking database connections");
+		
+		// 遍历所有空闲连接
+		list<MYSQL *>::iterator it = connList.begin();
+		while (it != connList.end() && running) {
+			MYSQL *con = *it;
+			
+			// 如果连接无效，重新建立连接
+			if (!PingConnection(con)) {
+				if (m_close_log == 0)
+					LOG_INFO("Found invalid connection, recreating");
+				
+				// 关闭失效连接
+				mysql_close(con);
+				
+				// 初始化新连接
+				con = mysql_init(NULL);
+				if (con == NULL) {
+					LOG_ERROR("MySQL init error during keepalive");
+					++it;
+					continue;
+				}
+				
+				// 设置自动重连选项
+				my_bool reconnect = 1;
+				mysql_options(con, MYSQL_OPT_RECONNECT, &reconnect);
+				
+				// 重新连接数据库 - 使用整型端口号
+				con = mysql_real_connect(con, m_url.c_str(), m_User.c_str(), m_PassWord.c_str(),
+									   m_DatabaseName.c_str(), m_Port, NULL, 0);
+				
+				if (con == NULL) {
+					LOG_ERROR("MySQL reconnect error during keepalive");
+					++it;
+					continue;
+				}
+				
+				// 设置UTF8mb4字符集
+				mysql_set_character_set(con, "utf8mb4");
+				
+				// 替换链表中的连接
+				*it = con;
+			} else {
+				// 对有效连接执行一个简单查询保持活跃
+				if (mysql_query(con, "SELECT 1") != 0) {
+					LOG_ERROR("Keepalive query failed");
+				}
+			}
+			++it;
+		}
+		
+		lock.unlock();
+	}
+	
+	if (m_close_log == 0)
+		LOG_INFO("Database connection keepalive thread stopped");
+}
+
+// 启动保活线程
+void connection_pool::StartKeepAliveThread()
+{
+	if (!running) {
+		running = true;
+		keepalive_thread = new std::thread(&connection_pool::KeepAliveConnections, this);
+	}
+}
+
+// 停止保活线程
+void connection_pool::StopKeepAliveThread()
+{
+	if (running) {
+		running = false;
+		if (keepalive_thread && keepalive_thread->joinable()) {
+			keepalive_thread->join();
+			delete keepalive_thread;
+			keepalive_thread = nullptr;
+		}
+	}
+}
+
 //销毁数据库连接池
 void connection_pool::DestroyPool()
 {
+	// 停止保活线程
+	StopKeepAliveThread();
 
 	lock.lock();
 	if (connList.size() > 0)
